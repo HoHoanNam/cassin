@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: cassin
+
+  datasource:
+    # PostgreSQL cai truc tiep tren may. Doi gia tri qua bien moi truong, khong sua cung mat khau o day.
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/cassin}
+    username: ${DB_USERNAME:cassin}
+    password: ${DB_PASSWORD:cassin}
+
+  jpa:
+    # Schema do Flyway quan ly; Hibernate chi kiem tra entity khop voi bang.
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          '[time_zone]': Asia/Ho_Chi_Minh
+    show-sql: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: 8080
