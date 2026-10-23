@@ -74,7 +74,7 @@ public class User {
     // [SỬA] Chuẩn hóa email: "  An@Gmail.com " và "an@gmail.com" là một người.
     // Không chuẩn hóa thì cùng một email đăng ký được 2 lần, vì UNIQUE trong DB phân biệt hoa thường.
     // Locale.ROOT: tránh lỗi đổi chữ theo ngôn ngữ máy (ví dụ máy cài tiếng Thổ Nhĩ Kỳ, "I" → "ı").
-    this.email = requireText(email, "Email").toLowerCase(Locale.ROOT);
+    this.email = normalizeEmail(email);
     this.passwordHash = requireText(passwordHash, "Mật khẩu");
     this.displayName = requireText(displayName, "Tên hiển thị");
   }
@@ -89,5 +89,9 @@ public class User {
       throw new IllegalArgumentException(fieldName + " không được để trống");
     }
     return value.strip();
+  }
+
+  public static String normalizeEmail(String email) {
+    return requireText(email, "Email").toLowerCase(Locale.ROOT);
   }
 }

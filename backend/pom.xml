@@ -74,6 +74,10 @@
         </dependency>
 
         <!-- Spring Security + JWT: them vao ngay Thu 5 (22/10) khi lam phan dang nhap -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
