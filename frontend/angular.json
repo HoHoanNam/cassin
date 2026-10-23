@@ -30,6 +30,10 @@
               }
             ],
             "styles": [
+              "@fontsource/be-vietnam-pro/400.css",
+              "@fontsource/be-vietnam-pro/500.css",
+              "@fontsource/be-vietnam-pro/600.css",
+              "@fontsource/patrick-hand/400.css",
               "src/styles.scss"
             ]
           },

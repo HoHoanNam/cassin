@@ -1,0 +1,22 @@
+<section aria-labelledby="quiz-heading">
+  <h2 id="quiz-heading" class="section-title">Bài kiểm tra gần đây</h2>
+
+  @if (rows().length > 0) {
+    <ul class="sheet list">
+      @for (quiz of rows(); track quiz.id) {
+        <li class="row">
+          <span class="info">
+            <span class="title">{{ quiz.topicTitle }}</span>
+            <span class="muted day">{{ quiz.day }}</span>
+          </span>
+          <!-- Điểm khoanh bằng bút đỏ, như cô giáo chấm bài -->
+          <span class="score" [attr.aria-label]="'Điểm ' + quiz.score + ' trên ' + quiz.total">
+            {{ quiz.score }}<small>/{{ quiz.total }}</small>
+          </span>
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="sheet muted">Bạn chưa làm bài kiểm tra nào. Chọn một chủ đề ngữ pháp để bắt đầu.</p>
+  }
+</section>

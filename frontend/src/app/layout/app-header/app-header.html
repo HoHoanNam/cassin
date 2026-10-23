@@ -1,0 +1,18 @@
+<header class="header">
+  <a class="logo" routerLink="/">Cassin</a>
+
+  <nav class="nav" aria-label="Điều hướng chính">
+    @for (link of links; track link.path) {
+      <a
+        class="nav-link"
+        [routerLink]="link.path"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: link.exact }"
+        ariaCurrentWhenActive="page"
+        >{{ link.label }}</a
+      >
+    }
+  </nav>
+
+  <span class="avatar" aria-label="Tài khoản của Nam">N</span>
+</header>

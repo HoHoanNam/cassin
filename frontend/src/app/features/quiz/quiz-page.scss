@@ -1,0 +1,91 @@
+.paper {
+  padding: 40px 50px;
+}
+
+.head {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 30px;
+  align-items: start;
+}
+
+.name {
+  font-family: var(--font-hand);
+  font-size: 1.3rem;
+}
+
+.name-line {
+  display: inline-block;
+  min-width: 160px;
+  border-bottom: 2px dotted var(--ink-soft);
+  color: var(--ink-blue);
+}
+
+/* Khung Điểm | Lời phê */
+.grade {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  min-height: 120px;
+  border: 1.5px solid var(--ink);
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 8px 10px;
+  text-align: center;
+}
+
+.cell + .cell {
+  border-left: 1.5px solid var(--ink);
+}
+
+.label {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Điểm và lời phê viết bằng bút đỏ */
+.score {
+  margin: auto 0;
+  color: var(--ink-red);
+  font-family: var(--font-hand);
+  font-size: 2.8rem;
+  line-height: 1;
+  transform: rotate(-6deg);
+}
+
+.score small {
+  font-size: 1.1rem;
+}
+
+.comment {
+  margin: auto 0;
+  color: var(--ink-red);
+  font-family: var(--font-hand);
+  font-size: 1.2rem;
+  line-height: 1.3;
+  transform: rotate(-2deg);
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--grid-minor);
+}
+
+@media (max-width: 760px) {
+  .paper {
+    padding: 24px 20px;
+  }
+
+  .head {
+    grid-template-columns: 1fr;
+  }
+}

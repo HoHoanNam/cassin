@@ -1,1 +1,202 @@
-/* You can add global styles to this file, and also import other style files */
+/*
+ * Style dùng chung cho cả app: bảng màu, font, nền vở ô li, nút, tờ giấy.
+ * Style riêng của từng component nằm trong file .scss cạnh component đó.
+ *
+ * VÌ SAO CÓ @layer?
+ * Tailwind đặt class của nó (mt-6, text-ink-soft...) trong "cascade layer" tên là utilities.
+ * Quy tắc của CSS: style KHÔNG nằm trong layer nào luôn thắng style nằm trong layer,
+ * bất kể selector mạnh yếu ra sao. Nếu viết "p { margin: 0 }" trần trụi ở đây,
+ * thì class "mt-6" của Tailwind trên thẻ <p> sẽ không có tác dụng.
+ *
+ * Nên style dùng chung được xếp vào đúng layer của Tailwind:
+ *   base       → style cho thẻ HTML (html, body, a, h1...)
+ *   components → class dùng lại (.btn, .sheet...)
+ *   utilities  → class Tailwind, luôn thắng hai layer trên
+ */
+
+:root {
+  /* Giấy và dòng kẻ của vở 4 ô li */
+  --paper: #fcfcf7;
+  --grid-major: #c3b3e2;   /* đường kẻ ô vuông lớn, tím nhạt */
+  --grid-minor: #ece6f6;   /* 3 dòng kẻ mảnh trong mỗi ô */
+  --margin-red: #e8776f;   /* đường lề đỏ bên trái */
+
+  /* Mực */
+  --ink: #23264a;          /* chữ chính: mực xanh đen */
+  --ink-soft: #5d6080;     /* chữ phụ: như bút chì */
+  --ink-blue: #1f4fb5;     /* bút bi xanh: hành động chính */
+  --ink-blue-dark: #183d8c;
+  --ink-red: #cf2e2e;      /* bút đỏ của cô giáo: điểm, chỗ sai */
+
+  --sheet: #ffffff;        /* tờ giấy kẹp trên vở */
+
+  /* Ô lớn 40px, chia 4 dòng mỗi dòng 10px. Khoảng cách trong app là bội số của 10. */
+  --cell: 40px;
+  --line: 10px;
+  --margin-x: 72px;        /* vị trí đường lề đỏ */
+
+  --font-body: 'Be Vietnam Pro', system-ui, sans-serif;
+  --font-hand: 'Patrick Hand', 'Be Vietnam Pro', cursive;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --margin-x: 28px;
+  }
+}
+
+/* ---------- Style cho thẻ HTML ---------- */
+/* Không cần reset margin của h1, p, ul... : Tailwind (preflight) đã làm. */
+@layer base {
+  html {
+    color: var(--ink);
+    font-family: var(--font-body);
+    line-height: 1.6;
+  }
+
+  body {
+    min-height: 100vh;
+    background-color: var(--paper);
+    /* Nền vở ô li vẽ hoàn toàn bằng CSS, không cần ảnh:
+       1. đường lề đỏ dọc
+       2. đường kẻ ngang của ô lớn
+       3. đường kẻ dọc của ô lớn
+       4. dòng kẻ mảnh, cách nhau 10px */
+    background-image:
+      linear-gradient(90deg,
+        transparent calc(var(--margin-x) - 1px),
+        var(--margin-red) calc(var(--margin-x) - 1px),
+        var(--margin-red) calc(var(--margin-x) + 1px),
+        transparent calc(var(--margin-x) + 1px)),
+      linear-gradient(var(--grid-major) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
+      linear-gradient(var(--grid-minor) 1px, transparent 1px);
+    background-size: 100% 100%, var(--cell) var(--cell), var(--cell) var(--cell), 100% var(--line);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-hand);
+    line-height: 1.2;
+  }
+
+  a {
+    color: var(--ink-blue);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ink-blue);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  /* Gợi ý phím tắt */
+  kbd {
+    display: inline-block;
+    min-width: 1.6em;
+    padding: 0 5px;
+    border: 1px solid var(--grid-major);
+    border-bottom-width: 2px;
+    border-radius: 3px;
+    background: var(--sheet);
+    font: 500 0.8rem/1.6 var(--font-body);
+    text-align: center;
+  }
+}
+
+/* ---------- Class dùng lại ---------- */
+@layer components {
+  /* Khung nội dung: căn giữa trang, rộng tối đa 920px.
+     Hai bên chừa khoảng trống bằng nhau (lề đỏ + 32px), nên trên màn hình hẹp
+     nội dung vẫn không bao giờ đè lên đường lề đỏ. */
+  .page {
+    width: min(100% - 2 * (var(--margin-x) + 32px), 920px);
+    margin-inline: auto;
+    padding-bottom: 80px;
+  }
+
+  /* Tờ giấy trắng kẹp lên vở: giúp chữ không bị dòng kẻ làm rối mắt */
+  .sheet {
+    background: var(--sheet);
+    border: 1px solid #e3ddef;
+    border-radius: 3px;
+    box-shadow: 0 1px 0 #e3ddef, 0 6px 14px -10px rgba(35, 38, 74, 0.35);
+    padding: 30px;
+  }
+
+  .section-title {
+    font-size: 1.75rem;
+    margin-bottom: 20px;
+  }
+
+  .muted {
+    color: var(--ink-soft);
+  }
+
+  /* Nút: viền bút xanh */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 20px;
+    border: 2px solid var(--ink-blue);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--ink-blue);
+    font: 600 0.95rem/1 var(--font-body);
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .btn:hover {
+    background: #eef2fb;
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Hành động chính: tô kín bút xanh */
+  .btn-primary {
+    background: var(--ink-blue);
+    color: #fff;
+  }
+
+  .btn-primary:hover {
+    background: var(--ink-blue-dark);
+    border-color: var(--ink-blue-dark);
+  }
+
+  /* Bút đỏ: "Quên", "Sai" */
+  .btn-danger {
+    border-color: var(--ink-red);
+    color: var(--ink-red);
+  }
+
+  .btn-danger:hover {
+    background: #fcecec;
+  }
+
+  @media (max-width: 640px) {
+    .page {
+      width: calc(100% - var(--margin-x) - 32px);
+      margin-left: calc(var(--margin-x) + 16px);
+    }
+
+    .sheet {
+      padding: 20px;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -1,0 +1,29 @@
+/*
+ * Tailwind CSS v4.
+ *
+ * File .css riêng (không phải .scss): Tailwind v4 không chạy chung với Sass,
+ * vì Sass sẽ cố xử lý @import "tailwindcss" trước khi Tailwind kịp đọc.
+ * Style tự viết vẫn để trong styles.scss và file .scss của từng component.
+ */
+@import 'tailwindcss';
+
+/*
+ * Đưa bảng màu và font của Cassin vào Tailwind, để dùng được class như
+ * text-ink, bg-paper, border-grid-major, font-hand...
+ * Giá trị trỏ tới biến CSS trong styles.scss: đổi màu ở một chỗ là cả hai cách viết cùng đổi.
+ */
+@theme inline {
+  --color-paper: var(--paper);
+  --color-sheet: var(--sheet);
+  --color-grid-major: var(--grid-major);
+  --color-grid-minor: var(--grid-minor);
+  --color-margin-red: var(--margin-red);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-blue: var(--ink-blue);
+  --color-ink-blue-dark: var(--ink-blue-dark);
+  --color-ink-red: var(--ink-red);
+
+  --font-sans: var(--font-body);
+  --font-hand: var(--font-hand);
+}

@@ -1,0 +1,38 @@
+<fieldset class="question" [disabled]="result() !== null">
+  <legend class="prompt">
+    <span class="num">Câu {{ number() }}.</span> {{ question().content }}
+  </legend>
+
+  <div class="options">
+    @for (option of question().options; track option.id; let i = $index) {
+      @let state = states().get(option.id);
+      <label class="option" [class]="state">
+        <!-- Radio thật vẫn có (cho bàn phím và trình đọc màn hình), chỉ ẩn đi về mặt hiển thị -->
+        <input
+          class="sr-only"
+          type="radio"
+          [name]="'question-' + question().id"
+          [value]="option.id"
+          [checked]="selectedId() === option.id"
+          (change)="picked.emit(option.id)"
+        />
+        <span class="letter">{{ letters[i] }}</span>
+        <span class="content">{{ option.content }}</span>
+      </label>
+    }
+  </div>
+
+  @if (result(); as r) {
+    <!-- Lời giải viết bằng bút đỏ -->
+    <p class="note">
+      @if (r.correct) {
+        Đúng.
+      } @else if (r.selectedOptionId === null) {
+        Bỏ trống.
+      } @else {
+        Sai.
+      }
+      {{ r.explanation }}
+    </p>
+  }
+</fieldset>

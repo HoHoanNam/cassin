@@ -1,0 +1,37 @@
+<section class="sheet panel" aria-labelledby="review-heading">
+  <div class="summary">
+    @if (review().dueToday > 0) {
+      <h2 id="review-heading" class="headline">Có {{ review().dueToday }} thẻ cần ôn hôm nay</h2>
+      <p class="muted">Ôn đúng hạn để từ mới nằm lại lâu hơn trong trí nhớ.</p>
+      <a class="btn btn-primary" routerLink="/review">Bắt đầu ôn {{ review().dueToday }} thẻ</a>
+    } @else {
+      <h2 id="review-heading" class="headline">Hôm nay bạn đã ôn xong</h2>
+      <p class="muted">Thêm từ mới vào một bộ từ để có thẻ ôn cho ngày mai.</p>
+      <a class="btn" routerLink="/decks">Thêm từ mới</a>
+    }
+
+    @if (review().streakDays > 0) {
+      <p class="streak">Bạn đã học {{ review().streakDays }} ngày liên tiếp.</p>
+    }
+  </div>
+
+  <figure class="boxes">
+    <figcaption class="caption">
+      <span>{{ totalCards() }} thẻ trong 5 hộp</span>
+      <span class="muted">Nhớ thì thẻ lên hộp sau, quên thì về hộp 1.</span>
+    </figcaption>
+
+    <ol class="bars">
+      @for (box of boxes(); track box.number) {
+        <li class="bar-item" [class.mastered]="box.mastered">
+          <span class="count">{{ box.count }}</span>
+          <span class="bar-track">
+            <span class="bar" [style.height.%]="box.heightPercent"></span>
+          </span>
+          <span class="box-name">Hộp {{ box.number }}</span>
+          <span class="interval">{{ box.interval }}</span>
+        </li>
+      }
+    </ol>
+  </figure>
+</section>

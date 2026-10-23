@@ -1,0 +1,34 @@
+/* Thanh tiến độ: một nét bút xanh dài dần */
+.track {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--grid-minor);
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--ink-blue);
+  transition: width 300ms ease-out;
+}
+
+.outcome {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-top: 1px solid var(--grid-minor);
+}
+
+.move {
+  color: var(--ink-blue);
+  font-family: var(--font-hand);
+  font-size: 1.15rem;
+}
+
+/* Quên: chữ bút đỏ */
+.move.forgot {
+  color: var(--ink-red);
+}

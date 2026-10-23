@@ -1,0 +1,21 @@
+<section aria-labelledby="grammar-heading">
+  <h2 id="grammar-heading" class="section-title">Luyện ngữ pháp</h2>
+
+  @if (topics().length > 0) {
+    <ul class="sheet list">
+      @for (topic of topics(); track topic.id) {
+        <li class="row">
+          <!-- Trình độ viết trong một ô vuông của vở -->
+          <span class="level" [attr.aria-label]="'Trình độ ' + topic.level">{{ topic.level }}</span>
+          <span class="info">
+            <span class="title">{{ topic.title }}</span>
+            <span class="muted count">{{ topic.questionCount }} câu hỏi</span>
+          </span>
+          <a class="btn quiz" [routerLink]="['/grammar', topic.id, 'quiz']">Làm bài</a>
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="sheet muted">Chưa có chủ đề ngữ pháp nào.</p>
+  }
+</section>

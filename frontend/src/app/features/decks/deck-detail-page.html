@@ -1,0 +1,84 @@
+@if (deck.isLoading()) {
+  <p class="muted mt-20 text-center" role="status">Đang mở bộ từ…</p>
+} @else if (deck.value(); as d) {
+  <header class="mt-12 flex flex-wrap items-end justify-between gap-6">
+    <div class="max-w-xl">
+      <a class="text-sm text-ink-soft hover:text-ink" routerLink="/">Trang chủ</a>
+      <h1 class="mt-2 font-hand text-5xl leading-tight">{{ d.name }}</h1>
+      @if (d.description) {
+        <p class="muted mt-2">{{ d.description }}</p>
+      }
+      <p class="mt-3 text-sm font-medium">
+        {{ d.cards.length }} thẻ, {{ wordCount() }} từ
+        @if (d.type === 'SYSTEM_DECK') {
+          <span class="tag ml-2">Bộ có sẵn</span>
+        }
+      </p>
+    </div>
+
+    <div class="flex gap-3">
+      @if (d.type === 'USER_DECK') {
+        <button type="button" class="btn">Thêm thẻ</button>
+      }
+      @if (d.dueCount > 0) {
+        <a class="btn btn-primary" [routerLink]="['/decks', d.id, 'review']">Ôn {{ d.dueCount }} thẻ</a>
+      }
+    </div>
+  </header>
+
+  <div class="mt-10">
+    <label class="text-sm font-medium" for="search">Tìm từ hoặc nghĩa</label>
+    <input
+      id="search"
+      class="search mt-2"
+      type="search"
+      placeholder="vd. light, ngân hàng"
+      autocomplete="off"
+      [value]="query()"
+      (input)="onSearch($event)"
+    />
+  </div>
+
+  @if (entries().length > 0) {
+    <ul class="sheet entries mt-6">
+      @for (entry of entries(); track entry.word) {
+        <!-- Một mục từ: từ bên trái, các nghĩa bên phải, giống trang từ điển -->
+        <li class="entry">
+          <div>
+            <p class="word">{{ entry.word }}</p>
+            @if (entry.phonetic) {
+              <p class="muted text-sm">{{ entry.phonetic }}</p>
+            }
+          </div>
+
+          <ol class="senses">
+            @for (sense of entry.senses; track sense.id) {
+              <li class="sense">
+                <div class="flex items-baseline gap-3">
+                  <abbr class="pos" [title]="sense.partOfSpeech | posLabel: 'full'">{{
+                    sense.partOfSpeech | posLabel
+                  }}</abbr>
+                  <span class="definition">{{ sense.definition }}</span>
+                  <app-box-meter class="ml-auto" [box]="sense.box" />
+                </div>
+                @for (example of sense.examples; track $index) {
+                  <p class="example">{{ example }}</p>
+                }
+              </li>
+            }
+          </ol>
+        </li>
+      }
+    </ul>
+  } @else if (query()) {
+    <p class="sheet muted mt-6">Không có từ nào khớp với "{{ query() }}".</p>
+  } @else {
+    <p class="sheet muted mt-6">Bộ này chưa có thẻ nào. Thêm thẻ đầu tiên để bắt đầu ôn.</p>
+  }
+} @else {
+  <section class="sheet mx-auto mt-16 max-w-xl text-center">
+    <h1 class="font-hand text-4xl">Không tìm thấy bộ từ này</h1>
+    <p class="muted mt-3">Bộ từ có thể đã bị xóa, hoặc đường dẫn bị sai.</p>
+    <a class="btn mt-6" routerLink="/">Về trang chủ</a>
+  </section>
+}

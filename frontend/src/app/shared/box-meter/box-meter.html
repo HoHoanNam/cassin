@@ -1,0 +1,10 @@
+<span
+  class="meter"
+  role="img"
+  [attr.aria-label]="box() === null ? 'Chưa ôn lần nào' : 'Đang ở hộp ' + box() + ' trên 5'"
+  [attr.title]="box() === null ? 'Chưa ôn lần nào' : 'Hộp ' + box()"
+>
+  @for (slot of slots; track slot) {
+    <span class="dot" [class.filled]="box() !== null && slot <= box()!"></span>
+  }
+</span>

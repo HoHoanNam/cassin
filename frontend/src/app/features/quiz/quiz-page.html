@@ -1,0 +1,67 @@
+@if (session.isLoading()) {
+  <p class="muted mt-20 text-center" role="status">Đang phát đề…</p>
+} @else if (session.value(); as quiz) {
+  <article class="sheet paper mx-auto mt-10 max-w-3xl">
+    <!-- Phần đầu tờ giấy kiểm tra -->
+    <header class="head">
+      <div>
+        <h1 class="font-hand text-4xl leading-tight">Bài kiểm tra: {{ quiz.topicTitle }}</h1>
+        <p class="muted mt-1">Trình độ {{ quiz.level }}, {{ quiz.questions.length }} câu</p>
+        <p class="name mt-4">Họ và tên: <span class="name-line">Nam</span></p>
+      </div>
+
+      <!-- Ô Điểm và Lời phê, kẻ khung như giấy kiểm tra ở trường -->
+      <div class="grade" aria-live="polite">
+        <div class="cell">
+          <span class="label">Điểm</span>
+          @if (result(); as r) {
+            <span class="score">{{ r.score }}<small>/{{ r.total }}</small></span>
+          }
+        </div>
+        <div class="cell">
+          <span class="label">Lời phê của giáo viên</span>
+          @if (result()) {
+            <span class="comment">{{ teacherComment() }}</span>
+          }
+        </div>
+      </div>
+    </header>
+
+    <ol class="mt-10 space-y-8">
+      @for (question of quiz.questions; track question.id; let i = $index) {
+        <li>
+          <app-quiz-question
+            [number]="i + 1"
+            [question]="question"
+            [selectedId]="selections()[question.id] ?? null"
+            [result]="resultByQuestion().get(question.id) ?? null"
+            (picked)="choose(question.id, $event)"
+          />
+        </li>
+      }
+    </ol>
+
+    <footer class="foot">
+      @if (result()) {
+        <button type="button" class="btn btn-primary" (click)="retry()">Làm lại với đề mới</button>
+        <a class="btn" routerLink="/">Về trang chủ</a>
+      } @else {
+        <p class="muted">
+          Đã làm {{ answeredCount() }} / {{ questions().length }} câu.
+          @if (unansweredCount() > 0) {
+            Câu bỏ trống sẽ tính là sai.
+          }
+        </p>
+        <button type="button" class="btn btn-primary" [disabled]="submitting()" (click)="submit()">
+          {{ submitting() ? 'Đang nộp…' : 'Nộp bài' }}
+        </button>
+      }
+    </footer>
+  </article>
+} @else {
+  <section class="sheet mx-auto mt-16 max-w-xl text-center">
+    <h1 class="font-hand text-4xl">Không tìm thấy chủ đề này</h1>
+    <p class="muted mt-3">Chọn một chủ đề ngữ pháp ở trang chủ để làm bài.</p>
+    <a class="btn mt-6" routerLink="/">Về trang chủ</a>
+  </section>
+}

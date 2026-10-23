@@ -1,0 +1,35 @@
+<!-- Cả tấm thẻ là một nút: bấm để lật. aria-pressed cho trình đọc màn hình biết thẻ đang lật hay chưa. -->
+<button
+  type="button"
+  class="card"
+  [class.is-flipped]="flipped()"
+  [attr.aria-pressed]="flipped()"
+  [attr.aria-label]="flipped() ? 'Thẻ đã lật' : 'Lật thẻ để xem nghĩa của ' + card().word"
+  (click)="flip.emit()"
+>
+  <span class="inner">
+    <!-- Mặt trước: từ tiếng Anh -->
+    <span class="face front">
+      <span class="meta">
+        <span>{{ card().partOfSpeech | posLabel: 'full' }}</span>
+        <app-box-meter [box]="card().box" />
+      </span>
+      <span class="word">{{ card().word }}</span>
+      @if (card().phonetic) {
+        <span class="phonetic">{{ card().phonetic }}</span>
+      }
+    </span>
+
+    <!-- Mặt sau: nghĩa và ví dụ -->
+    <span class="face back">
+      <span class="meta">
+        <span>{{ card().word }} ({{ card().partOfSpeech | posLabel }})</span>
+        <app-box-meter [box]="card().box" />
+      </span>
+      <span class="definition">{{ card().definition }}</span>
+      @for (example of card().examples; track $index) {
+        <span class="example">{{ example }}</span>
+      }
+    </span>
+  </span>
+</button>

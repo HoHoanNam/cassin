@@ -1,0 +1,34 @@
+<section aria-labelledby="decks-heading">
+  <div class="head">
+    <h2 id="decks-heading" class="section-title">Bộ từ của bạn</h2>
+    <a class="btn" routerLink="/decks/new">Tạo bộ từ</a>
+  </div>
+
+  @if (decks().length > 0) {
+    <!-- Trình bày như trang mục lục: tên bộ, dòng chấm dẫn, số thẻ -->
+    <ul class="sheet index">
+      @for (deck of decks(); track deck.id) {
+        <li class="row">
+          <span class="name">
+            <a class="name-link" [routerLink]="['/decks', deck.id]">{{ deck.name }}</a>
+            @if (deck.type === 'SYSTEM_DECK') {
+              <span class="tag">Bộ có sẵn</span>
+            }
+          </span>
+          <span class="leader" aria-hidden="true"></span>
+          <span class="cards">{{ deck.cardCount }} thẻ</span>
+
+          @if (deck.dueCount > 0) {
+            <a class="btn review" [routerLink]="['/decks', deck.id, 'review']">
+              Ôn {{ deck.dueCount }} thẻ
+            </a>
+          } @else {
+            <span class="done">Đã ôn xong</span>
+          }
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="sheet muted">Bạn chưa có bộ từ nào. Tạo bộ từ đầu tiên để bắt đầu ôn.</p>
+  }
+</section>
