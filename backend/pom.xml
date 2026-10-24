@@ -73,10 +73,32 @@
             <version>3.2.0</version>
         </dependency>
 
-        <!-- Spring Security + JWT: them vao ngay Thu 5 (22/10) khi lam phan dang nhap -->
+        <!-- Spring Security: đăng nhập, phân quyền. Đã bao gồm spring-security-crypto (BCrypt),
+             nên không cần khai báo riêng dependency crypto nữa. -->
         <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-crypto</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- JJWT: tạo và đọc JWT. api để code gọi; impl + jackson chỉ cần lúc chạy (runtime). -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.13.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.13.0</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.13.0</version>
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
 

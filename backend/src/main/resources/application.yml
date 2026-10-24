@@ -25,3 +25,10 @@ spring:
 
 server:
   port: 8080
+
+cassin:
+  jwt:
+    # Khóa bí mật để ký token, dạng base64, tối thiểu 32 byte.
+    # Giá trị mặc định chỉ dùng khi dev. Lúc deploy phải đặt biến môi trường JWT_SECRET.
+    secret: ${JWT_SECRET:ZGV2LW9ubHktc2VjcmV0LWNoYW5nZS1tZS1pbi1wcm9kdWN0aW9uIQ==}
+    access-token-ttl: 1h
