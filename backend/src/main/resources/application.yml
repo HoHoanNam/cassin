@@ -12,11 +12,17 @@ spring:
     # Schema do Flyway quan ly; Hibernate chi kiem tra entity khop voi bang.
     hibernate:
       ddl-auto: validate
+    # Tắt "giữ kết nối DB tới tận lúc trả JSON". Lỡ đọc quan hệ LAZY ngoài transaction là lỗi ngay
+    # (LazyInitializationException), nên buộc phải chuyển entity → DTO bên trong service.
     open-in-view: false
     properties:
       hibernate:
         jdbc:
           '[time_zone]': Asia/Ho_Chi_Minh
+        # Gom các truy vấn quan hệ LAZY lại, tránh lỗi "N+1".
+        # Ví dụ trang 20 thẻ: không có dòng này thì 1 câu lấy thẻ + 20 câu lấy câu ví dụ;
+        # có dòng này thì 1 câu lấy thẻ + 1 câu lấy ví dụ cho cả 20 thẻ (WHERE card_id IN (...)).
+        '[default_batch_fetch_size]': 50
     show-sql: false
 
   flyway:
@@ -31,4 +37,5 @@ cassin:
     # Khóa bí mật để ký token, dạng base64, tối thiểu 32 byte.
     # Giá trị mặc định chỉ dùng khi dev. Lúc deploy phải đặt biến môi trường JWT_SECRET.
     secret: ${JWT_SECRET:ZGV2LW9ubHktc2VjcmV0LWNoYW5nZS1tZS1pbi1wcm9kdWN0aW9uIQ==}
+    # Thời gian sống của access token
     access-token-ttl: 1h
