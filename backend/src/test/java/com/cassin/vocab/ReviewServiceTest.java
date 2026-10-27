@@ -98,7 +98,9 @@ class ReviewServiceTest {
 
     // Assert: đúng 2 thẻ, đúng thứ tự. TEST NÀY BẮT ĐƯỢC BUG "bỏ quên kết quả findNewCards".
     assertThat(queue)
-        .extracting(r -> r.card().word(), ReviewCardResponse::isNew)
+        // Dùng lambda r -> r.isNew() thay cho method reference ReviewCardResponse::isNew:
+        // chạy y hệt, nhưng IDE không báo warning "Null type safety".
+        .extracting(r -> r.card().word(), r -> r.isNew())
         .containsExactly(
             tuple("improve", false),
             tuple("achieve", true));
