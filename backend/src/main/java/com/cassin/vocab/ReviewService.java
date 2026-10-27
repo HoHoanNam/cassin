@@ -3,9 +3,9 @@ package com.cassin.vocab;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.springframework.data.domain.PageRequest;
@@ -108,12 +108,9 @@ public class ReviewService {
     //   countByBox(userId)  →  [ BoxCount(1, 24), BoxCount(3, 40) ]      (thiếu hộp 2, 4, 5)
     //
     // Bước 1: byBox — đổi List thành Map để tra nhanh "hộp X có bao nhiêu thẻ?"
-    //   .stream()                                  : duyệt từng BoxCount
-    //   .collect(Collectors.toMap(key, value))     : gom thành Map
-    //       BoxCount::box   → key   (số hộp)
-    //       BoxCount::total → value (số thẻ)
+    //   Duyệt từng BoxCount, put(số hộp → số thẻ) vào HashMap.
     //   Kết quả:  { 1 → 24, 3 → 40 }
-    //   (toMap ném lỗi nếu trùng key; ở đây không thể trùng vì SQL đã GROUP BY box.)
+    //   (Không thể trùng key: SQL đã GROUP BY box nên mỗi hộp chỉ có một dòng.)
     //
     // Bước 2: boxes — tạo đủ 5 phần tử, hộp nào không có trong Map thì điền 0
     //   IntStream.rangeClosed(1, 5)                : sinh dãy số 1, 2, 3, 4, 5 (closed = lấy cả số 5)
@@ -127,8 +124,14 @@ public class ReviewService {
     // Vì sao không chạy 5 câu count riêng cho từng hộp? 1 câu GROUP BY rẻ hơn 5 câu SQL.
 
     // Map<Hộp, Số lượng>
-    Map<Integer, Long> byBox = progressRepository.countByBox(userId).stream()
-      .collect(Collectors.toMap(BoxCount::box, BoxCount::total));
+    // [SỬA] Trước đây: stream().collect(Collectors.toMap(BoxCount::box, BoxCount::total)).
+    // Chạy đúng, nhưng IDE báo warning "Null type safety": trình phân tích null của Eclipse/VS Code
+    // không suy ra được kiểu null của method reference (BoxCount::box) khi đi qua toMap.
+    // Đổi sang vòng for (giống cách đã xử lý trong Card.cleanExamples): IDE theo dõi được từng dòng.
+    Map<Integer, Long> byBox = new HashMap<>();
+    for (BoxCount count : progressRepository.countByBox(userId)) {
+      byBox.put(count.box(), count.total());
+    }
       
     List<BoxCount> boxes = IntStream.rangeClosed(CardProgress.MIN_BOX, CardProgress.MAX_BOX)
       .mapToObj(box -> new BoxCount(box, byBox.getOrDefault(box, 0L)))

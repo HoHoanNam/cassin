@@ -19,6 +19,23 @@ import lombok.RequiredArgsConstructor;
 public class CardService {
   private static final int MAX_PAGE_SIZE = 100;
 
+  /**
+   * Thứ tự thẻ trong bộ: createdAt tăng dần, trùng thì theo id.
+   *
+   * [SỬA] Tách thành hằng số (static final) để gắn được @SuppressWarnings("null"):
+   * - Warning "Null type safety" ở đây là BÁO NHẦM (false positive). Trình phân tích null của
+   *   Eclipse/VS Code muốn biết tham số của TypedPropertyPath (interface của Spring Data) có thể
+   *   null hay không, nhưng Spring không ghi annotation kiểu mà Eclipse đọc được → nó đành cảnh báo.
+   *   Thực tế Spring Data chỉ dùng method reference để lấy TÊN field ("createdAt", "id"),
+   *   không bao giờ gọi getCreatedAt() trên một Card null.
+   * - Vẫn giữ method reference (an toàn kiểu: sai tên field là IDE báo đỏ) thay vì quay lại chuỗi "createdAt".
+   * - Đặt @SuppressWarnings trên MỘT hằng số nhỏ, không đặt trên cả class hay cả method,
+   *   để không vô tình che mất warning thật ở chỗ khác.
+   * - Bonus: Sort không đổi giữa các request, tạo một lần dùng mãi thay vì tạo lại mỗi lần gọi API.
+   */
+  @SuppressWarnings("null")
+  private static final Sort CARD_ORDER = Sort.by(Card::getCreatedAt, Card::getId);
+
   private final CardRepository cardRepository;
   private final DeckService deckService;   // dùng lại luật quyền, không viết lại
 
@@ -43,7 +60,13 @@ public class CardService {
         // Sắp theo createdAt tăng dần (thẻ thêm trước hiện trước); trùng createdAt thì theo id.
         // Thêm id để thứ tự LUÔN cố định: nếu 2 thẻ cùng createdAt mà không có id,
         // DB được phép trả thứ tự khác nhau giữa các lần → một thẻ có thể hiện ở cả trang 1 lẫn trang 2.
-        Sort.by("createdAt").ascending().and(Sort.by("id"))); // Giải thích thêm workflow và kết quả trả về ở đoạn này?
+        // [SỬA] Trước đây: Sort.by("createdAt").ascending().and(Sort.by("id")).
+        // Tên field viết bằng CHUỖI: gõ sai "createAt" hay sau này đổi tên field thì compile vẫn qua,
+        // tới lúc gọi API mới lỗi 500. Spring Data 4.1 (đi kèm Spring Boot 4.1) cho viết bằng
+        // method reference: Card::getCreatedAt sai tên là IDE báo đỏ ngay, đổi tên field là IDE đổi theo.
+        // Mặc định sắp xếp tăng dần (ASC) cho cả hai, nên kết quả giống hệt bản cũ.
+        // Xem hằng số CARD_ORDER ở đầu class.
+        CARD_ORDER); // Giải thích thêm workflow và kết quả trả về ở đoạn này?
     //
     // [TRẢ LỜI] Workflow, ví dụ GET /api/decks/5/cards?page=1&size=20 (trang thứ HAI, đếm từ 0):
     //
