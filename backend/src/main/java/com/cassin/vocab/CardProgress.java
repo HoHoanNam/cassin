@@ -52,6 +52,7 @@ public class CardProgress {
   @Column(name = "review_count", nullable = false)
   private int reviewCount;
 
+  // lapseCount: số lần quên
   @Column(name = "lapse_count", nullable = false)
   private int lapseCount;
 
