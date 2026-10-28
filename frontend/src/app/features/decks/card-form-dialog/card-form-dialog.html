@@ -1,0 +1,80 @@
+<app-modal [open]="open()" [title]="card() ? 'Sửa thẻ' : 'Thêm thẻ'" (closed)="close()">
+  <form class="mt-5 flex flex-col gap-5" [formGroup]="form" (ngSubmit)="submit(false)" novalidate>
+    @if (serverError(); as message) {
+      <div class="form-alert form-alert-error" role="alert">{{ message }}</div>
+    }
+
+    <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_170px]">
+      <div class="field">
+        <label class="label" for="card-word">Từ</label>
+        @let word = form.controls.word;
+        <input id="card-word" class="input" type="text" placeholder="improve" autocomplete="off" autocapitalize="off" formControlName="word"
+          [attr.aria-invalid]="word.touched && word.invalid" aria-describedby="card-word-error" />
+        @if (word.touched && word.hasError('required')) {
+          <p id="card-word-error" class="field-error">Vui lòng nhập từ</p>
+        } @else if (word.hasError('maxlength')) {
+          <p id="card-word-error" class="field-error">Tối đa {{ limits.word }} ký tự</p>
+        } @else if (word.hasError('server')) {
+          <p id="card-word-error" class="field-error">{{ word.getError('server') }}</p>
+        }
+      </div>
+      <div class="field">
+        <label class="label" for="card-pos">Loại từ</label>
+        <select id="card-pos" class="input" formControlName="partOfSpeech">
+          @for (option of posOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label" for="card-phonetic">Phiên âm <span class="font-normal text-ink-soft">(không bắt buộc)</span></label>
+      <input id="card-phonetic" class="input" type="text" placeholder="/ɪmˈpruːv/" autocomplete="off" formControlName="phonetic" />
+    </div>
+
+    <div class="field">
+      <label class="label" for="card-definition">Nghĩa</label>
+      @let definition = form.controls.definition;
+      <input id="card-definition" class="input" type="text" placeholder="cải thiện, tiến bộ" autocomplete="off" formControlName="definition"
+        [attr.aria-invalid]="definition.touched && definition.invalid" aria-describedby="card-definition-error" />
+      @if (definition.touched && definition.hasError('required')) {
+        <p id="card-definition-error" class="field-error">Vui lòng nhập nghĩa</p>
+      } @else if (definition.hasError('maxlength')) {
+        <p id="card-definition-error" class="field-error">Tối đa {{ limits.definition }} ký tự</p>
+      } @else {
+        <p id="card-definition-error" class="field-hint">Mỗi thẻ một nghĩa. Từ nhiều nghĩa thì tạo nhiều thẻ.</p>
+      }
+    </div>
+
+    <fieldset class="m-0 flex flex-col gap-2.5 border-0 p-0">
+      <legend class="label mb-1.5">Câu ví dụ <span class="font-normal text-ink-soft">(tối đa {{ limits.maxExamples }})</span></legend>
+      @for (control of examples.controls; track control; let i = $index) {
+        <div class="flex items-start gap-2">
+          <input class="input" type="text" [attr.aria-label]="'Câu ví dụ ' + (i + 1)" placeholder="Her English has improved a lot."
+            [formControl]="control" [attr.aria-invalid]="control.invalid" />
+          <button type="button" class="btn btn-ghost btn-icon mt-1 text-ink-soft" [attr.aria-label]="'Xóa câu ví dụ ' + (i + 1)"
+            (click)="removeExample(i)">
+            <app-icon name="trash" [size]="18" />
+          </button>
+        </div>
+        @if (control.invalid) {
+          <p class="field-error">Mỗi câu ví dụ tối đa {{ limits.example }} ký tự</p>
+        }
+      }
+      @if (examples.length < limits.maxExamples) {
+        <button type="button" class="btn btn-ghost btn-sm self-start" (click)="addExample()">
+          <app-icon name="plus" [size]="18" /> Thêm câu ví dụ
+        </button>
+      }
+    </fieldset>
+
+    <div class="actions">
+      <button type="button" class="btn btn-secondary" [disabled]="saving()" (click)="close()">Hủy</button>
+      @if (!card()) {
+        <button type="button" class="btn btn-secondary" [disabled]="saving()" (click)="submit(true)">Lưu và thêm tiếp</button>
+      }
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">{{ saving() ? 'Đang lưu...' : 'Lưu thẻ' }}</button>
+    </div>
+  </form>
+</app-modal>

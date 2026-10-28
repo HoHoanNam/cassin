@@ -1,0 +1,28 @@
+.aside {
+  display: flex;
+  flex: 1 1 480px;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  border-left: 1px solid var(--line);
+}
+
+@media (max-width: 900px) {
+  .aside {
+    display: none;
+  }
+}
+
+.aside-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 240px;
+  border: 1px solid var(--card-line);
+  border-radius: 10px;
+  transform: rotate(-2deg);
+  box-shadow: 0 22px 36px -26px rgba(35, 38, 74, 0.55);
+}

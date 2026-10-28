@@ -1,0 +1,99 @@
+/* Ô "Điểm | Lời phê" như đầu tờ bài kiểm tra */
+.grade-box {
+  display: grid;
+  grid-template-columns: 140px 190px;
+  border: 1.5px solid var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+@media (max-width: 480px) {
+  .grade-box {
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 8px 12px;
+}
+
+.cell-remark {
+  border-left: 1.5px solid var(--ink);
+}
+
+.remark {
+  margin-top: 10px;
+  color: var(--danger);
+  font-size: 19px;
+  line-height: 1.25;
+}
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-top: 1px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--danger-wash);
+  color: var(--danger-dark);
+}
+
+.mark-ok {
+  background: #e6f2ea;
+  color: var(--success);
+}
+
+.options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 20px;
+  margin-top: 14px;
+  padding-left: 36px;
+  font-size: 15px;
+}
+
+@media (max-width: 560px) {
+  .options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Khoanh đáp án đúng bằng bút đỏ */
+.letter-ring {
+  border: 2px solid var(--danger);
+  border-radius: 50%;
+  color: var(--danger);
+}
+
+/* Gạch đáp án sai đã chọn */
+.strike {
+  color: var(--ink-soft);
+  text-decoration: line-through 2px var(--danger);
+}
+
+.explain {
+  margin: 14px 0 0;
+  padding-left: 36px;
+  color: var(--ink-soft);
+  font-size: 18px;
+  line-height: 1.35;
+}

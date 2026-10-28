@@ -1,0 +1,74 @@
+<app-auth-layout word="begin" phonetic="/bɪˈɡɪn/" caption="Mười từ đầu tiên chỉ mất năm phút. Bắt đầu thôi.">
+  <h1 class="page-title">Tạo tài khoản</h1>
+  <p class="mt-2 text-ink-soft">Miễn phí, chỉ cần email. Bạn có thể học ngay sau khi đăng ký.</p>
+
+  @if (serverError(); as message) {
+    <div class="form-alert form-alert-error mt-6" role="alert">
+      <app-icon name="alert" class="mt-px" />
+      <span>{{ message }}</span>
+    </div>
+  }
+
+  <form class="mt-8 flex flex-col gap-5" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="field">
+      <label class="label" for="displayName">Tên hiển thị</label>
+      @let name = form.controls.displayName;
+      <input id="displayName" class="input" type="text" autocomplete="nickname" placeholder="Ví dụ: Nam" formControlName="displayName"
+        [attr.aria-invalid]="name.touched && name.invalid" aria-describedby="name-error" />
+      @if (name.touched && name.hasError('required')) {
+        <p id="name-error" class="field-error">Vui lòng nhập tên hiển thị</p>
+      } @else if (name.touched && name.hasError('maxlength')) {
+        <p id="name-error" class="field-error">Tên hiển thị tối đa 100 ký tự</p>
+      } @else if (name.hasError('server')) {
+        <p id="name-error" class="field-error">{{ name.getError('server') }}</p>
+      }
+    </div>
+
+    <div class="field">
+      <label class="label" for="email">Email</label>
+      @let email = form.controls.email;
+      <input id="email" class="input" type="email" autocomplete="email" placeholder="ban@email.com" formControlName="email"
+        [attr.aria-invalid]="(email.touched && email.invalid) || emailTaken()" aria-describedby="email-error" />
+      @if (emailTaken()) {
+        <p id="email-error" class="field-error">Email này đã được đăng ký. <a routerLink="/login" class="font-semibold">Đăng nhập?</a></p>
+      } @else if (email.touched && email.hasError('required')) {
+        <p id="email-error" class="field-error">Vui lòng nhập email</p>
+      } @else if (email.touched && email.hasError('email')) {
+        <p id="email-error" class="field-error">Email chưa đúng định dạng</p>
+      } @else if (email.hasError('server')) {
+        <p id="email-error" class="field-error">{{ email.getError('server') }}</p>
+      }
+    </div>
+
+    <div class="field">
+      <label class="label" for="password">Mật khẩu</label>
+      @let password = form.controls.password;
+      <div class="relative">
+        <input id="password" class="input pr-20" [type]="showPassword() ? 'text' : 'password'" autocomplete="new-password"
+          formControlName="password" [attr.aria-invalid]="password.touched && password.invalid" aria-describedby="password-hint" />
+        <button type="button" class="toggle" [attr.aria-label]="showPassword() ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+          (click)="showPassword.set(!showPassword())">
+          {{ showPassword() ? 'Ẩn' : 'Hiện' }}
+        </button>
+      </div>
+      @if (password.touched && password.hasError('required')) {
+        <p id="password-hint" class="field-error">Vui lòng nhập mật khẩu</p>
+      } @else if (password.touched && password.hasError('minlength')) {
+        <p id="password-hint" class="field-error">Mật khẩu cần ít nhất {{ passwordMin }} ký tự</p>
+      } @else {
+        <p id="password-hint" class="field-hint">Ít nhất {{ passwordMin }} ký tự.</p>
+      }
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-lg w-full" [disabled]="submitting()">
+      {{ submitting() ? 'Đang tạo tài khoản...' : 'Tạo tài khoản' }}
+    </button>
+    <p class="m-0 text-center text-xs text-ink-soft">
+      Khi tạo tài khoản, bạn đồng ý với Điều khoản sử dụng và Chính sách quyền riêng tư của Cassin.
+    </p>
+  </form>
+
+  <p class="mt-7 text-center text-ink-soft">
+    Đã có tài khoản? <a routerLink="/login" class="font-semibold">Đăng nhập</a>
+  </p>
+</app-auth-layout>

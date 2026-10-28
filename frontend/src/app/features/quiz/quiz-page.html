@@ -1,67 +1,80 @@
-@if (session.isLoading()) {
-  <p class="muted mt-20 text-center" role="status">Đang phát đề…</p>
-} @else if (session.value(); as quiz) {
-  <article class="sheet paper mx-auto mt-10 max-w-3xl">
-    <!-- Phần đầu tờ giấy kiểm tra -->
-    <header class="head">
-      <div>
-        <h1 class="font-hand text-4xl leading-tight">Bài kiểm tra: {{ quiz.topicTitle }}</h1>
-        <p class="muted mt-1">Trình độ {{ quiz.level }}, {{ quiz.questions.length }} câu</p>
-        <p class="name mt-4">Họ và tên: <span class="name-line">Nam</span></p>
-      </div>
-
-      <!-- Ô Điểm và Lời phê, kẻ khung như giấy kiểm tra ở trường -->
-      <div class="grade" aria-live="polite">
-        <div class="cell">
-          <span class="label">Điểm</span>
-          @if (result(); as r) {
-            <span class="score">{{ r.score }}<small>/{{ r.total }}</small></span>
-          }
-        </div>
-        <div class="cell">
-          <span class="label">Lời phê của giáo viên</span>
-          @if (result()) {
-            <span class="comment">{{ teacherComment() }}</span>
-          }
-        </div>
-      </div>
-    </header>
-
-    <ol class="mt-10 space-y-8">
-      @for (question of quiz.questions; track question.id; let i = $index) {
-        <li>
-          <app-quiz-question
-            [number]="i + 1"
-            [question]="question"
-            [selectedId]="selections()[question.id] ?? null"
-            [result]="resultByQuestion().get(question.id) ?? null"
-            (picked)="choose(question.id, $event)"
-          />
-        </li>
+<div class="flex min-h-dvh flex-col bg-bg">
+  <header class="topbar">
+    <div class="mx-auto flex w-full max-w-[760px] items-center gap-4 px-4 py-3 sm:px-6">
+      <a [routerLink]="['/grammar', topicId()]" class="btn btn-ghost -ml-2 gap-1.5 px-2 text-ink">
+        <app-icon name="close" [strokeWidth]="2" /> Thoát
+      </a>
+      @if (quiz.hasValue()) {
+        <span class="min-w-0 flex-1 truncate text-sm font-semibold">{{ quiz.value().topicTitle }}</span>
+        <span class="whitespace-nowrap text-[13px] text-ink-soft">Đã làm {{ answeredCount() }}/{{ questions().length }}</span>
       }
-    </ol>
+    </div>
+  </header>
 
-    <footer class="foot">
-      @if (result()) {
-        <button type="button" class="btn btn-primary" (click)="retry()">Làm lại với đề mới</button>
-        <a class="btn" routerLink="/">Về trang chủ</a>
+  <main class="flex flex-1 flex-col items-center px-4 pb-14 pt-8 sm:px-6">
+    <div class="w-full max-w-[680px]">
+      @if (quiz.hasValue()) {
+        <!-- Thanh số câu: chấm đậm = đã làm, viền xanh = đang xem -->
+        <nav class="dots" aria-label="Chọn câu hỏi">
+          @for (q of questions(); track q.questionId; let i = $index) {
+            <button type="button" class="dot" [class.dot-done]="answers()[q.questionId]" [class.dot-current]="i === index()"
+              [attr.aria-current]="i === index() ? 'step' : null"
+              [attr.aria-label]="'Câu ' + (i + 1) + (answers()[q.questionId] ? ', đã trả lời' : ', chưa trả lời')"
+              (click)="goTo(i)">{{ i + 1 }}</button>
+          }
+        </nav>
+
+        @if (current(); as q) {
+          <div class="card mt-6 p-5 sm:p-8">
+            <app-quiz-question [question]="q" [total]="questions().length" [selected]="answers()[q.questionId] ?? null"
+              (select)="choose(q.questionId, $event)" />
+          </div>
+
+          <div class="mt-6 flex items-center justify-between gap-3">
+            <button type="button" class="btn btn-secondary" [disabled]="index() === 0" (click)="goTo(index() - 1)">
+              <app-icon name="chevron-left" [size]="18" /> Câu trước
+            </button>
+            @if (isLast()) {
+              <button type="button" class="btn btn-primary" [disabled]="submitting()" (click)="requestSubmit()">
+                {{ submitting() ? 'Đang nộp bài...' : 'Nộp bài' }}
+              </button>
+            } @else {
+              <button type="button" class="btn btn-primary" (click)="goTo(index() + 1)">
+                Câu tiếp <app-icon name="chevron-right" [size]="18" />
+              </button>
+            }
+          </div>
+          <p class="mt-5 hidden text-center text-[13px] text-ink-soft sm:block">
+            Phím <kbd>A</kbd>–<kbd>D</kbd> chọn đáp án · <kbd>←</kbd> <kbd>→</kbd> chuyển câu
+            @if (!isLast()) {
+              · <button type="button" class="font-semibold text-brand underline" (click)="requestSubmit()">Nộp bài sớm</button>
+            }
+          </p>
+        }
+      } @else if (noQuestions()) {
+        <div class="card">
+          <app-empty-state icon="grammar" title="Chủ đề này chưa có câu hỏi" description="Câu hỏi đang được biên soạn. Bạn có thể đọc lý thuyết trước.">
+            <a [routerLink]="['/grammar', topicId()]" class="btn btn-primary">Đọc lý thuyết</a>
+          </app-empty-state>
+        </div>
+      } @else if (quiz.error()) {
+        <div class="card"><app-error-state title="Không bắt đầu được bài kiểm tra" [message]="errorText()" (retry)="quiz.reload()" /></div>
       } @else {
-        <p class="muted">
-          Đã làm {{ answeredCount() }} / {{ questions().length }} câu.
-          @if (unansweredCount() > 0) {
-            Câu bỏ trống sẽ tính là sai.
-          }
-        </p>
-        <button type="button" class="btn btn-primary" [disabled]="submitting()" (click)="submit()">
-          {{ submitting() ? 'Đang nộp…' : 'Nộp bài' }}
-        </button>
+        <div class="card mt-14 flex flex-col items-center gap-3 p-10 text-center" aria-busy="true">
+          <p class="hand m-0 text-2xl">Đang chuẩn bị đề...</p>
+          <p class="m-0 text-sm text-ink-soft">Cassin chọn ngẫu nhiên tối đa 10 câu cho lượt làm bài này.</p>
+        </div>
       }
-    </footer>
-  </article>
-} @else {
-  <section class="sheet mx-auto mt-16 max-w-xl text-center">
-    <h1 class="font-hand text-4xl">Không tìm thấy chủ đề này</h1>
-    <p class="muted mt-3">Chọn một chủ đề ngữ pháp ở trang chủ để làm bài.</p>
-    <a class="btn mt-6" routerLink="/">Về trang chủ</a>
-  </section>
-}
+    </div>
+  </main>
+</div>
+
+<app-confirm-dialog [open]="confirmSubmit()" title="Nộp bài khi chưa làm hết?"
+  [message]="'Còn ' + unanswered() + ' câu chưa trả lời. Câu bỏ trống được tính là sai. Mỗi lượt chỉ nộp được một lần.'"
+  confirmLabel="Nộp bài" cancelLabel="Làm tiếp" [danger]="false" [busy]="submitting()"
+  (cancelled)="confirmSubmit.set(false)" (confirmed)="submit()" />
+
+<app-confirm-dialog [open]="leaveDialog()" title="Thoát khi chưa nộp bài?"
+  message="Các đáp án đã chọn sẽ không được lưu. Lần sau bạn sẽ làm một lượt mới với đề khác."
+  confirmLabel="Thoát, bỏ bài này" cancelLabel="Ở lại làm tiếp"
+  (cancelled)="answerLeave(false)" (confirmed)="answerLeave(true)" />

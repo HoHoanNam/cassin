@@ -1,0 +1,77 @@
+<div class="page-container px-4 pb-20 pt-6 md:px-8 md:pt-8">
+  <a routerLink="/quiz-history" class="inline-flex items-center gap-1.5 text-sm font-semibold no-underline">
+    <app-icon name="arrow-left" [size]="18" /> Lịch sử làm bài
+  </a>
+
+  @if (result.hasValue()) {
+    @let r = result.value();
+    <!-- Đầu bài kiểm tra: tên bài + ô điểm và lời phê -->
+    <header class="card mt-4 flex flex-wrap items-center justify-between gap-6 p-6 sm:p-8">
+      <div class="min-w-0 flex-[1_1_280px]">
+        <p class="hand m-0 text-xl text-ink-soft">Bài kiểm tra · {{ relativeDay(r.submittedAt) }}</p>
+        <h1 class="page-title mt-1">{{ r.topicTitle }}</h1>
+        <p class="mb-0 mt-2 text-ink-soft">Đúng {{ r.score }} / {{ r.total }} câu.</p>
+        <div class="mt-5 flex flex-wrap gap-2.5">
+          <a class="btn btn-primary" [routerLink]="['/grammar', r.topicId, 'quiz']">Làm lại bài</a>
+          <a class="btn btn-secondary" [routerLink]="['/grammar', r.topicId]">Xem lý thuyết</a>
+        </div>
+      </div>
+      <div class="grade-box">
+        <div class="cell">Điểm<app-score-stamp class="mt-2" [score]="r.score" [total]="r.total" size="lg" /></div>
+        <div class="cell cell-remark">Lời phê<span class="hand remark">{{ remark() }}</span></div>
+      </div>
+    </header>
+
+    <div class="mt-8 flex flex-wrap items-center justify-between gap-3">
+      <h2 class="section-title">Bài làm của bạn</h2>
+      @if (wrongCount() > 0) {
+        <div class="segmented" role="group" aria-label="Lọc câu">
+          <button type="button" [attr.aria-pressed]="!onlyWrong()" (click)="onlyWrong.set(false)">Tất cả ({{ r.total }})</button>
+          <button type="button" [attr.aria-pressed]="onlyWrong()" (click)="onlyWrong.set(true)">Câu sai ({{ wrongCount() }})</button>
+        </div>
+      }
+    </div>
+
+    <ol class="m-0 mt-4 flex list-none flex-col gap-4 p-0">
+      @for (answer of visibleAnswers(); track answer.questionId) {
+        <li class="card p-5 sm:p-6">
+          <div class="flex items-start gap-3">
+            <span class="mark" [class.mark-ok]="answer.correct" [attr.aria-label]="answer.correct ? 'Đúng' : 'Sai'">
+              <app-icon [name]="answer.correct ? 'check' : 'close'" [size]="16" [strokeWidth]="2.4" />
+            </span>
+            <p class="m-0 font-semibold">Câu {{ answer.position + 1 }}. {{ answer.content }}</p>
+          </div>
+          <div class="options">
+            @for (option of answer.options; track option.id; let i = $index) {
+              @let isCorrect = option.id === answer.correctOptionId;
+              @let isPickedWrong = option.id === answer.selectedOptionId && !isCorrect;
+              <span class="flex items-center gap-2.5">
+                <span class="letter" [class.letter-ring]="isCorrect">{{ letters[i] }}</span>
+                <span [class.strike]="isPickedWrong" [class.font-semibold]="isCorrect">{{ option.content }}</span>
+                @if (isPickedWrong) { <span class="sr-only">(bạn đã chọn, sai)</span> }
+                @if (isCorrect && answer.selectedOptionId === option.id) { <span class="sr-only">(bạn đã chọn, đúng)</span> }
+              </span>
+            }
+          </div>
+          @if (answer.selectedOptionId === null) {
+            <p class="mb-0 mt-3 text-sm text-ink-soft">Bạn bỏ trống câu này.</p>
+          }
+          <p class="hand explain" [class.text-danger]="!answer.correct">{{ answer.correct ? 'Đúng.' : 'Sai.' }} {{ answer.explanation }}</p>
+        </li>
+      }
+    </ol>
+  } @else if (notFound()) {
+    <div class="card mt-6">
+      <app-empty-state icon="history" title="Không xem được kết quả này" description="Lượt làm bài không tồn tại, chưa được nộp, hoặc không thuộc tài khoản của bạn.">
+        <a routerLink="/quiz-history" class="btn btn-primary">Về lịch sử làm bài</a>
+      </app-empty-state>
+    </div>
+  } @else if (result.error()) {
+    <div class="card mt-6"><app-error-state title="Không tải được kết quả" (retry)="result.reload()" /></div>
+  } @else {
+    <div class="mt-6 flex flex-col gap-4">
+      <app-skeleton variant="card" />
+      <app-skeleton variant="card" />
+    </div>
+  }
+</div>

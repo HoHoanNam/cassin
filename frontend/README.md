@@ -1,59 +1,44 @@
-# Frontend
+# Cassin – Frontend (Angular 22)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.3.
-
-## Development server
-
-To start a local development server, run:
+## Chạy
 
 ```bash
-ng serve
+npm install
+npm start            # http://localhost:4200
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Mặc định chạy bằng **dữ liệu giả (mock)**, không cần backend. Tài khoản có sẵn: `nam@gmail.com` / `12345678`.
+Dữ liệu mock lưu trong localStorage; muốn làm lại từ đầu: menu tài khoản → "Đặt lại dữ liệu mẫu".
 
-## Code scaffolding
+Nối backend thật: sửa `useMockApi: false` trong `src/app/core/config/app-env.ts`, chạy backend ở cổng 8080.
+`ng serve` tự chuyển `/api/*` sang `http://localhost:8080` (xem `proxy.conf.json`).
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Cấu trúc
 
-```bash
-ng generate component component-name
+```
+src/app/
+├── core/                  Không có giao diện, dùng chung cả app
+│   ├── models/            Kiểu dữ liệu khớp 1-1 với DTO của backend
+│   ├── api/               "Hợp đồng" API (abstract class) + bản HTTP thật (api/http)
+│   ├── mock/              Bản giả lập API: cùng luật, cùng mã lỗi với backend
+│   ├── auth/              Phiên đăng nhập, guard, interceptor (gắn token, xử lý 401)
+│   ├── state/             Dữ liệu dùng chung nhiều trang (số thẻ đến hạn)
+│   ├── ui/                ToastService
+│   ├── util/              Ngày tháng, loại từ, chuỗi
+│   └── config/            Cấu hình chạy (mock / thật)
+├── shared/ui/             Component giao diện dùng lại: icon, modal, xác nhận, skeleton,
+│                          trạng thái trống / lỗi, phân trang, biểu đồ hộp, dấu điểm...
+├── layout/                Khung khu vực đăng nhập: sidebar, thanh dưới đáy, menu tài khoản
+└── features/              Mỗi thư mục một nhóm trang
+    ├── landing/           Trang giới thiệu
+    ├── auth/              Đăng nhập, đăng ký
+    ├── today/             Hôm nay
+    ├── decks/             Bộ từ, chi tiết bộ, hộp thoại bộ / thẻ
+    ├── review/            Ôn thẻ (chế độ tập trung)
+    ├── grammar/           Chủ đề ngữ pháp, lý thuyết
+    ├── quiz/              Làm bài, kết quả, lịch sử
+    └── not-found/
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Quy ước: mỗi component tách riêng `.ts` / `.html` / `.scss`; component dùng signal + `ChangeDetectionStrategy.OnPush`;
+dữ liệu tải bằng `rxResource`, mỗi khối tự có trạng thái đang tải / trống / lỗi.

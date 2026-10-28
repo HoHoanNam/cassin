@@ -1,0 +1,75 @@
+:host {
+  display: inline-flex;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--logo-size) * 0.2);
+  color: var(--brand);
+  line-height: 1;
+}
+
+.mark {
+  /* Hình trong SVG chừa lề để thẻ xoay không bị cắt, nên vẽ to hơn chiều cao chữ một chút cho cân. */
+  width: calc(var(--logo-size) * 1.25);
+  height: calc(var(--logo-size) * 1.25);
+  margin: calc(var(--logo-size) * -0.125) 0;
+  flex: none;
+  overflow: visible;
+}
+
+.card-back {
+  fill: var(--brand-tint);
+}
+
+.card-front {
+  fill: #fff;
+  stroke: var(--brand);
+  stroke-width: 2.2;
+}
+
+.margin {
+  stroke: var(--nb-margin-red);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.ruled {
+  stroke: var(--brand-tint);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+.tick {
+  fill: none;
+  stroke: var(--brand);
+  stroke-width: 2.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Chữ hiển thị có aria-hidden; trình đọc màn hình đọc chữ "Cassin" trong .sr-only (có cả khi ẩn chữ). */
+.wordmark {
+  font-family: var(--font-hand);
+  font-size: calc(var(--logo-size) * 1.02);
+  letter-spacing: 0.01em;
+  transform: translateY(-0.04em);
+}
+
+.logo-light {
+  color: #fff;
+
+  .card-back {
+    fill: rgba(255, 255, 255, 0.35);
+  }
+
+  .card-front {
+    stroke: #fff;
+    fill: #fff;
+  }
+
+  .tick {
+    stroke: var(--brand);
+  }
+}

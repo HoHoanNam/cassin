@@ -1,0 +1,42 @@
+<div class="page-container px-4 pb-20 pt-8 md:px-8 md:pt-10">
+  <h1 class="page-title">Lịch sử làm bài</h1>
+  <p class="mt-1 text-ink-soft">Bấm vào điểm để xem lại bài đã chấm và lời giải thích.</p>
+
+  <div class="mt-7">
+    @if (history.hasValue()) {
+      @let data = history.value();
+      @if (data.totalElements === 0) {
+        <div class="card">
+          <app-empty-state icon="history" title="Bạn chưa làm bài kiểm tra nào" description="Chọn một chủ đề ngữ pháp, đọc lý thuyết rồi làm 10 câu trắc nghiệm.">
+            <a routerLink="/grammar" class="btn btn-primary">Chọn chủ đề</a>
+          </app-empty-state>
+        </div>
+      } @else {
+        <ul class="card list-card" [class.opacity-60]="history.isLoading()">
+          @for (item of data.content; track item.attemptId) {
+            <li class="list-row flex-nowrap">
+              <span class="min-w-0 flex-1">
+                <a class="block font-semibold text-ink no-underline hover:underline" [routerLink]="['/grammar', item.topicId]">{{ item.topicTitle }}</a>
+                <span class="text-[13px] text-ink-soft">
+                  {{ relativeDay(item.submittedAt ?? item.startedAt) }} · {{ item.total }} câu
+                </span>
+              </span>
+              @if (item.score !== null) {
+                <a [routerLink]="['/quiz', item.attemptId, 'result']" class="rounded-full no-underline" [attr.aria-label]="'Xem kết quả ' + item.topicTitle">
+                  <app-score-stamp [score]="item.score" [total]="item.total" />
+                </a>
+              } @else {
+                <span class="chip">Chưa nộp</span>
+              }
+            </li>
+          }
+        </ul>
+        <app-pager [page]="data.page" [totalPages]="data.totalPages" [disabled]="history.isLoading()" (pageChange)="page.set($event)" />
+      }
+    } @else if (history.error()) {
+      <div class="card"><app-error-state title="Không tải được lịch sử làm bài" (retry)="history.reload()" /></div>
+    } @else {
+      <app-skeleton [rows]="4" />
+    }
+  </div>
+</div>

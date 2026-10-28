@@ -1,0 +1,25 @@
+<figure class="m-0" [class.compact]="compact()">
+  @if (!compact()) {
+    <figcaption class="text-sm font-semibold">
+      {{ total() }} thẻ trong 5 hộp.
+      <span class="font-normal text-ink-soft">Hộp 5 là những thẻ đã thuộc.</span>
+    </figcaption>
+  }
+  <div class="bars" role="img" [attr.aria-label]="summary()">
+    @for (bar of bars(); track bar.box) {
+      <div class="bar-col">
+        @if (!compact()) {
+          <span class="text-sm font-semibold tabular-nums">{{ bar.total }}</span>
+        }
+        <span class="bar" [class.bar-done]="bar.box === 5" [style.height.%]="bar.height"></span>
+      </div>
+    }
+  </div>
+  @if (!compact()) {
+    <div class="labels">
+      @for (bar of bars(); track bar.box) {
+        <span>Hộp {{ bar.box }}<br /><span class="text-ink-soft">{{ intervals[bar.box] }} ngày</span></span>
+      }
+    </div>
+  }
+</figure>

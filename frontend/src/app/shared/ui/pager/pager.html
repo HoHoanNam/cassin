@@ -1,0 +1,13 @@
+@if (totalPages() > 1) {
+  <nav class="pager" aria-label="Phân trang">
+    <button type="button" class="btn btn-secondary btn-sm" [disabled]="disabled() || page() === 0"
+      (click)="pageChange.emit(page() - 1)">
+      <app-icon name="chevron-left" [size]="18" /> Trang trước
+    </button>
+    <span class="text-sm text-ink-soft tabular-nums" aria-live="polite">Trang {{ page() + 1 }} / {{ totalPages() }}</span>
+    <button type="button" class="btn btn-secondary btn-sm" [disabled]="disabled() || page() >= totalPages() - 1"
+      (click)="pageChange.emit(page() + 1)">
+      Trang sau <app-icon name="chevron-right" [size]="18" />
+    </button>
+  </nav>
+}

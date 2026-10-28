@@ -1,0 +1,55 @@
+<div class="page-container px-4 pb-20 pt-6 md:px-8 md:pt-8">
+  <a routerLink="/grammar" class="inline-flex items-center gap-1.5 text-sm font-semibold no-underline">
+    <app-icon name="arrow-left" [size]="18" /> Ngữ pháp
+  </a>
+
+  @if (topic.hasValue()) {
+    @let t = topic.value();
+    <div class="layout mt-4">
+      <article class="card min-w-0 p-6 sm:p-8">
+        <header class="flex items-center gap-4">
+          <app-level-badge [level]="t.level" />
+          <h1 class="page-title">{{ t.title }}</h1>
+        </header>
+        <div class="theory mt-6">
+          @for (block of blocks(); track $index) {
+            @if (block.kind === 'p') {
+              <p>{{ block.text }}</p>
+            } @else {
+              <ul>
+                @for (item of block.items; track $index) {
+                  <li>{{ item }}</li>
+                }
+              </ul>
+            }
+          }
+        </div>
+      </article>
+
+      <aside class="card cta">
+        @if (t.questionCount > 0) {
+          <p class="hand m-0 text-2xl">Bài kiểm tra</p>
+          <p class="m-0 text-ink-soft">
+            {{ t.questionCount < 10 ? t.questionCount : 10 }} câu trắc nghiệm, chọn ngẫu nhiên từ {{ t.questionCount }} câu.
+            Nộp bài xong sẽ có đáp án và giải thích cho từng câu.
+          </p>
+          <a class="btn btn-primary btn-lg w-full" [routerLink]="['/grammar', t.id, 'quiz']">Bắt đầu làm bài</a>
+        } @else {
+          <p class="m-0 font-semibold">Câu hỏi đang được biên soạn</p>
+          <p class="m-0 text-sm text-ink-soft">Bạn có thể đọc phần lý thuyết trước. Bài kiểm tra sẽ có trong thời gian tới.</p>
+          <a routerLink="/grammar" class="btn btn-secondary w-full">Chọn chủ đề khác</a>
+        }
+      </aside>
+    </div>
+  } @else if (notFound()) {
+    <div class="card mt-6">
+      <app-empty-state icon="grammar" title="Không tìm thấy chủ đề này" description="Chủ đề có thể đã bị gỡ, hoặc đường dẫn bị gõ sai.">
+        <a routerLink="/grammar" class="btn btn-primary">Về danh sách chủ đề</a>
+      </app-empty-state>
+    </div>
+  } @else if (topic.error()) {
+    <div class="card mt-6"><app-error-state title="Không tải được chủ đề" (retry)="topic.reload()" /></div>
+  } @else {
+    <div class="mt-6"><app-skeleton variant="card" /></div>
+  }
+</div>

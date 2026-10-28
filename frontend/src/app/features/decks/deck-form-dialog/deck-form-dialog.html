@@ -1,0 +1,36 @@
+<app-modal [open]="open()" [title]="deck() ? 'Sửa bộ từ' : 'Tạo bộ từ'" (closed)="close()">
+  <form class="mt-5 flex flex-col gap-5" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    @if (serverError(); as message) {
+      <div class="form-alert form-alert-error" role="alert">{{ message }}</div>
+    }
+
+    <div class="field">
+      <label class="label" for="deck-name">Tên bộ</label>
+      @let name = form.controls.deckName;
+      <input id="deck-name" class="input" type="text" placeholder="Ví dụ: Từ vựng IELTS Writing" formControlName="deckName"
+        [attr.aria-invalid]="name.touched && name.invalid" aria-describedby="deck-name-error" />
+      @if (name.touched && name.hasError('required')) {
+        <p id="deck-name-error" class="field-error">Vui lòng nhập tên bộ</p>
+      } @else if (name.hasError('maxlength')) {
+        <p id="deck-name-error" class="field-error">Tên bộ tối đa {{ limits.deckName }} ký tự</p>
+      } @else if (name.hasError('server')) {
+        <p id="deck-name-error" class="field-error">{{ name.getError('server') }}</p>
+      }
+    </div>
+
+    <div class="field">
+      <label class="label" for="deck-description">Mô tả <span class="font-normal text-ink-soft">(không bắt buộc)</span></label>
+      @let description = form.controls.description;
+      <textarea id="deck-description" class="input" rows="3" placeholder="Bộ này dùng để làm gì?" formControlName="description"
+        [attr.aria-invalid]="description.invalid"></textarea>
+      <p class="field-hint" [class.field-error]="description.invalid">{{ description.value.length }} / {{ limits.description }} ký tự</p>
+    </div>
+
+    <div class="flex flex-wrap justify-end gap-2.5">
+      <button type="button" class="btn btn-secondary" [disabled]="saving()" (click)="close()">Hủy</button>
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? 'Đang lưu...' : deck() ? 'Lưu thay đổi' : 'Tạo bộ từ' }}
+      </button>
+    </div>
+  </form>
+</app-modal>

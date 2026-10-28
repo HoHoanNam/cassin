@@ -1,0 +1,44 @@
+:host {
+  display: block;
+}
+
+.page {
+  min-height: 100%;
+  padding: 48px 32px 80px 112px;
+}
+
+@media (max-width: 767px) {
+  .page {
+    padding: 28px 16px 40px 44px;
+  }
+}
+
+.title {
+  display: inline-block;
+  margin: 8px 0 0;
+  padding: 0 8px 4px;
+  font-size: 48px;
+  line-height: 1.15;
+  border-bottom: 3px solid var(--brand);
+}
+
+@media (max-width: 767px) {
+  .title {
+    font-size: 36px;
+  }
+}
+
+.hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 40px;
+  padding: 32px;
+}
+
+@media (max-width: 767px) {
+  .hero {
+    gap: 28px;
+    padding: 20px;
+  }
+}

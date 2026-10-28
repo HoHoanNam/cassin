@@ -1,38 +1,17 @@
-<fieldset class="question" [disabled]="result() !== null">
-  <legend class="prompt">
-    <span class="num">Câu {{ number() }}.</span> {{ question().content }}
+<fieldset class="m-0 border-0 p-0">
+  <legend class="mb-6 w-full">
+    <span class="hand block text-xl text-ink-soft">Câu {{ question().position + 1 }} / {{ total() }}</span>
+    <span class="mt-1 block text-[22px] font-semibold leading-snug sm:text-2xl">{{ question().content }}</span>
   </legend>
 
-  <div class="options">
+  <div class="flex flex-col gap-3">
     @for (option of question().options; track option.id; let i = $index) {
-      @let state = states().get(option.id);
-      <label class="option" [class]="state">
-        <!-- Radio thật vẫn có (cho bàn phím và trình đọc màn hình), chỉ ẩn đi về mặt hiển thị -->
-        <input
-          class="sr-only"
-          type="radio"
-          [name]="'question-' + question().id"
-          [value]="option.id"
-          [checked]="selectedId() === option.id"
-          (change)="picked.emit(option.id)"
-        />
-        <span class="letter">{{ letters[i] }}</span>
-        <span class="content">{{ option.content }}</span>
+      <label class="option" [class.option-selected]="selected() === option.id">
+        <input type="radio" class="sr-only" [name]="'q-' + question().questionId" [value]="option.id"
+          [checked]="selected() === option.id" (change)="select.emit(option.id)" />
+        <span class="letter" aria-hidden="true">{{ letters[i] }}</span>
+        <span class="flex-1">{{ option.content }}</span>
       </label>
     }
   </div>
-
-  @if (result(); as r) {
-    <!-- Lời giải viết bằng bút đỏ -->
-    <p class="note">
-      @if (r.correct) {
-        Đúng.
-      } @else if (r.selectedOptionId === null) {
-        Bỏ trống.
-      } @else {
-        Sai.
-      }
-      {{ r.explanation }}
-    </p>
-  }
 </fieldset>

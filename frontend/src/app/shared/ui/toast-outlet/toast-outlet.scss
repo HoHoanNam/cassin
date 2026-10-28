@@ -1,0 +1,58 @@
+.outlet {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(400px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  /* Chừa chỗ cho thanh điều hướng dưới đáy */
+  .outlet {
+    bottom: calc(var(--bottom-nav-h) + 12px);
+  }
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 8px 12px 16px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: #fff;
+  box-shadow: 0 16px 28px -18px rgba(35, 38, 74, 0.7);
+  pointer-events: auto;
+  animation: slide-in 0.2s ease-out;
+}
+
+.toast-error {
+  background: var(--surface);
+  border: 1.5px solid #e9b1b1;
+  color: var(--ink);
+}
+
+.close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}

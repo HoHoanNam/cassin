@@ -1,0 +1,30 @@
+@switch (variant()) {
+  @case ('list') {
+    <ul class="card list-card">
+      @for (i of items(); track i) {
+        <li class="list-row">
+          <span class="flex flex-1 flex-col gap-2">
+            <span class="bone" [style.width.%]="50 + (i % 3) * 12"></span>
+            <span class="bone bone-soft bone-sm" style="width: 30%"></span>
+          </span>
+          <span class="bone" style="width: 88px; height: 36px; border-radius: 8px"></span>
+        </li>
+      }
+    </ul>
+  }
+  @case ('text') {
+    <div class="flex flex-col gap-3">
+      @for (i of items(); track i) {
+        <span class="bone bone-soft bone-sm" [style.width.%]="95 - (i % 4) * 12"></span>
+      }
+    </div>
+  }
+  @case ('card') {
+    <div class="card flex flex-col gap-4 p-6">
+      <span class="bone" style="width: 60%; height: 24px"></span>
+      <span class="bone bone-soft bone-sm" style="width: 90%"></span>
+      <span class="bone bone-soft bone-sm" style="width: 55%"></span>
+      <span class="bone" style="width: 160px; height: 44px; border-radius: 8px"></span>
+    </div>
+  }
+}

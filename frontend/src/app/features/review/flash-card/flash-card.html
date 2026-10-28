@@ -1,35 +1,22 @@
-<!-- Cả tấm thẻ là một nút: bấm để lật. aria-pressed cho trình đọc màn hình biết thẻ đang lật hay chưa. -->
-<button
-  type="button"
-  class="card"
-  [class.is-flipped]="flipped()"
-  [attr.aria-pressed]="flipped()"
-  [attr.aria-label]="flipped() ? 'Thẻ đã lật' : 'Lật thẻ để xem nghĩa của ' + card().word"
-  (click)="flip.emit()"
->
-  <span class="inner">
-    <!-- Mặt trước: từ tiếng Anh -->
-    <span class="face front">
-      <span class="meta">
-        <span>{{ card().partOfSpeech | posLabel: 'full' }}</span>
-        <app-box-meter [box]="card().box" />
-      </span>
-      <span class="word">{{ card().word }}</span>
-      @if (card().phonetic) {
-        <span class="phonetic">{{ card().phonetic }}</span>
-      }
-    </span>
-
-    <!-- Mặt sau: nghĩa và ví dụ -->
-    <span class="face back">
-      <span class="meta">
-        <span>{{ card().word }} ({{ card().partOfSpeech | posLabel }})</span>
-        <app-box-meter [box]="card().box" />
-      </span>
-      <span class="definition">{{ card().definition }}</span>
-      @for (example of card().examples; track $index) {
-        <span class="example">{{ example }}</span>
-      }
-    </span>
+<button type="button" class="card-lines flash" [attr.aria-label]="label()" [attr.aria-pressed]="flipped()" (click)="flip.emit()">
+  <span class="meta">
+    <span>{{ posLabel() }}</span>
+    <span>{{ item().isNew ? 'Thẻ mới' : 'Hộp ' + item().box }}</span>
   </span>
+
+  @if (!flipped()) {
+    <span class="face" aria-hidden="true">
+      <span class="word">{{ item().card.word }}</span>
+      @if (item().card.phonetic) {
+        <span class="text-lg text-ink-soft">{{ item().card.phonetic }}</span>
+      }
+    </span>
+  } @else {
+    <span class="face" aria-hidden="true">
+      <span class="hand meaning">{{ item().card.definition }}</span>
+      @for (example of item().card.examples; track $index) {
+        <span class="max-w-[32em] italic text-ink-soft">{{ example }}</span>
+      }
+    </span>
+  }
 </button>

@@ -1,0 +1,45 @@
+<div class="page-container px-4 pb-20 pt-8 md:px-8 md:pt-10">
+  <h1 class="page-title">Ngữ pháp</h1>
+  <p class="mt-1 text-ink-soft">Đọc phần lý thuyết ngắn, rồi làm bài kiểm tra 10 câu để chắc là đã hiểu.</p>
+
+  <div class="segmented mt-7" role="group" aria-label="Lọc theo cấp độ">
+    <button type="button" [attr.aria-pressed]="level() === null" (click)="level.set(null)">Tất cả</button>
+    @for (l of levels; track l) {
+      <button type="button" [attr.aria-pressed]="level() === l" (click)="level.set(l)">{{ l }}</button>
+    }
+  </div>
+
+  <div class="mt-5">
+    @if (topics.hasValue()) {
+      @if (topics.value().length === 0) {
+        <div class="card">
+          <app-empty-state icon="grammar" title="Chưa có chủ đề ở cấp độ này" description="Chọn cấp độ khác, hoặc xem tất cả chủ đề.">
+            <button type="button" class="btn btn-secondary" (click)="level.set(null)">Xem tất cả</button>
+          </app-empty-state>
+        </div>
+      } @else {
+        <ul class="card list-card" [class.opacity-60]="topics.isLoading()">
+          @for (topic of topics.value(); track topic.id) {
+            <li class="list-row flex-nowrap">
+              <app-level-badge [level]="topic.level" />
+              <a class="min-w-0 flex-1 text-ink no-underline" [routerLink]="['/grammar', topic.id]">
+                <span class="block font-semibold hover:underline">{{ topic.title }}</span>
+                <span class="text-[13px] text-ink-soft">
+                  {{ topic.questionCount > 0 ? topic.questionCount + ' câu hỏi' : 'Đang biên soạn câu hỏi' }}
+                </span>
+              </a>
+              <a class="btn btn-secondary btn-sm hidden sm:inline-flex" [routerLink]="['/grammar', topic.id]">Xem lý thuyết</a>
+              @if (topic.questionCount > 0) {
+                <a class="btn btn-primary btn-sm" [routerLink]="['/grammar', topic.id, 'quiz']">Làm bài</a>
+              }
+            </li>
+          }
+        </ul>
+      }
+    } @else if (topics.error()) {
+      <div class="card"><app-error-state title="Không tải được chủ đề ngữ pháp" (retry)="topics.reload()" /></div>
+    } @else {
+      <app-skeleton [rows]="5" />
+    }
+  </div>
+</div>

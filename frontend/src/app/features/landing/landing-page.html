@@ -1,0 +1,158 @@
+<header class="relative z-10 border-b border-line bg-bg">
+  <nav class="container-x flex min-h-[72px] flex-wrap items-center gap-x-8 gap-y-3 py-3" aria-label="Điều hướng chính">
+    <a routerLink="/" class="no-underline" aria-label="Cassin, trang chủ"><app-logo [size]="32" /></a>
+    <div class="hidden flex-1 gap-6 text-[15px] font-medium sm:flex">
+      <a href="#cach-hoc" class="text-ink-soft no-underline hover:text-ink">Cách học</a>
+      <a href="#tinh-nang" class="text-ink-soft no-underline hover:text-ink">Tính năng</a>
+      <a href="#hoi-dap" class="text-ink-soft no-underline hover:text-ink">Hỏi đáp</a>
+    </div>
+    <div class="ml-auto flex items-center gap-4">
+      <a routerLink="/login" class="text-[15px] font-semibold text-ink no-underline">Đăng nhập</a>
+      <a routerLink="/register" class="btn btn-primary">Bắt đầu học</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <!-- Hero trên nền vở ô li -->
+  <section id="top" class="notebook px-6 pb-24 pt-16 sm:pt-20">
+    <div class="mx-auto flex max-w-[1120px] flex-wrap items-center gap-14">
+      <div class="min-w-0 flex-[1_1_460px] pl-4 sm:pl-16">
+        <p class="hand m-0 text-[22px] text-ink-soft">Bài học hôm nay</p>
+        <h1 class="hand mt-2 text-[44px] leading-[1.05] sm:text-[64px]">Ghi từ vựng như ghi vở, nhớ lâu như thuộc bài.</h1>
+        <p class="mt-6 max-w-[34em] text-lg leading-relaxed text-[#3d4062]">
+          Cassin nhắc bạn ôn từng từ đúng lúc sắp quên, theo phương pháp hộp Leitner. Mỗi ngày chỉ cần vài phút, phần còn lại để Cassin lo.
+        </p>
+        <div class="mt-8 flex flex-wrap items-center gap-3">
+          <a routerLink="/register" class="btn btn-primary btn-lg">Tạo tài khoản và bắt đầu</a>
+          <a href="#cach-hoc" class="btn btn-secondary btn-lg">Xem cách hoạt động</a>
+        </div>
+      </div>
+
+      <!-- Minh họa: hai tấm thẻ chồng lên nhau -->
+      <div class="hero-art min-w-0 flex-[1_1_380px]" aria-hidden="true">
+        <div class="card-lines hero-card hero-card-back">
+          <span class="hand text-[40px] text-brand">cải thiện, tiến bộ</span>
+          <span class="text-sm italic text-ink-soft">Her English has improved a lot.</span>
+        </div>
+        <div class="card-lines hero-card hero-card-front">
+          <div class="absolute left-5 right-5 top-3.5 flex items-center justify-between text-xs text-ink-soft">
+            <span>động từ</span>
+            <span class="flex gap-[3px]">
+              <span class="pip pip-on"></span><span class="pip pip-on"></span><span class="pip pip-on"></span><span class="pip"></span><span class="pip"></span>
+            </span>
+          </div>
+          <span class="text-[52px] font-semibold tracking-tight">improve</span>
+          <span class="text-[17px] text-ink-soft">/ɪmˈpruːv/</span>
+        </div>
+        <app-score-stamp class="hero-stamp" [score]="9" [total]="10" size="lg" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Cách học: 5 hộp Leitner -->
+  <section id="cach-hoc" class="border-t border-line bg-surface px-6 py-24">
+    <div class="mx-auto max-w-[1120px]">
+      <h2 class="m-0 max-w-[18em] text-[28px] font-bold leading-tight tracking-tight sm:text-4xl">
+        Từ bạn nhớ chắc sẽ được ôn thưa dần. Từ bạn hay quên sẽ quay lại sớm.
+      </h2>
+      <p class="mt-4 max-w-[40em] text-[17px] leading-relaxed text-ink-soft">
+        Mỗi thẻ nằm trong một trong năm hộp. Sau mỗi lần ôn, bạn tự chấm: nhớ thì thẻ lên hộp sau và lâu hơn mới gặp lại; quên thì thẻ về hộp 1 và gặp lại ngay ngày mai.
+      </p>
+      <ol class="boxes">
+        @for (item of boxes; track item.box) {
+          <li class="flex flex-col gap-2.5">
+            <div class="box-tile" [class.box-tile-done]="item.box === 5"><span class="hand text-[30px]">Hộp {{ item.box }}</span></div>
+            <span class="font-semibold">{{ item.title }}</span>
+            <span class="text-sm text-ink-soft">{{ item.note }}</span>
+          </li>
+        }
+      </ol>
+      <div class="hand mt-8 flex flex-wrap gap-x-10 gap-y-3 text-[22px]">
+        <span class="text-brand">Nhớ: thẻ lên hộp sau</span>
+        <span class="text-danger">Quên: thẻ về hộp 1</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tính năng -->
+  <section id="tinh-nang" class="border-t border-line bg-bg px-6 py-24">
+    <div class="mx-auto flex max-w-[1120px] flex-col gap-20">
+      <div class="flex flex-wrap items-center gap-12">
+        <div class="min-w-0 flex-[1_1_380px]">
+          <h2 class="m-0 text-[30px] font-bold leading-tight">Luyện ngữ pháp như làm bài kiểm tra ở lớp</h2>
+          <p class="mt-4 text-[17px] leading-relaxed text-ink-soft">
+            Chọn một chủ đề, làm 10 câu trắc nghiệm. Nộp bài xong, Cassin chấm bằng bút đỏ: khoanh đáp án đúng, gạch đáp án sai và giải thích vì sao.
+          </p>
+        </div>
+        <div class="card card-raised min-w-0 flex-[1_1_420px] p-7" aria-hidden="true">
+          <div class="flex flex-wrap items-start justify-between gap-5">
+            <span class="hand text-[26px]">Bài kiểm tra: Câu bị động</span>
+            <app-score-stamp [score]="8" [total]="10" />
+          </div>
+          <p class="mb-2.5 mt-5 font-semibold">Câu 1. This bridge ___ in 1998.</p>
+          <div class="grid grid-cols-2 gap-x-5 gap-y-2 text-[15px]">
+            <span class="flex items-center gap-2.5"><span class="ring-ok">A</span>was built</span>
+            <span class="flex items-center gap-2.5"><span class="w-[26px] text-center text-[13px] font-semibold">B</span><span class="strike">built</span></span>
+            <span class="flex items-center gap-2.5"><span class="w-[26px] text-center text-[13px] font-semibold">C</span>has built</span>
+            <span class="flex items-center gap-2.5"><span class="w-[26px] text-center text-[13px] font-semibold">D</span>is building</span>
+          </div>
+          <p class="hand mt-3.5 text-lg text-danger">Sai. Cây cầu không tự xây, nên dùng bị động: was + V3.</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap-reverse items-center gap-12">
+        <div class="card card-raised grid min-w-0 flex-[1_1_420px] grid-cols-[110px_minmax(0,1fr)] gap-5 p-7" aria-hidden="true">
+          <div>
+            <div class="hand text-[32px] leading-none text-brand">light</div>
+            <div class="text-[13px] text-ink-soft">/laɪt/</div>
+          </div>
+          <div class="flex flex-col gap-3 text-[15px]">
+            <div><span class="inline-block w-10 italic text-ink-soft">n.</span><b>ánh sáng</b><div class="ml-10 text-sm italic text-ink-soft">Turn on the light, please.</div></div>
+            <div><span class="inline-block w-10 italic text-ink-soft">adj.</span><b>nhẹ</b><div class="ml-10 text-sm italic text-ink-soft">This bag is light enough to carry.</div></div>
+            <div><span class="inline-block w-10 italic text-ink-soft">v.</span><b>thắp, đốt</b></div>
+          </div>
+        </div>
+        <div class="min-w-0 flex-[1_1_380px]">
+          <h2 class="m-0 text-[30px] font-bold leading-tight">Bộ từ của riêng bạn, mỗi nghĩa một thẻ</h2>
+          <p class="mt-4 text-[17px] leading-relaxed text-ink-soft">
+            Học bộ 1000 từ thông dụng có sẵn, hoặc tự tạo bộ từ cho bài thi của bạn. Từ nhiều nghĩa được tách thành nhiều thẻ, nên nghĩa nào hay quên sẽ được ôn nhiều hơn.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Hỏi đáp -->
+  <section id="hoi-dap" class="border-t border-line bg-surface px-6 py-24">
+    <div class="mx-auto max-w-[760px]">
+      <h2 class="mb-6 mt-0 text-[32px] font-bold">Hỏi đáp</h2>
+      @for (faq of faqs; track faq.question) {
+        <details class="faq">
+          <summary>{{ faq.question }}</summary>
+          <p class="mb-0 mt-3 leading-relaxed text-ink-soft">{{ faq.answer }}</p>
+        </details>
+      }
+    </div>
+  </section>
+
+  <!-- Lời mời cuối trang -->
+  <section class="notebook border-t border-line px-6 py-20">
+    <div class="mx-auto flex max-w-[1120px] flex-wrap items-center justify-between gap-6 pl-4 sm:pl-16">
+      <h2 class="hand m-0 text-[36px] leading-tight sm:text-[44px]">Bắt đầu với 10 từ đầu tiên ngay hôm nay.</h2>
+      <a routerLink="/register" class="btn btn-primary btn-lg">Tạo tài khoản</a>
+    </div>
+  </section>
+</main>
+
+<footer class="bg-ink px-6 py-10 text-[#c9cbe0]">
+  <div class="mx-auto flex max-w-[1120px] flex-wrap items-center justify-between gap-4 text-sm">
+    <app-logo [size]="26" variant="light" />
+    <div class="flex flex-wrap gap-6">
+      <a href="#top" class="text-[#c9cbe0]">Điều khoản sử dụng</a>
+      <a href="#top" class="text-[#c9cbe0]">Quyền riêng tư</a>
+      <a href="#top" class="text-[#c9cbe0]">Liên hệ</a>
+    </div>
+    <span>© {{ year }} Cassin</span>
+  </div>
+</footer>

@@ -1,24 +1,27 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
-import { BoxMeter } from '../../../shared/box-meter/box-meter';
-import { PosLabelPipe } from '../../../shared/pos-label.pipe';
-import { ReviewCard } from '../review.models';
+import { ReviewCard } from '../../../core/models/review.models';
+import { PART_OF_SPEECH } from '../../../core/util/part-of-speech';
 
 /**
- * Một tấm thẻ học hai mặt. Chỉ hiển thị; việc lật do component cha quyết định:
- * cha truyền [flipped], thẻ chỉ báo lên (flip) khi người dùng bấm vào.
+ * Thẻ học kẻ dòng. Mặt trước: từ + phiên âm. Mặt sau: nghĩa + câu ví dụ.
+ * Cả thẻ là MỘT nút bấm để lật (bàn phím và trình đọc màn hình dùng được).
  */
 @Component({
   selector: 'app-flash-card',
-  imports: [BoxMeter, PosLabelPipe],
   templateUrl: './flash-card.html',
   styleUrl: './flash-card.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FlashCard {
-  readonly card = input.required<ReviewCard>();
+  readonly item = input.required<ReviewCard>();
   readonly flipped = input(false);
-
-  // output(): sự kiện gửi lên cha, cha nghe bằng (flip)="..."
   readonly flip = output<void>();
+
+  protected readonly posLabel = computed(() => PART_OF_SPEECH[this.item().card.partOfSpeech].label);
+  protected readonly label = computed(() =>
+    this.flipped()
+      ? `Nghĩa: ${this.item().card.definition}`
+      : `Từ: ${this.item().card.word}. Bấm để lật thẻ`,
+  );
 }

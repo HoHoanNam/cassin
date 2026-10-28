@@ -1,0 +1,61 @@
+.shell {
+  display: flex;
+  min-height: 100dvh;
+}
+
+app-sidebar {
+  width: 248px;
+  flex: none;
+  /* Nền trắng kéo dài hết chiều cao trang, kể cả khi nội dung dài hơn màn hình */
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 12px 0 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+/* Style trong file .scss của component KHÔNG nằm trong layer của Tailwind nên luôn thắng
+   class "md:hidden" ở HTML. Vì vậy phải tự ẩn thanh trên ở màn hình rộng ngay tại đây. */
+@media (min-width: 768px) {
+  .topbar {
+    display: none;
+  }
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  outline: none;
+}
+
+@media (max-width: 767px) {
+  .content {
+    padding-bottom: var(--bottom-nav-h);
+  }
+}
+
+.skip-link {
+  position: absolute;
+  left: 16px;
+  top: -60px;
+  z-index: 100;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 600;
+}
+
+.skip-link:focus {
+  top: 12px;
+}

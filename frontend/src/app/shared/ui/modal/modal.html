@@ -1,0 +1,12 @@
+<dialog #dialog class="modal" [class.modal-sm]="size() === 'sm'" [attr.aria-labelledby]="titleId"
+  (cancel)="onCancel($event)" (click)="onDialogClick($event)">
+  <div class="modal-panel">
+    <header class="flex items-start justify-between gap-4">
+      <h2 class="m-0 text-lg font-bold leading-snug" [id]="titleId">{{ title() }}</h2>
+      <button type="button" class="btn btn-ghost btn-icon -mr-2 -mt-1 text-ink-soft" aria-label="Đóng" (click)="closed.emit()">
+        <app-icon name="close" />
+      </button>
+    </header>
+    <ng-content />
+  </div>
+</dialog>

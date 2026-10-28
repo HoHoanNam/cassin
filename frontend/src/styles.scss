@@ -1,194 +1,390 @@
 /*
- * Style dùng chung cho cả app: bảng màu, font, nền vở ô li, nút, tờ giấy.
+ * Style dùng chung cho cả app: design token (màu, font), style cho thẻ HTML, class dùng lại.
  * Style riêng của từng component nằm trong file .scss cạnh component đó.
  *
  * VÌ SAO CÓ @layer?
  * Tailwind đặt class của nó (mt-6, text-ink-soft...) trong "cascade layer" tên là utilities.
- * Quy tắc của CSS: style KHÔNG nằm trong layer nào luôn thắng style nằm trong layer,
- * bất kể selector mạnh yếu ra sao. Nếu viết "p { margin: 0 }" trần trụi ở đây,
- * thì class "mt-6" của Tailwind trên thẻ <p> sẽ không có tác dụng.
- *
+ * Quy tắc của CSS: style KHÔNG nằm trong layer nào luôn thắng style nằm trong layer.
  * Nên style dùng chung được xếp vào đúng layer của Tailwind:
- *   base       → style cho thẻ HTML (html, body, a, h1...)
- *   components → class dùng lại (.btn, .sheet...)
- *   utilities  → class Tailwind, luôn thắng hai layer trên
+ *   base       → style cho thẻ HTML (html, body, a...)
+ *   components → class dùng lại (.btn, .card, .input...)
+ *   utilities  → class Tailwind, luôn thắng hai layer trên (dùng để tinh chỉnh từng chỗ)
  */
 
 :root {
-  /* Giấy và dòng kẻ của vở 4 ô li */
-  --paper: #fcfcf7;
-  --grid-major: #c3b3e2;   /* đường kẻ ô vuông lớn, tím nhạt */
-  --grid-minor: #ece6f6;   /* 3 dòng kẻ mảnh trong mỗi ô */
-  --margin-red: #e8776f;   /* đường lề đỏ bên trái */
+  /* ---- Nền và đường kẻ giao diện ---- */
+  --bg: #fbfaf7;           /* nền giấy trơn của app */
+  --surface: #ffffff;      /* thẻ, bảng, hộp thoại */
+  --line: #e7e3ee;         /* viền khung lớn: sidebar, header */
+  --card-line: #e3ddef;    /* viền thẻ nội dung */
+  --divider: #f0edf5;      /* đường chia giữa các dòng trong danh sách */
+  --field: #d4d0e3;        /* viền ô nhập, nút phụ */
+  --chip: #efecf4;         /* nền nhãn, nhóm nút lọc */
+  --skeleton: #ece9f2;
+  --skeleton-soft: #f2f0f6;
 
-  /* Mực */
+  /* ---- Mực ---- */
   --ink: #23264a;          /* chữ chính: mực xanh đen */
-  --ink-soft: #5d6080;     /* chữ phụ: như bút chì */
-  --ink-blue: #1f4fb5;     /* bút bi xanh: hành động chính */
-  --ink-blue-dark: #183d8c;
-  --ink-red: #cf2e2e;      /* bút đỏ của cô giáo: điểm, chỗ sai */
+  --ink-soft: #5d6080;     /* chữ phụ */
+  --ink-faint: #9a97b5;    /* icon trang trí, chữ rất phụ */
+  --brand: #1f4fb5;        /* bút bi xanh: hành động chính */
+  --brand-dark: #183d8c;
+  --brand-tint: #d7e0f4;   /* vòng focus, cột biểu đồ */
+  --brand-wash: #eaf0fb;   /* nền thông báo thông tin */
+  --danger: #cf2e2e;       /* bút đỏ của cô giáo: điểm, chỗ sai */
+  --danger-dark: #b42626;
+  --danger-wash: #fcecec;
+  --success: #2f7d4a;
 
-  --sheet: #ffffff;        /* tờ giấy kẹp trên vở */
-
-  /* Ô lớn 40px, chia 4 dòng mỗi dòng 10px. Khoảng cách trong app là bội số của 10. */
-  --cell: 40px;
-  --line: 10px;
-  --margin-x: 72px;        /* vị trí đường lề đỏ */
+  /* ---- Vở ô li (chỉ dùng ở trang học chính) ---- */
+  --nb-paper: #fcfcf7;
+  --nb-grid-major: #c3b3e2;
+  --nb-grid-minor: #ece6f6;
+  --nb-margin-red: #e8776f;
+  --nb-margin-x: 72px;     /* vị trí đường lề đỏ */
 
   --font-body: 'Be Vietnam Pro', system-ui, sans-serif;
   --font-hand: 'Patrick Hand', 'Be Vietnam Pro', cursive;
+
+  /* Chiều cao thanh điều hướng dưới đáy trên điện thoại (để chừa chỗ cho nội dung) */
+  --bottom-nav-h: 72px;
 }
 
 @media (max-width: 640px) {
   :root {
-    --margin-x: 28px;
+    --nb-margin-x: 28px;
   }
 }
 
-/* ---------- Style cho thẻ HTML ---------- */
-/* Không cần reset margin của h1, p, ul... : Tailwind (preflight) đã làm. */
+/* ======================= Style cho thẻ HTML ======================= */
 @layer base {
   html {
     color: var(--ink);
     font-family: var(--font-body);
     line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
   }
 
   body {
-    min-height: 100vh;
-    background-color: var(--paper);
-    /* Nền vở ô li vẽ hoàn toàn bằng CSS, không cần ảnh:
-       1. đường lề đỏ dọc
-       2. đường kẻ ngang của ô lớn
-       3. đường kẻ dọc của ô lớn
-       4. dòng kẻ mảnh, cách nhau 10px */
-    background-image:
-      linear-gradient(90deg,
-        transparent calc(var(--margin-x) - 1px),
-        var(--margin-red) calc(var(--margin-x) - 1px),
-        var(--margin-red) calc(var(--margin-x) + 1px),
-        transparent calc(var(--margin-x) + 1px)),
-      linear-gradient(var(--grid-major) 1px, transparent 1px),
-      linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
-      linear-gradient(var(--grid-minor) 1px, transparent 1px);
-    background-size: 100% 100%, var(--cell) var(--cell), var(--cell) var(--cell), 100% var(--line);
-  }
-
-  h1,
-  h2,
-  h3 {
-    font-family: var(--font-hand);
-    line-height: 1.2;
+    min-height: 100dvh;
+    background: var(--bg);
   }
 
   a {
-    color: var(--ink-blue);
+    color: var(--brand);
+  }
+
+  a:hover {
+    color: var(--brand-dark);
   }
 
   :focus-visible {
-    outline: 2px solid var(--ink-blue);
-    outline-offset: 3px;
-    border-radius: 2px;
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 
-  /* Gợi ý phím tắt */
+  ::selection {
+    background: var(--brand-tint);
+  }
+
   kbd {
     display: inline-block;
     min-width: 1.6em;
     padding: 0 5px;
-    border: 1px solid var(--grid-major);
+    border: 1px solid var(--field);
     border-bottom-width: 2px;
-    border-radius: 3px;
-    background: var(--sheet);
+    border-radius: 4px;
+    background: var(--surface);
     font: 500 0.8rem/1.6 var(--font-body);
     text-align: center;
   }
 }
 
-/* ---------- Class dùng lại ---------- */
+/* ======================= Class dùng lại ======================= */
 @layer components {
-  /* Khung nội dung: căn giữa trang, rộng tối đa 920px.
-     Hai bên chừa khoảng trống bằng nhau (lề đỏ + 32px), nên trên màn hình hẹp
-     nội dung vẫn không bao giờ đè lên đường lề đỏ. */
-  .page {
-    width: min(100% - 2 * (var(--margin-x) + 32px), 920px);
-    margin-inline: auto;
-    padding-bottom: 80px;
+  /* ---------- Nút ----------
+     .btn là khung chung; thêm MỘT class màu: primary (hành động chính, mỗi khu vực chỉ một nút),
+     secondary (hành động phụ), danger (xóa), ghost (nhẹ nhất). Cỡ: btn-sm / btn-lg. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 20px;
+    border: 1.5px solid transparent;
+    border-radius: 8px;
+    font: 600 15px/1.2 var(--font-body);
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s;
   }
 
-  /* Tờ giấy trắng kẹp lên vở: giúp chữ không bị dòng kẻ làm rối mắt */
-  .sheet {
-    background: var(--sheet);
-    border: 1px solid #e3ddef;
-    border-radius: 3px;
-    box-shadow: 0 1px 0 #e3ddef, 0 6px 14px -10px rgba(35, 38, 74, 0.35);
-    padding: 30px;
+  .btn:disabled,
+  .btn[aria-disabled='true'] {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background: var(--brand);
+    color: #fff;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: var(--brand-dark);
+    color: #fff;
+  }
+
+  .btn-secondary {
+    background: var(--surface);
+    border-color: var(--field);
+    color: var(--ink);
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    border-color: var(--ink-soft);
+    color: var(--ink);
+  }
+
+  .btn-danger {
+    background: var(--danger-dark);
+    color: #fff;
+  }
+
+  .btn-danger:hover:not(:disabled) {
+    background: #962020;
+    color: #fff;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--brand);
+    padding: 0 12px;
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--brand-wash);
+  }
+
+  .btn-sm {
+    min-height: 36px;
+    padding: 0 14px;
+    font-size: 14px;
+  }
+
+  .btn-lg {
+    min-height: 52px;
+    padding: 0 28px;
+    font-size: 16px;
+  }
+
+  .btn-icon {
+    width: 40px;
+    min-height: 40px;
+    padding: 0;
+  }
+
+  /* ---------- Khung nội dung ---------- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--card-line);
+    border-radius: 12px;
+  }
+
+  .card-raised {
+    box-shadow: 0 10px 24px -20px rgba(35, 38, 74, 0.45);
+  }
+
+  /* Danh sách dạng thẻ: <ul class="card list-card"><li class="list-row">... */
+  .list-card {
+    list-style: none;
+    margin: 0;
+    padding: 0 20px;
+  }
+
+  .list-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    min-height: 72px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--divider);
+  }
+
+  .list-row:last-child {
+    border-bottom: 0;
+  }
+
+  /* ---------- Trang ---------- */
+  .page-container {
+    width: 100%;
+    max-width: 1000px;
+    margin-inline: auto;
+  }
+
+  .page-title {
+    margin: 0;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
   }
 
   .section-title {
-    font-size: 1.75rem;
-    margin-bottom: 20px;
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .hand {
+    font-family: var(--font-hand);
+    font-weight: 400;
   }
 
   .muted {
     color: var(--ink-soft);
   }
 
-  /* Nút: viền bút xanh */
-  .btn {
+  /* ---------- Form ---------- */
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .label {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .input {
+    width: 100%;
+    min-height: 48px;
+    padding: 0 14px;
+    border: 1.5px solid var(--field);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--ink);
+    font: 400 16px/1.4 var(--font-body);
+  }
+
+  textarea.input {
+    min-height: 96px;
+    padding: 12px 14px;
+    resize: vertical;
+  }
+
+  .input::placeholder {
+    color: var(--ink-faint);
+  }
+
+  .input:focus-visible {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-tint);
+  }
+
+  .input[aria-invalid='true'] {
+    border-color: var(--danger);
+  }
+
+  .field-error {
+    margin: 0;
+    color: var(--danger-dark);
+    font-size: 13px;
+  }
+
+  .field-hint {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 13px;
+  }
+
+  .form-alert {
+    display: flex;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .form-alert-error {
+    background: var(--danger-wash);
+    color: var(--danger-dark);
+  }
+
+  .form-alert-info {
+    background: var(--brand-wash);
+    color: var(--brand-dark);
+  }
+
+  /* ---------- Nhãn và nhóm nút lọc ---------- */
+  .chip {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    min-height: 44px;
-    padding: 0 20px;
-    border: 2px solid var(--ink-blue);
-    border-radius: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--chip);
+    color: var(--ink-soft);
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .segmented {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 10px;
+    background: var(--chip);
+  }
+
+  .segmented > button {
+    min-height: 36px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 7px;
     background: transparent;
-    color: var(--ink-blue);
-    font: 600 0.95rem/1 var(--font-body);
-    text-decoration: none;
+    color: var(--ink-soft);
+    font: 500 14px/1 var(--font-body);
     cursor: pointer;
   }
 
-  .btn:hover {
-    background: #eef2fb;
+  .segmented > button[aria-pressed='true'] {
+    background: var(--surface);
+    color: var(--ink);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(35, 38, 74, 0.12);
   }
 
-  .btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  /* ---------- Vở ô li ----------
+     Vẽ hoàn toàn bằng CSS: đường lề đỏ + ô lớn 40px + dòng kẻ mảnh 10px. */
+  .notebook {
+    background-color: var(--nb-paper);
+    background-image:
+      linear-gradient(90deg,
+        transparent calc(var(--nb-margin-x) - 1px),
+        var(--nb-margin-red) calc(var(--nb-margin-x) - 1px),
+        var(--nb-margin-red) calc(var(--nb-margin-x) + 1px),
+        transparent calc(var(--nb-margin-x) + 1px)),
+      linear-gradient(var(--nb-grid-major) 1px, transparent 1px),
+      linear-gradient(90deg, var(--nb-grid-major) 1px, transparent 1px),
+      linear-gradient(var(--nb-grid-minor) 1px, transparent 1px);
+    background-size: 100% 100%, 40px 40px, 40px 40px, 100% 10px;
   }
 
-  /* Hành động chính: tô kín bút xanh */
-  .btn-primary {
-    background: var(--ink-blue);
-    color: #fff;
-  }
-
-  .btn-primary:hover {
-    background: var(--ink-blue-dark);
-    border-color: var(--ink-blue-dark);
-  }
-
-  /* Bút đỏ: "Quên", "Sai" */
-  .btn-danger {
-    border-color: var(--ink-red);
-    color: var(--ink-red);
-  }
-
-  .btn-danger:hover {
-    background: #fcecec;
-  }
-
-  @media (max-width: 640px) {
-    .page {
-      width: calc(100% - var(--margin-x) - 32px);
-      margin-left: calc(var(--margin-x) + 16px);
-    }
-
-    .sheet {
-      padding: 20px;
-    }
+  /* Thẻ học kẻ dòng như thẻ flashcard giấy */
+  .card-lines {
+    background-color: var(--surface);
+    background-image:
+      linear-gradient(transparent 46px, var(--nb-margin-red) 46px, var(--nb-margin-red) 48px, transparent 48px),
+      repeating-linear-gradient(transparent 0 39px, #dfe7f5 39px 40px);
   }
 }
 
@@ -196,7 +392,7 @@
   *,
   *::before,
   *::after {
-    animation: none !important;
-    transition: none !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

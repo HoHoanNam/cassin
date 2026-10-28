@@ -8,21 +8,30 @@
 @import 'tailwindcss';
 
 /*
- * Đưa bảng màu và font của Cassin vào Tailwind, để dùng được class như
- * text-ink, bg-paper, border-grid-major, font-hand...
- * Giá trị trỏ tới biến CSS trong styles.scss: đổi màu ở một chỗ là cả hai cách viết cùng đổi.
+ * Đưa bảng màu (design token) của Cassin vào Tailwind, để dùng được class như
+ * text-ink-soft, bg-surface, border-line, text-brand...
+ * Giá trị trỏ tới biến CSS trong styles.scss: đổi màu ở MỘT chỗ là cả hai cách viết cùng đổi.
  */
 @theme inline {
-  --color-paper: var(--paper);
-  --color-sheet: var(--sheet);
-  --color-grid-major: var(--grid-major);
-  --color-grid-minor: var(--grid-minor);
-  --color-margin-red: var(--margin-red);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-line: var(--line);
+  --color-card-line: var(--card-line);
+  --color-divider: var(--divider);
+  --color-field: var(--field);
+  --color-chip: var(--chip);
+
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
-  --color-ink-blue: var(--ink-blue);
-  --color-ink-blue-dark: var(--ink-blue-dark);
-  --color-ink-red: var(--ink-red);
+  --color-ink-faint: var(--ink-faint);
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-tint: var(--brand-tint);
+  --color-brand-wash: var(--brand-wash);
+  --color-danger: var(--danger);
+  --color-danger-dark: var(--danger-dark);
+  --color-danger-wash: var(--danger-wash);
+  --color-success: var(--success);
 
   --font-sans: var(--font-body);
   --font-hand: var(--font-hand);

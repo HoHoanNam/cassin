@@ -1,12 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
-import { QuizAnswerResult, QuizQuestion } from '../quiz.models';
-
-type OptionState = 'idle' | 'selected' | 'correct' | 'wrong';
+import { QuizQuestion } from '../../../core/models/quiz.models';
+import { OPTION_LETTERS } from '../../../core/util/text';
 
 /**
- * Một câu trắc nghiệm. Không tự giữ trạng thái: cha truyền xuống đáp án đang chọn
- * và kết quả (nếu đã nộp), câu hỏi chỉ báo lên (picked) khi người dùng chọn.
+ * Một câu hỏi trắc nghiệm lúc làm bài: 4 đáp án dạng radio.
+ * Dùng <input type="radio"> thật (ẩn đi, vẽ lại bằng CSS) nên phím mũi tên,
+ * Tab và trình đọc màn hình đều hoạt động như một nhóm lựa chọn chuẩn.
  */
 @Component({
   selector: 'app-quiz-question',
@@ -14,36 +14,11 @@ type OptionState = 'idle' | 'selected' | 'correct' | 'wrong';
   styleUrl: './quiz-question.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class QuizQuestionItem {
-  readonly number = input.required<number>();
+export class QuizQuestionView {
   readonly question = input.required<QuizQuestion>();
-  readonly selectedId = input<number | null>(null);
-  /** null = chưa nộp bài. */
-  readonly result = input<QuizAnswerResult | null>(null);
+  readonly total = input.required<number>();
+  readonly selected = input<number | null>(null);
+  readonly select = output<number>();
 
-  // Không đặt tên "select": trùng tên sự kiện có sẵn của trình duyệt.
-  readonly picked = output<number>();
-
-  protected readonly letters = ['A', 'B', 'C', 'D'];
-
-  /** Trạng thái hiển thị của từng đáp án, tính một lần mỗi khi dữ liệu đổi. */
-  protected readonly states = computed(() => {
-    const result = this.result();
-    const selected = this.selectedId();
-    const map = new Map<number, OptionState>();
-    for (const option of this.question().options) {
-      let state: OptionState = 'idle';
-      if (result) {
-        if (option.id === result.correctOptionId) {
-          state = 'correct';
-        } else if (option.id === result.selectedOptionId) {
-          state = 'wrong';
-        }
-      } else if (option.id === selected) {
-        state = 'selected';
-      }
-      map.set(option.id, state);
-    }
-    return map;
-  });
+  protected readonly letters = OPTION_LETTERS;
 }

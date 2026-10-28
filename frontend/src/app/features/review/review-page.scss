@@ -1,34 +1,92 @@
-/* Thanh tiến độ: một nét bút xanh dài dần */
-.track {
-  display: block;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--grid-minor);
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(252, 252, 247, 0.94);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(4px);
 }
 
-.fill {
-  display: block;
+.progress {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #e6e1f0;
+}
+
+.progress-bar {
   height: 100%;
-  border-radius: 2px;
-  background: var(--ink-blue);
-  transition: width 300ms ease-out;
+  border-radius: 3px;
+  background: var(--brand);
+  transition: width 0.3s ease;
 }
 
-.outcome {
+.grade {
   display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 10px 0;
-  border-top: 1px solid var(--grid-minor);
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60px;
+  border-radius: 10px;
+  font: 600 17px/1.2 var(--font-body);
+  cursor: pointer;
+
+  small {
+    font-size: 12px;
+    font-weight: 500;
+  }
 }
 
-.move {
-  color: var(--ink-blue);
-  font-family: var(--font-hand);
-  font-size: 1.15rem;
+.grade-forgot {
+  border: 2px solid var(--danger);
+  background: var(--surface);
+  color: var(--danger-dark);
 }
 
-/* Quên: chữ bút đỏ */
-.move.forgot {
-  color: var(--ink-red);
+.grade-forgot:hover {
+  background: var(--danger-wash);
+}
+
+.grade-ok {
+  border: 0;
+  background: var(--brand);
+  color: #fff;
+}
+
+.grade-ok:hover {
+  background: var(--brand-dark);
+}
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.tally {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px 56px;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+.tally-num {
+  font: 400 52px/1 var(--font-hand);
+}
+
+.flash-skeleton {
+  height: 340px;
+  border: 1px solid var(--card-line);
+  border-radius: 12px;
+  opacity: 0.6;
 }

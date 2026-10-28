@@ -1,0 +1,12 @@
+.stamp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 150px;
+  height: 104px;
+  border: 3px solid var(--danger);
+  border-radius: 52% 48% 55% 45% / 50% 55% 45% 50%;
+  transform: rotate(-6deg);
+  color: var(--danger);
+  font: 400 60px/1 var(--font-hand);
+}

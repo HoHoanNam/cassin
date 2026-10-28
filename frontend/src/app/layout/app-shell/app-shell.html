@@ -1,0 +1,18 @@
+<a class="skip-link" href="#main">Bỏ qua điều hướng</a>
+
+<div class="shell">
+  <app-sidebar class="hidden md:block" />
+
+  <div class="flex min-w-0 flex-1 flex-col">
+    <header class="topbar md:hidden">
+      <a routerLink="/today" class="no-underline" aria-label="Cassin, về trang Hôm nay"><app-logo [size]="26" /></a>
+      <app-user-menu variant="avatar" placement="down" />
+    </header>
+
+    <main id="main" class="content" tabindex="-1">
+      <router-outlet />
+    </main>
+  </div>
+</div>
+
+<app-bottom-nav class="md:hidden" />

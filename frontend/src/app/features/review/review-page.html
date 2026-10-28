@@ -1,80 +1,77 @@
-@if (session.isLoading()) {
-  <p class="muted mt-20 text-center" role="status">Đang chuẩn bị thẻ…</p>
-} @else if (total() === 0) {
-  <section class="sheet mx-auto mt-16 max-w-xl text-center">
-    <h1 class="font-hand text-4xl">Không còn thẻ nào cần ôn</h1>
-    <p class="muted mt-3">Các thẻ đã ôn sẽ quay lại đúng ngày đến hạn.</p>
-    <a class="btn mt-6" routerLink="/">Về trang chủ</a>
-  </section>
-} @else if (finished()) {
-  <!-- Màn tổng kết -->
-  <section class="sheet mx-auto mt-16 max-w-2xl" aria-labelledby="summary-heading">
-    <h1 id="summary-heading" class="font-hand text-4xl">Xong buổi ôn hôm nay</h1>
-    <p class="mt-2 text-lg">Bạn nhớ {{ rememberedCount() }} trên {{ total() }} thẻ.</p>
-
-    <ul class="outcomes mt-6">
-      @for (outcome of outcomes(); track outcome.cardId) {
-        <li class="outcome">
-          <span class="font-semibold">{{ outcome.word }}</span>
-          <span class="move" [class.forgot]="!outcome.remembered">
-            @if (outcome.fromBox === outcome.toBox) {
-              Vẫn ở hộp {{ outcome.toBox }}
-            } @else {
-              Hộp {{ outcome.fromBox }} sang hộp {{ outcome.toBox }}
-            }
-          </span>
-        </li>
-      }
-    </ul>
-
-    <a class="btn btn-primary mt-8" routerLink="/">Về trang chủ</a>
-  </section>
-} @else {
-  @let card = current()!;
-
-  <div class="mx-auto mt-10 max-w-2xl">
-    <!-- Tiến độ: thẻ thứ mấy / tổng số -->
-    <div class="flex items-center justify-between gap-4 text-sm">
-      <span class="font-medium" aria-live="polite">Thẻ {{ index() + 1 }} / {{ total() }}</span>
-      <a class="text-ink-soft hover:text-ink" routerLink="/">Dừng ôn</a>
-    </div>
-    <div class="track mt-2" aria-hidden="true">
-      <span class="fill" [style.width.%]="progressPercent()"></span>
-    </div>
-
-    <app-flash-card class="mt-8" [card]="card" [flipped]="flipped()" (flip)="toggleFlip()" />
-
-    <div class="mt-8 flex flex-col items-center gap-3">
-      @if (!flipped()) {
-        <button type="button" class="btn btn-primary min-w-48 justify-center" (click)="toggleFlip()">
-          Lật thẻ
-        </button>
-        <!-- Gợi ý phím tắt: ẩn trên điện thoại vì không có bàn phím -->
-        <p class="muted text-sm max-sm:hidden">hoặc nhấn <kbd>Space</kbd></p>
-      } @else {
-        <div class="flex gap-4">
-          <button
-            type="button"
-            class="btn btn-danger min-w-36 justify-center"
-            [disabled]="answering()"
-            (click)="answer(false)"
-          >
-            Quên
-          </button>
-          <button
-            type="button"
-            class="btn btn-primary min-w-36 justify-center"
-            [disabled]="answering()"
-            (click)="answer(true)"
-          >
-            Nhớ
-          </button>
+<div class="notebook flex min-h-dvh flex-col">
+  <header class="topbar">
+    <div class="mx-auto flex w-full max-w-[760px] items-center gap-5 px-4 py-3.5 sm:px-6">
+      <a [routerLink]="exitLink()" class="btn btn-ghost -ml-2 gap-1.5 px-2 text-ink">
+        <app-icon name="close" [strokeWidth]="2" /> Thoát
+      </a>
+      @if (cards().length > 0 && !finished()) {
+        <div class="flex flex-1 flex-col gap-1.5">
+          <div class="flex justify-between gap-3 text-[13px] text-ink-soft">
+            <span class="truncate">{{ title() }}</span>
+            <span class="whitespace-nowrap font-semibold text-ink" aria-live="polite">Thẻ {{ index() + 1 }} / {{ cards().length }}</span>
+          </div>
+          <div class="progress" role="progressbar" aria-label="Tiến độ buổi ôn" aria-valuemin="0"
+            [attr.aria-valuemax]="cards().length" [attr.aria-valuenow]="index()">
+            <div class="progress-bar" [style.width.%]="progress()"></div>
+          </div>
         </div>
-        <p class="muted text-sm max-sm:hidden">
-          <kbd>1</kbd> Quên, về hộp 1 <span class="mx-2">|</span> <kbd>2</kbd> Nhớ, lên hộp
-          {{ card.box < 5 ? card.box + 1 : 5 }}
-        </p>
       }
     </div>
-  </div>
-}
+  </header>
+
+  <main class="flex flex-1 flex-col items-center px-4 pb-14 pt-10 sm:px-6 sm:pt-12">
+    <div class="flex w-full max-w-[640px] flex-col gap-8">
+      @if (queue.hasValue()) {
+        @if (cards().length === 0) {
+          <div class="card">
+            <app-empty-state icon="check" title="Không còn thẻ nào cần ôn"
+              [description]="deckId() !== undefined ? 'Bộ này đã ôn xong hôm nay và không còn thẻ mới.' : 'Bạn đã ôn hết thẻ đến hạn hôm nay. Quay lại vào ngày mai nhé.'">
+              <a routerLink="/today" class="btn btn-primary">Về trang Hôm nay</a>
+              <a routerLink="/decks" class="btn btn-secondary">Học thẻ mới</a>
+            </app-empty-state>
+          </div>
+        } @else if (finished()) {
+          <!-- Tổng kết buổi ôn -->
+          <section class="card card-raised summary" aria-live="polite">
+            <p class="hand m-0 text-2xl text-ink-soft">Xong buổi ôn!</p>
+            <h1 class="m-0 text-[28px] font-bold leading-tight">Bạn vừa ôn {{ cards().length }} thẻ</h1>
+            <div class="tally">
+              <div><span class="tally-num text-brand">{{ remembered() }}</span><span class="text-sm text-ink-soft">thẻ nhớ, lên hộp sau</span></div>
+              <div><span class="tally-num text-danger">{{ forgotten() }}</span><span class="text-sm text-ink-soft">thẻ quên, ôn lại ngày mai</span></div>
+            </div>
+            @if (failed() > 0) {
+              <p class="form-alert form-alert-error m-0">{{ failed() }} kết quả chưa lưu được. Bấm "Thử lại" trên thông báo ở góc màn hình.</p>
+            }
+            <div class="flex flex-wrap justify-center gap-3">
+              <a routerLink="/today" class="btn btn-primary">Về trang Hôm nay</a>
+              @if (deckId() !== undefined) {
+                <button type="button" class="btn btn-secondary" (click)="restart()">Học thêm thẻ mới</button>
+              }
+            </div>
+          </section>
+        } @else if (current(); as item) {
+          <app-flash-card [item]="item" [flipped]="flipped()" (flip)="flip()" />
+
+          @if (!flipped()) {
+            <div class="flex flex-col items-center gap-2.5">
+              <button type="button" class="btn btn-primary btn-lg min-w-[220px]" (click)="flip()">Lật thẻ</button>
+              <span class="hidden text-[13px] text-ink-soft sm:inline">hoặc nhấn <kbd>Space</kbd></span>
+            </div>
+          } @else {
+            <div class="flex flex-col items-center gap-2.5">
+              <div class="flex w-full max-w-[440px] gap-4">
+                <button type="button" class="grade grade-forgot" (click)="grade(false)">Quên<small>về hộp 1</small></button>
+                <button type="button" class="grade grade-ok" (click)="grade(true)">Nhớ<small>{{ nextBoxText() }}</small></button>
+              </div>
+              <span class="hidden text-[13px] text-ink-soft sm:inline">Phím <kbd>1</kbd> Quên · Phím <kbd>2</kbd> Nhớ</span>
+            </div>
+          }
+        }
+      } @else if (queue.error()) {
+        <div class="card"><app-error-state title="Không tải được thẻ cần ôn" (retry)="queue.reload()" /></div>
+      } @else {
+        <div class="card-lines flash-skeleton" aria-busy="true" aria-label="Đang tải thẻ"></div>
+      }
+    </div>
+  </main>
+</div>

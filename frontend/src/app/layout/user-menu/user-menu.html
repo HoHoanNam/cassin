@@ -1,0 +1,32 @@
+<div class="relative">
+  <button type="button" class="trigger" [class.trigger-full]="variant() === 'full'" aria-haspopup="menu"
+    [attr.aria-expanded]="open()" aria-label="Mở menu tài khoản" (click)="toggle()">
+    <span class="avatar" aria-hidden="true">{{ avatar() }}</span>
+    @if (variant() === 'full') {
+      <span class="flex min-w-0 flex-1 flex-col text-left">
+        <span class="text-sm font-semibold">{{ user()?.displayName }}</span>
+        <span class="truncate text-xs text-ink-soft">{{ user()?.email }}</span>
+      </span>
+      <app-icon class="text-ink-soft" name="chevron-down" [size]="18" />
+    }
+  </button>
+
+  @if (open()) {
+    <div class="menu" [class.menu-up]="placement() === 'up'" role="menu">
+      @if (variant() === 'avatar') {
+        <div class="border-b border-divider px-3 pb-2.5 pt-1.5">
+          <p class="m-0 text-sm font-semibold">{{ user()?.displayName }}</p>
+          <p class="m-0 truncate text-xs text-ink-soft">{{ user()?.email }}</p>
+        </div>
+      }
+      @if (isMock) {
+        <button type="button" role="menuitem" class="item" (click)="resetMockData()">
+          <app-icon name="reset" [size]="18" /> Đặt lại dữ liệu mẫu
+        </button>
+      }
+      <button type="button" role="menuitem" class="item" (click)="logout()">
+        <app-icon name="logout" [size]="18" /> Đăng xuất
+      </button>
+    </div>
+  }
+</div>

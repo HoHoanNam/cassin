@@ -1,0 +1,49 @@
+.bars {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  align-items: end;
+  height: 120px;
+  margin-top: 16px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  height: 100%;
+}
+
+.bar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  background: var(--brand-tint);
+  transition: height 0.4s ease;
+}
+
+.bar-done {
+  background: var(--brand);
+}
+
+.labels {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.compact .bars {
+  height: 48px;
+  margin-top: 0;
+  gap: 6px;
+}
+
+.compact .bar {
+  border-radius: 3px 3px 0 0;
+}

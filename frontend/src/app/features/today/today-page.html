@@ -1,0 +1,161 @@
+<div class="notebook page">
+  <div class="mx-auto max-w-[960px]">
+    <header class="pb-10 text-center">
+      <p class="hand m-0 text-[22px] text-ink-soft">{{ today }}</p>
+      <h1 class="hand title">Ôn tập hôm nay</h1>
+    </header>
+
+    <!-- Việc chính của ngày -->
+    <section class="card card-raised hero" aria-labelledby="due-heading">
+      @if (stats.hasValue()) {
+        @let s = stats.value();
+        <div class="flex min-w-0 flex-[1_1_300px] flex-col items-start gap-3.5">
+          @if (s.dueToday > 0) {
+            <h2 id="due-heading" class="m-0 text-[26px] font-bold leading-tight">Có {{ s.dueToday }} thẻ cần ôn hôm nay</h2>
+            @if (dueBreakdown()) {
+              <p class="m-0 leading-relaxed text-ink-soft">{{ dueBreakdown() }}</p>
+            }
+            <a routerLink="/review" class="btn btn-primary btn-lg">Bắt đầu ôn {{ s.dueToday }} thẻ</a>
+          } @else {
+            <h2 id="due-heading" class="m-0 text-[26px] font-bold leading-tight">Hôm nay bạn đã ôn xong</h2>
+            <p class="m-0 leading-relaxed text-ink-soft">Không còn thẻ nào đến hạn. Muốn học thêm thì bắt đầu vài thẻ mới.</p>
+            @if (suggestedNewDeck(); as deck) {
+              <a class="btn btn-primary btn-lg" [routerLink]="['/decks', deck.id, 'review']">Học thẻ mới từ "{{ deck.deckName }}"</a>
+            } @else {
+              <a routerLink="/decks" class="btn btn-primary btn-lg">Thêm từ mới</a>
+            }
+          }
+          @if (s.streakDays) {
+            <p class="hand m-0 mt-1 flex items-center gap-2 text-xl text-ink-soft">
+              <app-icon class="text-danger" name="flame" [size]="22" />
+              Bạn đã học {{ s.streakDays }} ngày liên tiếp.
+            </p>
+          }
+        </div>
+        <div class="min-w-0 flex-[1_1_340px]">
+          <app-box-chart [boxes]="s.boxes" />
+        </div>
+      } @else if (stats.error()) {
+        <app-error-state class="w-full" title="Không tải được số thẻ cần ôn" (retry)="statsStore.refresh()" />
+      } @else {
+        <app-skeleton class="w-full" variant="text" [rows]="5" />
+      }
+    </section>
+
+    <!-- Bộ từ -->
+    <section class="mt-10" aria-labelledby="decks-heading">
+      <div class="flex items-baseline justify-between gap-4">
+        <h2 id="decks-heading" class="section-title">Bộ từ của bạn</h2>
+        <a routerLink="/decks" class="text-sm font-semibold">Xem tất cả</a>
+      </div>
+      <div class="mt-3.5">
+        @if (decks.hasValue()) {
+          @if (topDecks().length === 0) {
+            <div class="card">
+              <app-empty-state title="Bạn chưa có bộ từ nào" description="Tạo bộ từ đầu tiên cho bài thi của bạn.">
+                <a routerLink="/decks" class="btn btn-primary">Tạo bộ từ</a>
+              </app-empty-state>
+            </div>
+          } @else {
+            <ul class="card list-card px-6">
+              @for (deck of topDecks(); track deck.id) {
+                <li class="list-row">
+                  <span class="min-w-0 flex-[1_1_220px]">
+                    <a class="font-semibold text-ink no-underline hover:underline" [routerLink]="['/decks', deck.id]">{{ deck.deckName }}</a>
+                    <span class="block text-[13px] text-ink-soft">
+                      {{ deck.deckType === 'SYSTEM_DECK' ? 'Bộ có sẵn' : 'Của bạn' }}, {{ deck.cardCount }} thẻ
+                    </span>
+                  </span>
+                  @if ((deck.dueCount ?? 0) > 0) {
+                    <span class="text-sm font-semibold text-brand">{{ deck.dueCount }} thẻ đến hạn</span>
+                    <a class="btn btn-secondary btn-sm" [routerLink]="['/decks', deck.id, 'review']">Ôn bộ này</a>
+                  } @else if ((deck.newCount ?? 0) > 0) {
+                    <span class="text-sm text-ink-soft">{{ deck.newCount }} thẻ mới</span>
+                    <a class="btn btn-secondary btn-sm" [routerLink]="['/decks', deck.id, 'review']">Học thẻ mới</a>
+                  } @else {
+                    <span class="text-sm text-ink-soft">Hôm nay đã ôn xong</span>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        } @else if (decks.error()) {
+          <div class="card"><app-error-state title="Không tải được danh sách bộ từ" (retry)="decks.reload()" /></div>
+        } @else {
+          <app-skeleton [rows]="3" />
+        }
+      </div>
+    </section>
+
+    <div class="mt-10 flex flex-wrap gap-8">
+      <!-- Ngữ pháp -->
+      <section class="min-w-0 flex-[1_1_380px]" aria-labelledby="grammar-heading">
+        <div class="flex items-baseline justify-between gap-4">
+          <h2 id="grammar-heading" class="section-title">Luyện ngữ pháp</h2>
+          <a routerLink="/grammar" class="text-sm font-semibold">Xem tất cả</a>
+        </div>
+        <div class="mt-3.5">
+          @if (topics.hasValue()) {
+            <ul class="card list-card">
+              @for (topic of topTopics(); track topic.id) {
+                <li class="list-row flex-nowrap">
+                  <app-level-badge [level]="topic.level" />
+                  <a class="min-w-0 flex-1 text-ink no-underline" [routerLink]="['/grammar', topic.id]">
+                    <span class="block font-semibold">{{ topic.title }}</span>
+                    <span class="text-[13px] text-ink-soft">{{ topic.questionCount }} câu hỏi</span>
+                  </a>
+                  <a class="btn btn-secondary btn-sm" [routerLink]="['/grammar', topic.id, 'quiz']">Làm bài</a>
+                </li>
+              }
+            </ul>
+          } @else if (topics.error()) {
+            <div class="card"><app-error-state title="Không tải được chủ đề" (retry)="topics.reload()" /></div>
+          } @else {
+            <app-skeleton [rows]="3" />
+          }
+        </div>
+      </section>
+
+      <!-- Bài kiểm tra gần đây -->
+      <section class="min-w-0 flex-[1_1_380px]" aria-labelledby="quiz-heading">
+        <div class="flex items-baseline justify-between gap-4">
+          <h2 id="quiz-heading" class="section-title">Bài kiểm tra gần đây</h2>
+          <a routerLink="/quiz-history" class="text-sm font-semibold">Xem tất cả</a>
+        </div>
+        <div class="mt-3.5">
+          @if (history.hasValue()) {
+            @if (history.value().content.length === 0) {
+              <div class="card">
+                <app-empty-state icon="history" title="Chưa có bài kiểm tra nào" description="Chọn một chủ đề ngữ pháp và làm bài đầu tiên.">
+                  <a routerLink="/grammar" class="btn btn-secondary">Chọn chủ đề</a>
+                </app-empty-state>
+              </div>
+            } @else {
+              <ul class="card list-card">
+                @for (item of history.value().content; track item.attemptId) {
+                  <li class="list-row flex-nowrap">
+                    <span class="min-w-0 flex-1">
+                      <span class="block font-semibold">{{ item.topicTitle }}</span>
+                      <span class="text-[13px] text-ink-soft">{{ relativeDay(item.submittedAt ?? item.startedAt) }}</span>
+                    </span>
+                    @if (item.score !== null) {
+                      <a [routerLink]="['/quiz', item.attemptId, 'result']" class="no-underline" aria-label="Xem kết quả">
+                        <app-score-stamp [score]="item.score" [total]="item.total" />
+                      </a>
+                    } @else {
+                      <span class="chip">Chưa nộp</span>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          } @else if (history.error()) {
+            <div class="card"><app-error-state title="Không tải được lịch sử" (retry)="history.reload()" /></div>
+          } @else {
+            <app-skeleton [rows]="3" />
+          }
+        </div>
+      </section>
+    </div>
+  </div>
+</div>

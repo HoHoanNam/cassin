@@ -1,0 +1,17 @@
+<nav class="sidebar" aria-label="Điều hướng chính">
+  <a routerLink="/today" class="logo" aria-label="Cassin, về trang Hôm nay"><app-logo [size]="30" /></a>
+
+  @for (item of items; track item.link) {
+    <a class="nav-link" [routerLink]="item.link" routerLinkActive="active" ariaCurrentWhenActive="page">
+      <app-icon [name]="item.icon" />
+      <span class="flex-1">{{ item.label }}</span>
+      @if (item.showDue && stats.dueCount() > 0) {
+        <span class="badge" [attr.aria-label]="stats.dueCount() + ' thẻ đến hạn'">{{ stats.dueCount() }}</span>
+      }
+    </a>
+  }
+
+  <div class="mt-auto border-t border-divider pt-4">
+    <app-user-menu variant="full" placement="up" />
+  </div>
+</nav>

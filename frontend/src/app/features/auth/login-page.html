@@ -1,0 +1,55 @@
+<app-auth-layout word="remember" phonetic="/rɪˈmem.bər/" caption="Ôn đúng lúc sắp quên, nhớ lâu hơn mà không phải học nhiều hơn.">
+  <h1 class="page-title">Chào mừng bạn quay lại</h1>
+  <p class="mt-2 text-ink-soft">Đăng nhập để ôn tiếp các thẻ đang chờ.</p>
+
+  @if (sessionExpired()) {
+    <div class="form-alert form-alert-info mt-6" role="status">
+      <app-icon name="info" class="mt-px" />
+      <span>Phiên đăng nhập đã hết hạn. Đăng nhập lại để học tiếp từ chỗ đang dừng.</span>
+    </div>
+  }
+  @if (serverError(); as message) {
+    <div class="form-alert form-alert-error mt-6" role="alert">
+      <app-icon name="alert" class="mt-px" />
+      <span>{{ message }}</span>
+    </div>
+  }
+
+  <form class="mt-8 flex flex-col gap-5" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="field">
+      <label class="label" for="email">Email</label>
+      @let email = form.controls.email;
+      <input id="email" class="input" type="email" autocomplete="email" placeholder="ban@email.com" formControlName="email"
+        [attr.aria-invalid]="email.touched && email.invalid" aria-describedby="email-error" />
+      @if (email.touched && email.hasError('required')) {
+        <p id="email-error" class="field-error">Vui lòng nhập email</p>
+      } @else if (email.touched && email.hasError('email')) {
+        <p id="email-error" class="field-error">Email chưa đúng định dạng</p>
+      }
+    </div>
+
+    <div class="field">
+      <label class="label" for="password">Mật khẩu</label>
+      @let password = form.controls.password;
+      <div class="relative">
+        <input id="password" class="input pr-20" [type]="showPassword() ? 'text' : 'password'" autocomplete="current-password"
+          formControlName="password" [attr.aria-invalid]="password.touched && password.invalid" aria-describedby="password-error" />
+        <button type="button" class="toggle" [attr.aria-label]="showPassword() ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+          (click)="showPassword.set(!showPassword())">
+          {{ showPassword() ? 'Ẩn' : 'Hiện' }}
+        </button>
+      </div>
+      @if (password.touched && password.hasError('required')) {
+        <p id="password-error" class="field-error">Vui lòng nhập mật khẩu</p>
+      }
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-lg w-full" [disabled]="submitting()">
+      {{ submitting() ? 'Đang đăng nhập...' : 'Đăng nhập' }}
+    </button>
+  </form>
+
+  <p class="mt-7 text-center text-ink-soft">
+    Chưa có tài khoản? <a routerLink="/register" class="font-semibold">Đăng ký</a>
+  </p>
+</app-auth-layout>

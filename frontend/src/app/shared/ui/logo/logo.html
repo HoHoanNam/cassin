@@ -1,0 +1,17 @@
+<span class="logo" [class.logo-light]="variant() === 'light'" [style.--logo-size.px]="size()">
+  <svg class="mark" viewBox="0 0 40 40" aria-hidden="true">
+    <!-- Thẻ phía sau -->
+    <rect x="11" y="4" width="23" height="28" rx="4" transform="rotate(9 22.5 18)" class="card-back" />
+    <!-- Thẻ phía trước: lề đỏ + dòng kẻ + dấu tích -->
+    <g transform="rotate(-7 18 22)">
+      <rect x="6" y="8" width="24" height="28" rx="4" class="card-front" />
+      <line x1="7.5" y1="15" x2="28.5" y2="15" class="margin" />
+      <line x1="10" y1="29.5" x2="26" y2="29.5" class="ruled" />
+      <path d="M11.5 22.5l3.6 3.6 7.4-8.2" class="tick" />
+    </g>
+  </svg>
+  @if (showWordmark()) {
+    <span class="wordmark" aria-hidden="true">Cassin</span>
+  }
+  <span class="sr-only">Cassin</span>
+</span>

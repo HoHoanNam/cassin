@@ -1,0 +1,138 @@
+.container-x {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding-inline: 24px;
+}
+
+/* ---- Minh họa hero ---- */
+.hero-art {
+  position: relative;
+  height: 380px;
+}
+
+.hero-card {
+  position: absolute;
+  width: 76%;
+  height: 260px;
+  border: 1px solid var(--card-line);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.hero-card-back {
+  left: 12%;
+  top: 34px;
+  transform: rotate(5deg);
+  box-shadow: 0 18px 30px -24px rgba(35, 38, 74, 0.5);
+}
+
+.hero-card-front {
+  left: 4%;
+  top: 72px;
+  transform: rotate(-3deg);
+  box-shadow: 0 22px 36px -24px rgba(35, 38, 74, 0.55);
+}
+
+.pip {
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid var(--brand);
+}
+
+.pip-on {
+  background: var(--brand);
+}
+
+.hero-stamp {
+  position: absolute;
+  right: 4%;
+  bottom: 0;
+}
+
+/* ---- 5 hộp ---- */
+.boxes {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+  margin: 48px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 720px) {
+  .boxes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.box-tile {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 120px;
+  padding-bottom: 14px;
+  border: 1.5px solid var(--nb-grid-major);
+  border-radius: 10px;
+  background: #f6f3fb;
+}
+
+.box-tile-done {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+}
+
+/* ---- Bài chấm mẫu ---- */
+.ring-ok {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--danger);
+  border-radius: 50%;
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.strike {
+  color: var(--ink-soft);
+  text-decoration: line-through 2px var(--danger);
+}
+
+/* ---- Hỏi đáp ---- */
+.faq {
+  padding: 20px 0;
+  border-top: 1px solid var(--line);
+
+  &:last-of-type {
+    border-bottom: 1px solid var(--line);
+  }
+
+  summary {
+    font-size: 17px;
+    font-weight: 600;
+    list-style: none;
+    cursor: pointer;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &::after {
+      content: '+';
+      float: right;
+      color: var(--ink-soft);
+      font-weight: 400;
+    }
+  }
+
+  &[open] summary::after {
+    content: '–';
+  }
+}

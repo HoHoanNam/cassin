@@ -1,0 +1,18 @@
+<div class="flex min-h-dvh flex-wrap bg-bg">
+  <main class="flex min-w-0 flex-[1_1_520px] flex-col px-6 pb-12 pt-8">
+    <a routerLink="/" class="self-start pl-[8%] no-underline" aria-label="Cassin, trang chủ"><app-logo [size]="32" /></a>
+    <div class="m-auto w-full max-w-[400px] pt-12">
+      <ng-content />
+    </div>
+  </main>
+
+  <aside class="notebook aside" aria-hidden="true">
+    <div class="flex w-full max-w-[420px] flex-col gap-7">
+      <div class="card-lines aside-card">
+        <span class="text-[46px] font-semibold">{{ word() }}</span>
+        <span class="text-ink-soft">{{ phonetic() }}</span>
+      </div>
+      <p class="hand m-0 text-[28px] leading-snug">{{ caption() }}</p>
+    </div>
+  </aside>
+</div>

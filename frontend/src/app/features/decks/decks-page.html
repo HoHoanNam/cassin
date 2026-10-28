@@ -1,0 +1,89 @@
+<div class="page-container px-4 pb-20 pt-8 md:px-8 md:pt-10">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="page-title">Bộ từ</h1>
+      <p class="mt-1 min-h-[1.6em] text-ink-soft">{{ summary() }}</p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="creating.set(true)">
+      <app-icon name="plus" [size]="18" [strokeWidth]="2" /> Tạo bộ từ
+    </button>
+  </div>
+
+  <div class="mt-7 flex flex-wrap items-center justify-between gap-3">
+    <div class="segmented" role="group" aria-label="Lọc bộ từ">
+      @for (f of filters; track f.value) {
+        <button type="button" [attr.aria-pressed]="filter() === f.value" (click)="filter.set(f.value)">{{ f.label }}</button>
+      }
+    </div>
+    <div class="relative w-full sm:w-80">
+      <label for="deck-search" class="sr-only">Tìm bộ từ</label>
+      <app-icon class="pointer-events-none absolute left-3 top-3 text-ink-soft" name="search" [size]="18" [strokeWidth]="2" />
+      <input id="deck-search" class="input min-h-11 pl-10 text-[15px]" type="search" placeholder="Tìm bộ từ" [value]="query()" (input)="onQuery($event)" />
+    </div>
+  </div>
+
+  <div class="mt-5">
+    @if (decks.hasValue()) {
+      @if (decks.value().length === 0) {
+        <div class="card">
+          <app-empty-state title="Bạn chưa có bộ từ nào" description="Tạo một bộ từ cho bài thi của bạn, hoặc bắt đầu với bộ 1000 từ thông dụng.">
+            <button type="button" class="btn btn-primary" (click)="creating.set(true)">Tạo bộ từ đầu tiên</button>
+          </app-empty-state>
+        </div>
+      } @else if (visible().length === 0) {
+        <div class="card">
+          <app-empty-state icon="search" title="Không có bộ từ nào khớp" description="Thử từ khóa khác hoặc chọn bộ lọc Tất cả." />
+        </div>
+      } @else {
+        <div class="card overflow-hidden">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">Tên bộ</th>
+                <th scope="col" class="hidden sm:table-cell">Số thẻ</th>
+                <th scope="col">Đến hạn</th>
+                <th scope="col" class="hidden md:table-cell">Cập nhật</th>
+                <th scope="col"><span class="sr-only">Thao tác</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (deck of visible(); track deck.id) {
+                <tr>
+                  <td>
+                    <a class="font-semibold text-ink no-underline hover:underline" [routerLink]="['/decks', deck.id]">{{ deck.deckName }}</a>
+                    @if (deck.deckType === 'SYSTEM_DECK') {
+                      <span class="chip ml-1.5">Có sẵn</span>
+                    }
+                    <span class="block text-[13px] text-ink-soft sm:hidden">{{ deck.cardCount }} thẻ</span>
+                  </td>
+                  <td class="hidden tabular-nums sm:table-cell">{{ deck.cardCount }}</td>
+                  <td>
+                    @if ((deck.dueCount ?? 0) > 0) {
+                      <span class="font-semibold text-brand">{{ deck.dueCount }} thẻ</span>
+                    } @else {
+                      <span class="whitespace-nowrap text-ink-soft">Không có</span>
+                    }
+                  </td>
+                  <td class="hidden text-ink-soft md:table-cell">{{ deck.updatedAt ? relativeDay(deck.updatedAt) : '' }}</td>
+                  <td class="text-right">
+                    @if ((deck.dueCount ?? 0) > 0) {
+                      <a class="btn btn-secondary btn-sm" [routerLink]="['/decks', deck.id, 'review']">Ôn</a>
+                    } @else if ((deck.newCount ?? 0) > 0) {
+                      <a class="btn btn-secondary btn-sm" [routerLink]="['/decks', deck.id, 'review']">Học mới</a>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    } @else if (decks.error()) {
+      <div class="card"><app-error-state title="Không tải được danh sách bộ từ" message="Kiểm tra kết nối mạng rồi thử lại. Thẻ bạn đã ôn vẫn được lưu." (retry)="decks.reload()" /></div>
+    } @else {
+      <app-skeleton [rows]="4" />
+    }
+  </div>
+</div>
+
+<app-deck-form-dialog [open]="creating()" (closed)="creating.set(false)" (saved)="onCreated($event)" />

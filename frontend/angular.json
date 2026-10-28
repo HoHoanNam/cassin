@@ -33,7 +33,9 @@
               "@fontsource/be-vietnam-pro/400.css",
               "@fontsource/be-vietnam-pro/500.css",
               "@fontsource/be-vietnam-pro/600.css",
+              "@fontsource/be-vietnam-pro/700.css",
               "@fontsource/patrick-hand/400.css",
+              "src/tailwind.css",
               "src/styles.scss"
             ]
           },
@@ -47,8 +49,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "6kB",
+                  "maximumError": "10kB"
                 }
               ],
               "outputHashing": "all"
@@ -71,7 +73,10 @@
               "buildTarget": "frontend:build:development"
             }
           },
-          "defaultConfiguration": "development"
+          "defaultConfiguration": "development",
+          "options": {
+            "proxyConfig": "proxy.conf.json"
+          }
         },
         "test": {
           "builder": "@angular/build:unit-test"
