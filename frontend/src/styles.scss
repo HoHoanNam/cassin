@@ -379,6 +379,18 @@
     background-size: 100% 100%, 40px 40px, 40px 40px, 100% 10px;
   }
 
+  /* Khoảng đệm cho trang nằm trên nền vở ô li: lề trái luôn VƯỢT QUA đường lề đỏ,
+     để chữ không bao giờ đè lên đường kẻ đỏ (giống viết vở thật: chữ nằm bên phải lề). */
+  .page-pad {
+    padding: 40px 32px 80px calc(var(--nb-margin-x) + 40px);
+  }
+
+  @media (max-width: 767px) {
+    .page-pad {
+      padding: 28px 16px 40px calc(var(--nb-margin-x) + 16px);
+    }
+  }
+
   /* Thẻ học kẻ dòng như thẻ flashcard giấy */
   .card-lines {
     background-color: var(--surface);

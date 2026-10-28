@@ -1,4 +1,4 @@
-<div class="flex min-h-dvh flex-col bg-bg">
+<div class="notebook flex min-h-dvh flex-col">
   <header class="topbar">
     <div class="mx-auto flex w-full max-w-[760px] items-center gap-4 px-4 py-3 sm:px-6">
       <a [routerLink]="['/grammar', topicId()]" class="btn btn-ghost -ml-2 gap-1.5 px-2 text-ink">
@@ -11,7 +11,7 @@
     </div>
   </header>
 
-  <main class="flex flex-1 flex-col items-center px-4 pb-14 pt-8 sm:px-6">
+  <main class="flex flex-1 flex-col items-center pb-14 pl-11 pr-4 pt-8 sm:px-6">
     <div class="w-full max-w-[680px]">
       @if (quiz.hasValue()) {
         <!-- Thanh số câu: chấm đậm = đã làm, viền xanh = đang xem -->
