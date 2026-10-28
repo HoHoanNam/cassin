@@ -9,12 +9,35 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * Một câu trong một lượt làm quiz.
+ * MỘT DÒNG trên tờ bài làm (QuizAttempt): câu số mấy, là câu hỏi nào, đã chọn đáp án nào, đúng hay sai.
  *
- * Được tạo NGAY LÚC BẮT ĐẦU quiz (chưa có đáp án chọn) để "chốt" đề:
- * lúc nộp bài chỉ điền vào các dòng có sẵn, người dùng không tự thêm câu hỏi khác vào được.
+ * ── Chỉ TRỎ TỚI câu hỏi, không chép nội dung ────────────────────────────────────────
+ *   Bảng attempt_answers chỉ lưu:
+ *     position       : câu số mấy trên tờ này (0..9)
+ *     question       : TRỎ TỚI câu hỏi trong ngân hàng đề (chỉ lưu question_id)
+ *     selectedOption : TRỎ TỚI đáp án đã chọn (chỉ lưu selected_option_id); null = bỏ trống
+ *     correct        : đúng hay sai (bỏ trống = sai)
+ *   Đề bài, 4 đáp án, lời giải thích chỉ nằm trong Question / QuestionOption.
+ *   Cần hiển thị thì đi theo quan hệ: answer.getQuestion().getContent().
+ *   Nhờ vậy nội dung câu hỏi không bị chép lặp lại vào hàng nghìn bài làm.
  *
- * Mọi thay đổi đi qua QuizAttempt (aggregate root), nên constructor và grade(...) là package-private.
+ * ── Một câu hỏi, nhiều bài làm ──────────────────────────────────────────────────────
+ *   Ngân hàng đề chỉ có MỘT câu #12, nhưng nó có thể nằm trên nhiều tờ, mỗi tờ một lựa chọn khác:
+ *
+ *     attempt | position | question | selected_option | correct
+ *     1       | 0        | #12      | B               | true
+ *     1       | 1        | #7       | null (bỏ trống) | false
+ *     9       | 2        | #12      | A               | false
+ *
+ *   Vì vậy "đáp án đã chọn" không thể nằm trong Question (giống "đang ở hộp mấy"
+ *   không thể nằm trong Card) → cần entity riêng này.
+ *
+ * ── Vòng đời ────────────────────────────────────────────────────────────────────────
+ *   Tạo NGAY LÚC BẮT ĐẦU quiz (QuizAttempt.start), chưa chọn gì: selectedOption = null, correct = false.
+ *   Lúc nộp bài (QuizAttempt.submit), grade(...) điền đáp án đã chọn và chấm đúng/sai.
+ *
+ * Mọi thay đổi đi qua QuizAttempt (aggregate root), nên constructor và grade(...) là package-private
+ * (không ghi public): chỉ class cùng package quiz gọi được.
  */
 @Entity
 @Table(name = "attempt_answers")

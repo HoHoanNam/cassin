@@ -19,10 +19,45 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * Một lượt làm quiz ngữ pháp của một người dùng.
+ * MỘT lần làm quiz của MỘT người dùng trên MỘT chủ đề ngữ pháp, kèm kết quả của lần đó.
+ * Ngoài đời giống: một TỜ BÀI LÀM.
  *
- * Vòng đời: start(...) chốt danh sách câu hỏi → submit(...) chấm điểm đúng MỘT lần.
- * QuizAttempt là aggregate root của nhóm QuizAttempt + AttemptAnswer.
+ * ── Đề thi và bài làm ───────────────────────────────────────────────────────────────
+ *   Question + QuestionOption : NGÂN HÀNG ĐỀ, chung cho mọi người, không đổi khi có người làm bài.
+ *   QuizAttempt               : một tờ bài làm (riêng một người, một lần).
+ *   AttemptAnswer             : một dòng trên tờ bài làm (xem AttemptAnswer).
+ *   Giống cặp Card (chung) → CardProgress (riêng từng người) bên phần từ vựng.
+ *
+ * ── Mỗi lần làm bài là MỘT dòng mới ─────────────────────────────────────────────────
+ *   Một người làm cùng một chủ đề 3 lần = 3 QuizAttempt, 3 id khác nhau,
+ *   cùng user_id (cùng một người) và cùng topic_id (cùng chủ đề):
+ *
+ *     id | user_id  | topic_id             | score | total | started_at
+ *     1  | 5 (An)   | 2 (Present Perfect)  | 6     | 10    | 25/10
+ *     4  | 5 (An)   | 2 (Present Perfect)  | 8     | 10    | 26/10
+ *     9  | 5 (An)   | 2 (Present Perfect)  | 10    | 10    | 27/10
+ *
+ *   id không liền nhau là bình thường: người khác làm bài xen giữa, BIGSERIAL cấp id chung cho cả bảng.
+ *   "Số lần làm bài" = đếm số dòng; "lịch sử của An" = mọi dòng có user_id = 5.
+ *
+ * ── Thông tin của một lần làm bài ───────────────────────────────────────────────────
+ *   user        : của ai          (nhiều lượt trỏ về một user → @ManyToOne)
+ *   topic       : chủ đề gì       (nhiều lượt trỏ về một chủ đề → @ManyToOne)
+ *   answers     : các dòng trên tờ, tối đa MAX_QUESTIONS (10) → List<AttemptAnswer>
+ *   score       : số câu đúng; null = chưa nộp
+ *   total       : tổng số câu trong đề
+ *   startedAt   : lúc bắt đầu
+ *   submittedAt : lúc nộp; null = chưa nộp (đang làm dở hoặc bỏ dở)
+ *
+ * ── Vòng đời ────────────────────────────────────────────────────────────────────────
+ *   1. start(...)  PHÁT TỜ: tạo sẵn một AttemptAnswer cho mỗi câu, chưa chọn gì, chưa có điểm.
+ *                  Việc này "chốt đề": server đã ghi lại tờ này gồm những câu nào,
+ *                  lúc nộp người dùng không tự thay / thêm câu khác vào được.
+ *   2. submit(...) THU BÀI: điền đáp án đã chọn vào từng dòng, chấm đúng/sai, tính điểm.
+ *                  Mỗi tờ chỉ nộp được MỘT lần.
+ *
+ * QuizAttempt là aggregate root của nhóm QuizAttempt + AttemptAnswer: tờ bài làm quản lý các dòng
+ * của nó, bên ngoài không tự thêm / xóa / chấm dòng nào, mọi thay đổi đi qua start(...) và submit(...).
  */
 @Entity
 @Table(name = "quiz_attempts")
@@ -136,8 +171,9 @@ public class QuizAttempt {
         }
 
         // Chấm từng câu. Logic "đáp án có đúng không" nằm sẵn trong Question, ở đây chỉ gọi lại.
-        // Lưu ý hiệu năng: mỗi câu sẽ tải Question + options (LAZY) → khoảng 20 câu truy vấn cho 10 câu hỏi.
-        // Chấp nhận được lúc này; tối ưu bằng fetch join ở repository khi cần.
+        // [SỬA] Cập nhật comment hiệu năng: Question và options đều LAZY, nhưng nhờ
+        // default_batch_fetch_size: 50 (application.yml) Hibernate gom lại: 1 câu SQL tải cả 10 Question,
+        // 1 câu tải đáp án của cả 10 câu → vài câu SQL, không phải ~20 câu như ghi chú cũ.
         int correctCount = 0;
         for (AttemptAnswer answer : answers) {
             answer.grade(chosen.get(answer.getQuestion().getId()));
