@@ -12,6 +12,9 @@ import { UserMenu } from '../user-menu/user-menu';
  *   - Máy tính (≥ 768px): sidebar bên trái + nội dung
  *   - Điện thoại: thanh trên (logo + avatar) + nội dung + thanh điều hướng dưới đáy
  * Các trang tập trung (ôn thẻ, làm bài) KHÔNG nằm trong khung này để người học không bị phân tâm.
+ *
+ * Vùng nội dung dùng nền vở ô li (class "notebook") cho mọi trang bên trong:
+ * từng trang KHÔNG tự vẽ nền nữa, chỉ cần dùng class "page-pad" để chữ nằm bên phải đường lề đỏ.
  */
 @Component({
   selector: 'app-shell',

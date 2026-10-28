@@ -2,17 +2,6 @@
   display: block;
 }
 
-.page {
-  min-height: 100%;
-  padding: 48px 32px 80px 112px;
-}
-
-@media (max-width: 767px) {
-  .page {
-    padding: 28px 16px 40px 44px;
-  }
-}
-
 .title {
   display: inline-block;
   margin: 8px 0 0;

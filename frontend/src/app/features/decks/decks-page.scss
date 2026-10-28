@@ -36,3 +36,23 @@
     background: #fcfbfe;
   }
 }
+
+/* Điện thoại: lề trong bảng nhỏ lại, để tên bộ không bị xuống dòng quá nhiều */
+@media (max-width: 640px) {
+  .table {
+    th,
+    td {
+      padding: 12px 8px;
+    }
+
+    th:first-child,
+    td:first-child {
+      padding-left: 14px;
+    }
+
+    th:last-child,
+    td:last-child {
+      padding-right: 14px;
+    }
+  }
+}

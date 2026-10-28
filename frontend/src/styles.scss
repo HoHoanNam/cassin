@@ -41,7 +41,9 @@
   --nb-grid-major: #c3b3e2;
   --nb-grid-minor: #ece6f6;
   --nb-margin-red: #e8776f;
-  --nb-margin-x: 72px;     /* vị trí đường lề đỏ */
+  /* Vị trí đường lề đỏ. Phải là BỘI SỐ của 40px (cỡ ô lớn) để lề đỏ nằm đè đúng lên
+     một đường kẻ dọc tím. Trước đây là 72px → lề đỏ lệch cạnh đường kẻ tím ở 80px. */
+  --nb-margin-x: 80px;
 
   --font-body: 'Be Vietnam Pro', system-ui, sans-serif;
   --font-hand: 'Patrick Hand', 'Be Vietnam Pro', cursive;
@@ -52,7 +54,7 @@
 
 @media (max-width: 640px) {
   :root {
-    --nb-margin-x: 28px;
+    --nb-margin-x: 40px; /* điện thoại: đè lên đường kẻ dọc thứ nhất */
   }
 }
 
