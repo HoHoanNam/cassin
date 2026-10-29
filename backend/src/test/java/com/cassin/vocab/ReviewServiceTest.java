@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -64,6 +65,8 @@ class ReviewServiceTest {
   // DeckService là service thật của mình, nhưng ở đây cũng mock: test ReviewService
   // không nên phụ thuộc vào luật quyền của DeckService (đã có chỗ khác lo).
   @Mock DeckService deckService;
+  // [THÊM] ReviewService giờ cần thêm StudyDayRepository (đánh dấu ngày học, tính streak).
+  @Mock StudyDayRepository studyDayRepository;
 
   private ReviewService reviewService;
 
@@ -77,7 +80,10 @@ class ReviewServiceTest {
     Clock fixedClock = Clock.fixed(TODAY.atStartOfDay(TimeConfig.APP_ZONE).toInstant(), TimeConfig.APP_ZONE);
 
     // Tự tạo service bằng constructor (thứ tự tham số = thứ tự field final, do @RequiredArgsConstructor sinh).
-    reviewService = new ReviewService(progressRepository, cardRepository, userRepository, deckService, fixedClock);
+    // [SỬA] Thêm studyDayRepository ĐÚNG VỊ TRÍ field trong ReviewService (trước clock).
+    // Thiếu hoặc sai thứ tự → test không biên dịch được.
+    reviewService = new ReviewService(
+        progressRepository, cardRepository, userRepository, deckService, studyDayRepository, fixedClock);
   }
 
   // ===================== getQueue =====================
@@ -157,6 +163,8 @@ class ReviewServiceTest {
     assertThat(result.reviewCount()).isEqualTo(1);
     verify(deckService).checkReadable(deck, USER_ID);
     verify(progressRepository).save(any(CardProgress.class));
+    // [THÊM] Ôn hợp lệ → hôm nay được tính là "có học" (để tính streak).
+    verify(studyDayRepository).markStudied(USER_ID, TODAY);
   }
 
   @Test
@@ -192,6 +200,8 @@ class ReviewServiceTest {
           assertThat(ex.getMessage()).isEqualTo("Thẻ này đã được ôn hôm nay");
         });
     verify(progressRepository, never()).save(any());
+    // [THÊM] Lượt ôn bị từ chối thì không được tính là một ngày học.
+    verifyNoInteractions(studyDayRepository);
   }
 
   @Test
@@ -218,7 +228,39 @@ class ReviewServiceTest {
 
     assertThatThrownBy(() -> reviewService.review(CARD_ID, true, USER_ID))
         .isInstanceOf(BusinessException.class);
-    verifyNoInteractions(progressRepository);
+    verifyNoInteractions(progressRepository, studyDayRepository);
+  }
+
+  // ===================== getAllDue (GET /api/review-queue) =====================
+
+  @Test
+  @DisplayName("Hàng đợi gộp: chỉ thẻ đến hạn, giữ nguyên thứ tự DB trả về, không lấy thẻ mới")
+  void getAllDue_returnsDueCardsInOrder_withoutNewCards() {
+    CardProgress older = CardProgress.start(user, newCard("improve"), TODAY.minusDays(5));
+    CardProgress newer = CardProgress.start(user, newCard("achieve"), TODAY.minusDays(1));
+    when(progressRepository.findAllDue(eq(USER_ID), eq(TODAY), any(Pageable.class)))
+        .thenReturn(List.of(older, newer));
+
+    List<ReviewCardResponse> queue = reviewService.getAllDue(USER_ID);
+
+    assertThat(queue)
+        .extracting(r -> r.card().word(), r -> r.isNew())
+        .containsExactly(
+            tuple("improve", false),
+            tuple("achieve", false));
+    // Hàng đợi gộp không kèm thẻ mới (thẻ mới học theo từng bộ) và không cần kiểm tra 1 bộ cụ thể.
+    verifyNoInteractions(cardRepository, deckService);
+  }
+
+  @Test
+  @DisplayName("Hàng đợi gộp: tối đa 100 thẻ mỗi lượt")
+  void getAllDue_limitsTo100() {
+    reviewService.getAllDue(USER_ID);
+
+    ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+    verify(progressRepository).findAllDue(eq(USER_ID), eq(TODAY), pageable.capture());
+    assertThat(pageable.getValue().getPageNumber()).isZero();
+    assertThat(pageable.getValue().getPageSize()).isEqualTo(100);
   }
 
   // ===================== getStats =====================
@@ -226,7 +268,8 @@ class ReviewServiceTest {
   @Test
   @DisplayName("Thống kê: luôn đủ 5 hộp theo thứ tự, hộp trống = 0")
   void getStats_fillsEmptyBoxesWithZero() {
-    when(progressRepository.countByUserIdAndDueDateLessThanEqual(USER_ID, TODAY)).thenReturn(18L);
+    // [SỬA] countByUserIdAndDueDateLessThanEqual → countAllDue (đếm cùng điều kiện với hàng đợi).
+    when(progressRepository.countAllDue(USER_ID, TODAY)).thenReturn(18L);
     // DB chỉ trả hộp 1 và 3
     when(progressRepository.countByBox(USER_ID)).thenReturn(List.of(new BoxCount(1, 24), new BoxCount(3, 40)));
 
@@ -240,6 +283,83 @@ class ReviewServiceTest {
         new BoxCount(3, 40),
         new BoxCount(4, 0),
         new BoxCount(5, 0));
+    // recentDays không được dạy → mock trả List rỗng → chưa học ngày nào → streak = 0.
+    assertThat(stats.streakDays()).isZero();
+  }
+
+  @Test
+  @DisplayName("Thống kê: streakDays tính từ các ngày học trong DB")
+  void getStats_includesStreak() {
+    // Học hôm nay, hôm qua, hôm kia; nghỉ 4 ngày trước → chuỗi 3 ngày.
+    when(studyDayRepository.recentDays(eq(USER_ID), any(Pageable.class)))
+        .thenReturn(List.of(TODAY, TODAY.minusDays(1), TODAY.minusDays(2), TODAY.minusDays(4)));
+
+    ReviewStatsResponse stats = reviewService.getStats(USER_ID);
+
+    assertThat(stats.streakDays()).isEqualTo(3);
+    // Chỉ lấy tối đa MAX_STREAK_DAYS ngày gần nhất, không tải toàn bộ lịch sử.
+    ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+    verify(studyDayRepository).recentDays(eq(USER_ID), pageable.capture());
+    assertThat(pageable.getValue().getPageSize()).isEqualTo(ReviewService.MAX_STREAK_DAYS);
+  }
+
+  // ===================== streak (hàm tĩnh, không cần mock) =====================
+  // Hàm static thuần: vào List ngày + hôm nay, ra một con số → test thẳng, không cần service.
+
+  @Test
+  @DisplayName("Streak: chưa học ngày nào → 0")
+  void streak_noDays_isZero() {
+    assertThat(ReviewService.streak(List.of(), TODAY)).isZero();
+  }
+
+  @Test
+  @DisplayName("Streak: hôm nay đã học → đếm cả hôm nay")
+  void streak_studiedToday_countsToday() {
+    assertThat(ReviewService.streak(List.of(TODAY, TODAY.minusDays(1)), TODAY)).isEqualTo(2);
+  }
+
+  @Test
+  @DisplayName("Streak: hôm nay CHƯA học nhưng hôm qua có → chuỗi vẫn còn, đếm từ hôm qua")
+  void streak_notYetToday_keepsStreakFromYesterday() {
+    List<LocalDate> days = List.of(TODAY.minusDays(1), TODAY.minusDays(2), TODAY.minusDays(3));
+
+    assertThat(ReviewService.streak(days, TODAY)).isEqualTo(3);
+  }
+
+  @Test
+  @DisplayName("Streak: bỏ trọn hôm qua → chuỗi mất, về 0")
+  void streak_missedYesterday_isZero() {
+    // Lần học gần nhất là hôm kia, hôm qua và hôm nay đều không học.
+    assertThat(ReviewService.streak(List.of(TODAY.minusDays(2), TODAY.minusDays(3)), TODAY)).isZero();
+  }
+
+  @Test
+  @DisplayName("Streak: chỉ đếm đoạn liên tiếp gần nhất, dừng ở ngày nghỉ đầu tiên")
+  void streak_stopsAtFirstGap() {
+    // Học 3 ngày gần nhất, nghỉ 1 ngày, trước đó học 10 ngày liền → chỉ tính 3.
+    List<LocalDate> days = new ArrayList<>(List.of(TODAY, TODAY.minusDays(1), TODAY.minusDays(2)));
+    for (int i = 4; i < 14; i++) {
+      days.add(TODAY.minusDays(i));
+    }
+
+    assertThat(ReviewService.streak(days, TODAY)).isEqualTo(3);
+  }
+
+  @Test
+  @DisplayName("Streak: thứ tự ngày truyền vào không ảnh hưởng kết quả")
+  void streak_orderDoesNotMatter() {
+    List<LocalDate> shuffled = List.of(TODAY.minusDays(2), TODAY, TODAY.minusDays(1));
+
+    assertThat(ReviewService.streak(shuffled, TODAY)).isEqualTo(3);
+  }
+
+  @Test
+  @DisplayName("Streak: chuỗi đi qua ranh giới tháng/năm vẫn liên tiếp")
+  void streak_acrossYearBoundary() {
+    LocalDate newYear = LocalDate.of(2027, 1, 1);
+    List<LocalDate> days = List.of(newYear, LocalDate.of(2026, 12, 31), LocalDate.of(2026, 12, 30));
+
+    assertThat(ReviewService.streak(days, newYear)).isEqualTo(3);
   }
 
   // ===================== helper =====================

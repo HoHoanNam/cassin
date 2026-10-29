@@ -45,5 +45,15 @@ public class ReviewController {
   public ReviewStatsResponse stats(@AuthenticationPrincipal AuthUser user) {
     return reviewService.getStats(user.id());
   }
+
+  // [SỬA] Trước đây: @GetMapping("/review-queue/all-due").
+  // Frontend (HttpReviewApi.allQueue) gọi GET /api/review-queue?newLimit=0 → BE trả 404 NOT_FOUND,
+  // nút "Bắt đầu ôn" ở trang Hôm nay sẽ hỏng khi bật useMockApi = false.
+  // Đường dẫn là "hợp đồng" giữa FE và BE: đổi tên method thoải mái, nhưng URL phải khớp hai bên.
+  // Tham số newLimit FE gửi kèm bị Spring bỏ qua (method không khai báo nó) → không lỗi.
+  @GetMapping("/review-queue")
+  public List<ReviewCardResponse> allDue(@AuthenticationPrincipal AuthUser user) {
+    return reviewService.getAllDue(user.id());
+  }
 }
 

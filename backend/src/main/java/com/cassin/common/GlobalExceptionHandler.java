@@ -8,9 +8,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.cassin.common.dto.ErrorResponse;
 
@@ -143,4 +146,32 @@ public class GlobalExceptionHandler {
   // Vì nó cũng bắt luôn những lỗi Spring đã xử lý đúng sẵn: gọi sai URL (404),
   // sai method GET/POST (405)... rồi biến tất cả thành 500. Những lỗi thật sự bất ngờ
   // cứ để Spring Boot trả 500 mặc định (không kèm stack trace) và ghi log ở server.
+  //
+  // [SỬA GHI CHÚ] 3 handler bên dưới KHÔNG mâu thuẫn với đoạn trên: mã HTTP vẫn đúng như Spring
+  // (400 / 404 / 405), mình chỉ bắt TỪNG loại cụ thể để đổi body sang cùng dạng ErrorResponse,
+  // frontend chỉ cần đọc một kiểu JSON lỗi.
+  //
+  // Lưu ý NoResourceFoundException: đường dẫn sai mà CHƯA đăng nhập thì Spring Security chặn trước
+  // → client nhận 401, không tới được handler này. Đã đăng nhập mới nhận 404 NOT_FOUND.
+
+  /** /api/decks/abc: "abc" không đổi được sang Long → 400 (mặc định Spring trả JSON khác dạng). */
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+    return ResponseEntity.badRequest()
+        .body(new ErrorResponse("INVALID_PARAMETER", "Tham số '" + ex.getName() + "' không hợp lệ", Map.of()));
+  }
+
+  /** Gọi đường dẫn không có, ví dụ /api/khong-ton-tai → 404. */
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ResponseEntity<ErrorResponse> handleNotFound(NoResourceFoundException ex) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .body(new ErrorResponse("NOT_FOUND", "Không tìm thấy đường dẫn", Map.of()));
+  }
+
+  /** Sai HTTP method, ví dụ DELETE /api/auth/login → 405. */
+  @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+  public ResponseEntity<ErrorResponse> handleMethod(HttpRequestMethodNotSupportedException ex) {
+    return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+        .body(new ErrorResponse("METHOD_NOT_ALLOWED", "Phương thức không được hỗ trợ", Map.of()));
+  }
 }

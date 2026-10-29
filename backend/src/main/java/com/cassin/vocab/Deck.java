@@ -98,6 +98,12 @@ public class Deck {
   // Không cho đổi owner hay deckType: đó là nghiệp vụ khác, không phải "sửa bộ".
   public void update(String deckName, String description) {
     apply(deckName, description);
+    // [SỬA] Gán updatedAt NGAY khi sửa, không chỉ chờ @PreUpdate.
+    // @PreUpdate chỉ chạy lúc Hibernate flush (cuối transaction), tức là SAU KHI
+    // DeckService.updateDeck đã dựng xong DeckResponse → response PUT /api/decks/{id}
+    // trả về updatedAt CŨ, frontend hiện "Cập nhật 3 ngày trước" ngay sau khi vừa sửa.
+    // @PreUpdate vẫn giữ: mọi thay đổi khác của bộ (nếu sau này có) vẫn được cập nhật thời gian.
+    this.updatedAt = Instant.now();
   }
 
   /**

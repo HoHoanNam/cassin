@@ -1,5 +1,7 @@
 package com.cassin.vocab;
 
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -20,11 +22,13 @@ public class DeckService {
   private final DeckRepository deckRepository;
   private final CardRepository cardRepository;
   private final UserRepository userRepository;
+  private final CardProgressRepository progressRepository;
+  private final Clock clock;
 
   @Transactional(readOnly = true)
   // Liệt kê danh sách deck công khai + deck cá nhân
   public List<DeckResponse> listDecks(Long userId) {
-    return deckRepository.findVisibleSummaries(userId)
+    return deckRepository.findVisibleSummaries(userId, LocalDate.now(clock))
         .stream()
         .map(s -> DeckResponse.from(s, userId))
         .toList();
@@ -33,7 +37,7 @@ public class DeckService {
   @Transactional(readOnly = true)
   public DeckResponse getDeck(Long deckId, Long userId) {
     Deck deck = findReadable(deckId, userId);
-    return DeckResponse.from(deck, cardRepository.countByDeckId(deckId), userId);
+    return toResponse(deck, userId);
   }
 
   @Transactional
@@ -42,7 +46,9 @@ public class DeckService {
     // đủ để ghi owner_id vào bảng decks. Dùng findById ở đây là tốn thêm 1 câu SQL.
     User owner = userRepository.getReferenceById(userId);
     Deck deck = deckRepository.save(Deck.personal(request.deckName(), request.description(), owner));
-    return DeckResponse.from(deck, 0, userId);
+    // [SỬA] Trước đây: return toResponse(deck, userId) → chạy thêm 3 câu count lên DB
+    // cho một bộ VỪA TẠO, kết quả chắc chắn là 0, 0, 0 (chính comment của toResponse đã ghi vậy).
+    return DeckResponse.from(deck, 0L, 0L, 0L, userId);
   }
 
   @Transactional
@@ -50,7 +56,7 @@ public class DeckService {
     Deck deck = findEditable(deckId, userId);
     deck.update(request.deckName(), request.description());
     // Không cần save(): "dirty checking", cuối transaction Hibernate tự chạy UPDATE.
-    return DeckResponse.from(deck, cardRepository.countByDeckId(deckId), userId);
+    return toResponse(deck, userId);
   }
 
   @Transactional
@@ -95,6 +101,20 @@ public class DeckService {
   // [LỖI]: Không tìm thấy bộ từ
   private static BusinessException deckNotFound() {
     return new BusinessException(HttpStatus.NOT_FOUND, "DECK_NOT_FOUND", "Không tìm thấy bộ từ");
+  }
+
+  // Dùng chung cho getDeck / updateDeck (createDeck không cần: bộ mới chắc chắn 0, 0, 0).
+  // [SỬA] public → private: chỉ DeckService dùng. Để public thì controller có thể gọi thẳng
+  // ngoài transaction, và nó trở thành một phần "API" của service mà không ai định như vậy.
+  private DeckResponse toResponse(Deck deck, Long userId) {
+    LocalDate today = LocalDate.now(clock);
+    return DeckResponse.from(
+      deck, 
+      cardRepository.countByDeckId(deck.getId()), 
+      progressRepository.countDueInDeck(deck.getId(), userId, today), 
+      progressRepository.countNewInDeck(deck.getId(), userId),
+      userId
+    );
   }
 }
 

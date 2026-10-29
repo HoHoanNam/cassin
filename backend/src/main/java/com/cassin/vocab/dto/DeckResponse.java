@@ -1,5 +1,6 @@
 package com.cassin.vocab.dto;
 
+import java.time.Instant;
 import java.util.Objects;
 
 import com.cassin.vocab.Deck;
@@ -11,7 +12,10 @@ public record DeckResponse(
   String description, 
   DeckType deckType,
   long cardCount, 
-  boolean editable
+  boolean editable,
+  long dueCount,
+  long newCount,
+  Instant updatedAt
 ) {
   // [CÂU HỎI] Tại sao ở đây lại phải tạo 2 constructor? Và cách xác định editable
   // theo 2 cách khác nhau thì có ý nghĩa gì?
@@ -41,14 +45,17 @@ public record DeckResponse(
   //    thì phải sửa CẢ isOwnedBy LẪN dòng Objects.equals bên dưới, không thì hai API trả editable khác nhau.
 
   // "editable" giúp frontend biết có hiện nút Sửa/Xóa hay không, khỏi phải tự đoán luật quyền.
-  public static DeckResponse from(Deck deck, long cardCount, Long userId) {
+  public static DeckResponse from(Deck deck, long cardCount, long dueCount, long newCount, Long userId) {
     return new DeckResponse(
       deck.getId(), 
       deck.getDeckName(), 
       deck.getDescription(),
       deck.getDeckType(), 
       cardCount, 
-      deck.isOwnedBy(userId)
+      deck.isOwnedBy(userId),
+      dueCount,
+      newCount,
+      deck.getUpdatedAt()
     );
   }
 
@@ -59,7 +66,10 @@ public record DeckResponse(
       s.description(), 
       s.deckType(),
       s.cardCount(), 
-      Objects.equals(s.ownerId(), userId)
+      Objects.equals(s.ownerId(), userId),
+      s.dueCount(),
+      s.newCount(),
+      s.updatedAt()
     );
   }
 }
