@@ -11,7 +11,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.lang.reflect.RecordComponent;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -106,7 +105,10 @@ class QuizServiceTest {
   void optionResponse_neverExposesCorrectFlag() {
     // Đọc danh sách field của record bằng reflection. Ai đó lỡ thêm "boolean correct" vào
     // OptionResponse là test này hỏng ngay → không bao giờ lộ đáp án qua tab Network của trình duyệt.
-    assertThat(Arrays.stream(OptionResponse.class.getRecordComponents()).map(RecordComponent::getName))
+    // [SỬA] RecordComponent::getName → lambda c -> c.getName(): chạy y hệt, nhưng hết warning
+    // "Null type safety" (trình phân tích null của IDE không suy được kiểu null qua method reference,
+    // cùng cách đã xử lý ở ReviewServiceTest và CardService).
+    assertThat(Arrays.stream(OptionResponse.class.getRecordComponents()).map(c -> c.getName()))
         .containsExactly("id", "content");
   }
 

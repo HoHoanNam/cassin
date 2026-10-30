@@ -59,6 +59,10 @@ public class GrammarTopic {
 
   public void update(String title, CefrLevel level, String explanation) {
     this.apply(title, level, explanation);
+    // [SỬA] Gán updatedAt ngay, giống Deck.update và Question.update.
+    // @PreUpdate chỉ chạy lúc flush (cuối transaction), SAU khi AdminGrammarService.updateTopic
+    // đã dựng xong response → response mang thời gian cập nhật cũ.
+    this.updatedAt = Instant.now();
   }
 
   @PreUpdate

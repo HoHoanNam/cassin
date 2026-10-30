@@ -16,5 +16,9 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> 
   // Tìm theo userId và sắp xếp theo thời gian bắt đầu làm bài mới nhất
   @EntityGraph(attributePaths = "topic")
   Page<QuizAttempt> findByUserIdOrderByStartedAtDesc(Long userId, Pageable pageable);
+
+  // [THÊM] Chủ đề đã có ai làm quiz chưa (kể cả lượt chưa nộp)? Dùng để chặn xóa chủ đề.
+  // Spring tự sinh: select exists(... where topic_id = ?) → dừng ngay khi gặp dòng đầu tiên.
+  boolean existsByTopicId(Long topicId);
 }
 

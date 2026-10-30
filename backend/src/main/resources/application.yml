@@ -39,3 +39,7 @@ cassin:
     secret: ${JWT_SECRET:ZGV2LW9ubHktc2VjcmV0LWNoYW5nZS1tZS1pbi1wcm9kdWN0aW9uIQ==}
     # Thời gian sống của access token
     access-token-ttl: 1h
+  admin:
+    # Đặt qua biến môi trường. Để trống thì không tạo admin.
+    email: ${ADMIN_EMAIL:}
+    password: ${ADMIN_PASSWORD:}

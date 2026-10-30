@@ -2,13 +2,23 @@
   "properties": [
     {
       "name": "cassin.jwt.access-token-ttl",
-      "type": "java.lang.String",
-      "description": " Thời gian sống của access token"
+      "type": "java.time.Duration",
+      "description": "Thời gian sống của access token"
     },
     {
       "name": "cassin.jwt.secret",
       "type": "java.lang.String",
       "description": "Khóa bí mật để ký token"
+    },
+    {
+      "name": "cassin.admin.email",
+      "type": "java.lang.String",
+      "description": "Email tài khoản admin khởi tạo lúc bootstrap"
+    },
+    {
+      "name": "cassin.admin.password",
+      "type": "java.lang.String",
+      "description": "Mật khẩu tài khoản admin khởi tạo lúc bootstrap"
     }
   ]
 }

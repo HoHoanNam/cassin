@@ -94,4 +94,8 @@ public class User {
   public static String normalizeEmail(String email) {
     return requireText(email, "Email").toLowerCase(Locale.ROOT);
   }
+
+  public void promoteToAdmin() {
+    this.role = Role.ADMIN;
+  }
 }
