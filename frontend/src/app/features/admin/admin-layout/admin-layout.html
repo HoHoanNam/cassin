@@ -1,0 +1,20 @@
+<div class="page-container page-pad">
+  <p class="eyebrow">
+    <app-icon name="shield" [size]="16" [strokeWidth]="2" /> Khu vực quản trị
+  </p>
+
+  <nav class="tabs" aria-label="Điều hướng quản trị">
+    @for (tab of tabs; track tab.link) {
+      <a class="tab" [routerLink]="tab.link" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: tab.exact }"
+        ariaCurrentWhenActive="page">
+        <app-icon class="tab-icon" [name]="tab.icon" [size]="18" />
+        <span class="hidden sm:inline">{{ tab.label }}</span>
+        <span class="sm:hidden">{{ tab.short }}</span>
+      </a>
+    }
+  </nav>
+
+  <div class="mt-7">
+    <router-outlet />
+  </div>
+</div>

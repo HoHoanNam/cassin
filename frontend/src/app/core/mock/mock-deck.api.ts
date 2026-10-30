@@ -103,7 +103,7 @@ export class MockDeckApi extends DeckApi {
     return simulate(() => {
       const deck = this.findEditable(deckId, this.session.userId());
       validateCard(request);
-      this.assertNotDuplicate(deck.id, request, null);
+      assertCardNotDuplicate(this.db, deck.id, request, null);
       const card: DbCard = {
         id: this.db.nextId(),
         deckId: deck.id,
@@ -125,7 +125,7 @@ export class MockDeckApi extends DeckApi {
     return simulate(() => {
       const card = this.findEditableCard(cardId);
       validateCard(request);
-      this.assertNotDuplicate(card.deckId, request, card.id);
+      assertCardNotDuplicate(this.db, card.deckId, request, card.id);
       card.word = request.word.trim();
       card.partOfSpeech = request.partOfSpeech;
       card.phonetic = request.phonetic?.trim() || null;
@@ -172,22 +172,6 @@ export class MockDeckApi extends DeckApi {
     return card;
   }
 
-  /** Giống unique index (deck_id, lower(word), lower(definition)) trong V3. */
-  private assertNotDuplicate(deckId: number, request: CardRequest, exceptCardId: number | null): void {
-    const word = request.word.trim().toLowerCase();
-    const definition = request.definition.trim().toLowerCase();
-    const duplicated = this.db.cards.some(
-      (c) =>
-        c.deckId === deckId &&
-        c.id !== exceptCardId &&
-        c.word.toLowerCase() === word &&
-        c.definition.toLowerCase() === definition,
-    );
-    if (duplicated) {
-      throw conflict('DATA_CONFLICT', 'Bộ này đã có thẻ cùng từ và cùng nghĩa');
-    }
-  }
-
   private toDeck(deck: DbDeck, userId: number): Deck {
     const today = todayIso();
     const cards = this.db.cards.filter((c) => c.deckId === deck.id);
@@ -229,7 +213,23 @@ export function toCard(card: DbCard): Card {
   };
 }
 
-function validateDeck(request: DeckRequest): void {
+/** Giống unique index (deck_id, lower(word), lower(definition)) trong V3. Dùng chung với MockAdminApi. */
+export function assertCardNotDuplicate(db: MockDb, deckId: number, request: CardRequest, exceptCardId: number | null): void {
+  const word = request.word.trim().toLowerCase();
+  const definition = request.definition.trim().toLowerCase();
+  const duplicated = db.cards.some(
+    (c) =>
+      c.deckId === deckId &&
+      c.id !== exceptCardId &&
+      c.word.toLowerCase() === word &&
+      c.definition.toLowerCase() === definition,
+  );
+  if (duplicated) {
+    throw conflict('DATA_CONFLICT', 'Bộ này đã có thẻ cùng từ và cùng nghĩa');
+  }
+}
+
+export function validateDeck(request: DeckRequest): void {
   validate([
     ['deckName', isBlank(request.deckName), 'Vui lòng nhập tên bộ'],
     ['deckName', tooLong(request.deckName, DECK_LIMITS.deckName), 'Tên bộ tối đa 100 ký tự'],
@@ -237,7 +237,7 @@ function validateDeck(request: DeckRequest): void {
   ]);
 }
 
-function validateCard(request: CardRequest): void {
+export function validateCard(request: CardRequest): void {
   const examples = request.examples ?? [];
   validate([
     ['word', isBlank(request.word), 'Vui lòng nhập từ'],
@@ -251,6 +251,6 @@ function validateCard(request: CardRequest): void {
   ]);
 }
 
-function cleanExamples(examples: string[] | null | undefined): string[] {
+export function cleanExamples(examples: string[] | null | undefined): string[] {
   return (examples ?? []).map((e) => e.trim()).filter((e) => e.length > 0);
 }

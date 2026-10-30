@@ -11,6 +11,14 @@
     </a>
   }
 
+  @if (isAdmin()) {
+    <p class="group-label">Quản trị</p>
+    <a class="nav-link" [routerLink]="adminItem.link" routerLinkActive="active" ariaCurrentWhenActive="page">
+      <app-icon [name]="adminItem.icon" />
+      <span class="flex-1">{{ adminItem.label }}</span>
+    </a>
+  }
+
   <div class="mt-auto border-t border-divider pt-4">
     <app-user-menu variant="full" placement="up" />
   </div>

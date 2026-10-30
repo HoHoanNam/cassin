@@ -1,0 +1,59 @@
+.content {
+  min-height: 72px;
+}
+
+.option-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px;
+  border: 1.5px solid transparent;
+  border-radius: 10px;
+}
+
+/* Đáp án đang được chọn là đúng: viền xanh lá, giống dấu tích của cô giáo */
+.option-row.is-correct {
+  border-color: var(--success);
+  background: #f1f8f3;
+}
+
+.letter {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--chip);
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+
+.is-correct .letter {
+  background: var(--success);
+  color: #fff;
+}
+
+.correct-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 6px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+
+  input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--success);
+    cursor: pointer;
+  }
+}
+
+.is-correct .correct-toggle {
+  color: var(--success);
+  font-weight: 600;
+}

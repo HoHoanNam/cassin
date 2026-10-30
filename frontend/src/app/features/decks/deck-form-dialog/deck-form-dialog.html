@@ -1,4 +1,4 @@
-<app-modal [open]="open()" [title]="deck() ? 'Sửa bộ từ' : 'Tạo bộ từ'" (closed)="close()">
+<app-modal [open]="open()" [title]="deck() ? 'Sửa bộ từ' : scope() === 'system' ? 'Tạo bộ từ hệ thống' : 'Tạo bộ từ'" (closed)="close()">
   <form class="mt-5 flex flex-col gap-5" [formGroup]="form" (ngSubmit)="submit()" novalidate>
     @if (serverError(); as message) {
       <div class="form-alert form-alert-error" role="alert">{{ message }}</div>

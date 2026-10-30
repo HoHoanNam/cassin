@@ -1,0 +1,59 @@
+<div class="flex flex-wrap items-center justify-between gap-4">
+  <div>
+    <h1 class="page-title">Ngữ pháp</h1>
+    <p class="mt-1 text-ink-soft">Chủ đề cần ít nhất 1 câu hỏi thì học viên mới làm bài được.</p>
+  </div>
+  <button type="button" class="btn btn-primary" (click)="creating.set(true)">
+    <app-icon name="plus" [size]="18" [strokeWidth]="2" /> Tạo chủ đề
+  </button>
+</div>
+
+<div class="segmented mt-6" role="group" aria-label="Lọc theo cấp độ">
+  <button type="button" [attr.aria-pressed]="level() === null" (click)="level.set(null)">Tất cả</button>
+  @for (l of levels; track l) {
+    <button type="button" [attr.aria-pressed]="level() === l" (click)="level.set(l)">{{ l }}</button>
+  }
+</div>
+
+<div class="mt-5">
+  @if (topics.hasValue()) {
+    @if (topics.value().length === 0) {
+      <div class="card">
+        <app-empty-state icon="grammar" [title]="level() ? 'Chưa có chủ đề ' + level() : 'Chưa có chủ đề nào'"
+          description="Mỗi chủ đề gồm một bài lý thuyết ngắn và bộ câu hỏi trắc nghiệm.">
+          <button type="button" class="btn btn-primary" (click)="creating.set(true)">Tạo chủ đề</button>
+        </app-empty-state>
+      </div>
+    } @else {
+      <ul class="card list-card" [class.opacity-60]="topics.isLoading()">
+        @for (topic of topics.value(); track topic.id) {
+          <li class="list-row flex-nowrap">
+            <app-level-badge [level]="topic.level" />
+            <a class="min-w-0 flex-1 text-ink no-underline" [routerLink]="['/admin/grammar', topic.id]">
+              <span class="block font-semibold hover:underline">{{ topic.title }}</span>
+              @if (topic.questionCount > 0) {
+                <span class="text-[13px] text-ink-soft">{{ topic.questionCount }} câu hỏi</span>
+              } @else {
+                <span class="text-[13px] font-semibold text-danger-dark">Chưa có câu hỏi: học viên chưa làm bài được</span>
+              }
+            </a>
+            <a class="btn btn-secondary btn-sm hidden sm:inline-flex" [routerLink]="['/admin/grammar', topic.id]">Soạn câu hỏi</a>
+            <button type="button" class="btn btn-ghost btn-icon text-ink-soft" [attr.aria-label]="'Xóa chủ đề ' + topic.title"
+              title="Xóa chủ đề" (click)="toDelete.set(topic)">
+              <app-icon name="trash" [size]="18" />
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  } @else if (topics.error()) {
+    <div class="card"><app-error-state title="Không tải được chủ đề ngữ pháp" (retry)="topics.reload()" /></div>
+  } @else {
+    <app-skeleton [rows]="5" />
+  }
+</div>
+
+<app-topic-form-dialog [open]="creating()" (closed)="creating.set(false)" (saved)="onCreated($event)" />
+<app-confirm-dialog [open]="toDelete() !== null" [title]="'Xóa chủ đề “' + (toDelete()?.title ?? '') + '”?'"
+  [message]="(toDelete()?.questionCount ?? 0) + ' câu hỏi của chủ đề sẽ bị xóa. Chủ đề đã có người làm bài thì hệ thống sẽ từ chối xóa.'"
+  confirmLabel="Xóa chủ đề" [busy]="deleting()" (cancelled)="toDelete.set(null)" (confirmed)="deleteTopic()" />

@@ -48,3 +48,13 @@
   font-weight: 600;
   text-align: center;
 }
+
+/* Nhãn nhóm: tách khu vực quản trị khỏi các mục học */
+.group-label {
+  margin: 20px 12px 6px;
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

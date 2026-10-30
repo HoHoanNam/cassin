@@ -1,13 +1,14 @@
 import { Routes } from '@angular/router';
 
-import { authGuard, guestGuard } from './core/auth/auth.guards';
+import { adminGuard, authGuard, guestGuard } from './core/auth/auth.guards';
 import { quizLeaveGuard } from './features/quiz/quiz-leave.guard';
 
 /**
  * Sơ đồ trang. Mọi trang đều lazy load: code của trang chỉ tải khi người dùng mở trang đó.
  *
  *   Khách (chưa đăng nhập)        : /  /login  /register
- *   Khu vực học (có sidebar)      : /today /decks /decks/:deckId /grammar /grammar/:topicId /quiz-history /quiz/:attemptId/result
+ *   Khu vực học (có sidebar)      : /today /decks /decks/:deckId /grammar /grammar/:topicId /quiz-history /quiz/:attemptId/result /account
+ *   Quản trị (chỉ ADMIN)          : /admin  /admin/decks(/:deckId)  /admin/grammar(/:topicId)
  *   Chế độ tập trung (không menu) : /review  /decks/:deckId/review  /grammar/:topicId/quiz
  */
 export const routes: Routes = [
@@ -93,6 +94,45 @@ export const routes: Routes = [
         path: 'quiz/:attemptId/result',
         title: 'Kết quả bài kiểm tra | Cassin',
         loadComponent: () => import('./features/quiz/quiz-result-page').then((m) => m.QuizResultPage),
+      },
+      {
+        path: 'account',
+        title: 'Tài khoản | Cassin',
+        loadComponent: () => import('./features/account/account-page').then((m) => m.AccountPage),
+      },
+
+      // ---------- Khu vực quản trị: chỉ ADMIN (backend vẫn chặn thật bằng 403) ----------
+      {
+        path: 'admin',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./features/admin/admin-layout/admin-layout').then((m) => m.AdminLayout),
+        children: [
+          {
+            path: '',
+            title: 'Quản trị | Cassin',
+            loadComponent: () => import('./features/admin/admin-overview-page').then((m) => m.AdminOverviewPage),
+          },
+          {
+            path: 'decks',
+            title: 'Bộ từ hệ thống | Quản trị Cassin',
+            loadComponent: () => import('./features/admin/admin-decks-page').then((m) => m.AdminDecksPage),
+          },
+          {
+            path: 'decks/:deckId',
+            title: 'Bộ từ hệ thống | Quản trị Cassin',
+            loadComponent: () => import('./features/admin/admin-deck-page').then((m) => m.AdminDeckPage),
+          },
+          {
+            path: 'grammar',
+            title: 'Ngữ pháp | Quản trị Cassin',
+            loadComponent: () => import('./features/admin/admin-topics-page').then((m) => m.AdminTopicsPage),
+          },
+          {
+            path: 'grammar/:topicId',
+            title: 'Chủ đề ngữ pháp | Quản trị Cassin',
+            loadComponent: () => import('./features/admin/admin-topic-page').then((m) => m.AdminTopicPage),
+          },
+        ],
       },
       {
         path: '**',

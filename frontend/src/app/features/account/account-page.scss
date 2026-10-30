@@ -1,0 +1,30 @@
+/* Form đọc dễ hơn khi không trải hết chiều ngang màn hình lớn */
+.section {
+  max-width: 720px;
+  padding: 24px;
+}
+
+@media (min-width: 640px) {
+  .section {
+    padding: 28px 32px;
+  }
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 600;
+}

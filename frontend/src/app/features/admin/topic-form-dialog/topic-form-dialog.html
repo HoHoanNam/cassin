@@ -1,0 +1,55 @@
+<app-modal [open]="open()" [title]="topic() ? 'Sửa chủ đề' : 'Tạo chủ đề ngữ pháp'" (closed)="close()">
+  <form class="mt-5 flex flex-col gap-5" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    @if (serverError(); as message) {
+      <div class="form-alert form-alert-error" role="alert">{{ message }}</div>
+    }
+
+    <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_120px]">
+      <div class="field">
+        <label class="label" for="topic-title">Tiêu đề</label>
+        @let title = form.controls.title;
+        <input id="topic-title" class="input" type="text" placeholder="Thì hiện tại hoàn thành" formControlName="title"
+          [attr.aria-invalid]="title.touched && title.invalid" aria-describedby="topic-title-error" />
+        @if (title.touched && title.hasError('required')) {
+          <p id="topic-title-error" class="field-error">Vui lòng nhập tiêu đề</p>
+        } @else if (title.hasError('maxlength')) {
+          <p id="topic-title-error" class="field-error">Tối đa {{ limits.title }} ký tự</p>
+        } @else if (title.hasError('server')) {
+          <p id="topic-title-error" class="field-error">{{ title.getError('server') }}</p>
+        }
+      </div>
+      <div class="field">
+        <label class="label" for="topic-level">Trình độ</label>
+        <select id="topic-level" class="input" formControlName="level">
+          @for (level of levels; track level) {
+            <option [value]="level">{{ level }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label" for="topic-explanation">Bài giải thích</label>
+      @let explanation = form.controls.explanation;
+      <textarea id="topic-explanation" class="input explanation" rows="10" formControlName="explanation"
+        placeholder="Dùng thì hiện tại hoàn thành khi..." [attr.aria-invalid]="explanation.touched && explanation.invalid"
+        aria-describedby="topic-explanation-hint"></textarea>
+      @if (explanation.touched && explanation.hasError('required')) {
+        <p id="topic-explanation-hint" class="field-error">Vui lòng nhập bài giải thích</p>
+      } @else if (explanation.hasError('server')) {
+        <p id="topic-explanation-hint" class="field-error">{{ explanation.getError('server') }}</p>
+      } @else {
+        <p id="topic-explanation-hint" class="field-hint">
+          Cách một dòng trống để sang đoạn mới. Dòng bắt đầu bằng <b>•</b> sẽ thành gạch đầu dòng.
+        </p>
+      }
+    </div>
+
+    <div class="flex flex-wrap justify-end gap-2.5">
+      <button type="button" class="btn btn-secondary" [disabled]="saving()" (click)="close()">Hủy</button>
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? 'Đang lưu...' : topic() ? 'Lưu thay đổi' : 'Tạo chủ đề' }}
+      </button>
+    </div>
+  </form>
+</app-modal>

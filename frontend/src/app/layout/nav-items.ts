@@ -16,3 +16,6 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Ngữ pháp', icon: 'grammar', link: '/grammar' },
   { label: 'Lịch sử', icon: 'history', link: '/quiz-history' },
 ];
+
+/** Chỉ hiện với tài khoản ADMIN (sidebar). Trên điện thoại vào qua menu tài khoản. */
+export const ADMIN_NAV_ITEM: NavItem = { label: 'Quản trị', icon: 'shield', link: '/admin' };

@@ -1,6 +1,6 @@
 /**
  * Dữ liệu mẫu cho chế độ mock. Chỉ để làm giao diện khi chưa nối backend;
- * khi chạy thật, nội dung lấy từ database (migration seed V8).
+ * khi chạy thật, nội dung lấy từ database (migration V9__seed_content.sql, sinh ra từ chính file này).
  */
 import { CefrLevel } from '../models/grammar.models';
 import { PartOfSpeech } from '../models/deck.models';

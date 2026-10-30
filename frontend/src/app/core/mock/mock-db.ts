@@ -18,6 +18,7 @@ export interface DbUser {
   password: string; // chỉ có trong mock; backend thật lưu chuỗi băm BCrypt
   displayName: string;
   role: Role;
+  bio: string | null;
 }
 
 export interface DbDeck {
@@ -99,7 +100,11 @@ interface DbState {
 }
 
 const STORAGE_KEY = 'cassin.mockdb';
-const VERSION = 1;
+/**
+ * Tăng số này mỗi khi đổi cấu trúc dữ liệu mẫu: trình duyệt đang giữ bản cũ sẽ tự dựng lại từ đầu.
+ * 2: thêm tài khoản admin + field bio cho user.
+ */
+const VERSION = 2;
 
 /**
  * Lưu vào localStorage sau mỗi lần ghi: tải lại trang vẫn còn bộ từ / thẻ / tiến độ vừa tạo.
@@ -138,7 +143,7 @@ export class MockDb {
   }
 
   /** Xóa các dòng thỏa điều kiện khỏi một bảng (giống DELETE ... WHERE). */
-  removeWhere<K extends 'decks' | 'cards' | 'progresses' | 'attempts'>(
+  removeWhere<K extends 'decks' | 'cards' | 'progresses' | 'attempts' | 'topics' | 'questions'>(
     table: K,
     predicate: (row: DbState[K][number]) => boolean,
   ): void {
@@ -199,8 +204,17 @@ function buildSeed(): DbState {
   };
   const id = () => ++state.seq;
 
-  const nam: DbUser = { id: 1, email: 'nam@gmail.com', password: '12345678', displayName: 'Nam', role: 'USER' };
-  state.users.push(nam);
+  const nam: DbUser = { id: 1, email: 'nam@gmail.com', password: '12345678', displayName: 'Nam', role: 'USER', bio: null };
+  // Tài khoản quản trị: giống tài khoản AdminBootstrap tạo ở backend khi chạy profile dev.
+  const admin: DbUser = {
+    id: 2,
+    email: 'admin@cassin.local',
+    password: 'admin-dev-123',
+    displayName: 'Quản trị viên',
+    role: 'ADMIN',
+    bio: null,
+  };
+  state.users.push(nam, admin);
 
   const addDeck = (deckName: string, description: string | null, deckType: DeckType, ownerId: number | null, updatedDaysAgo: number) => {
     const deck: DbDeck = {

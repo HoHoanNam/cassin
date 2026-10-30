@@ -25,7 +25,7 @@ export const appConfig: ApplicationConfig = {
       withViewTransitions(),
     ),
     provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
-    // Mock hay API thật: đổi trong core/config/app-env.ts
+    // Mock hay API thật: chọn bằng lệnh chạy (npm start / npm run start:mock), xem src/environments/
     provideApi(APP_ENV.useMockApi),
   ],
 };

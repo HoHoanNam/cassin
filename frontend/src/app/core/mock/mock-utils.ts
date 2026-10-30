@@ -45,3 +45,6 @@ export function shuffle<T>(items: T[]): T[] {
   }
   return copy;
 }
+
+/** Lỗi 400 của luật nghiệp vụ (không gắn với field): giống BusinessException(BAD_REQUEST, code, ...) ở backend. */
+export const businessError = (code: string, message: string) => new ApiError(400, code, message);

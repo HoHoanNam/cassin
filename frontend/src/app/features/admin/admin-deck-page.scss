@@ -1,0 +1,12 @@
+.word-col {
+  display: flex;
+  flex-direction: column;
+  width: 180px;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .word-col {
+    width: 100%;
+  }
+}

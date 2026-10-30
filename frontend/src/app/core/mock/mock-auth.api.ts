@@ -35,6 +35,7 @@ export class MockAuthApi extends AuthApi {
         password: request.password,
         displayName: request.displayName.trim(),
         role: 'USER',
+        bio: null,
       };
       this.db.users.push(user);
       this.db.save();
@@ -74,10 +75,10 @@ export class MockAuthApi extends AuthApi {
   }
 }
 
-function normalizeEmail(email: string): string {
+export function normalizeEmail(email: string): string {
   return (email ?? '').trim().toLowerCase();
 }
 
-function toUser(user: DbUser): User {
-  return { id: user.id, email: user.email, displayName: user.displayName, role: user.role };
+export function toUser(user: DbUser): User {
+  return { id: user.id, email: user.email, displayName: user.displayName, role: user.role, bio: user.bio };
 }

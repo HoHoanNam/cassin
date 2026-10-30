@@ -1,0 +1,65 @@
+<h1 class="page-title">Tổng quan</h1>
+<p class="mt-1 text-ink-soft">Nội dung bạn sửa ở đây hiển thị ngay cho mọi học viên.</p>
+
+@if (stats.hasValue()) {
+  @let s = stats.value();
+  <section class="mt-7" aria-labelledby="learners-heading">
+    <h2 id="learners-heading" class="group-title">Người học</h2>
+    <dl class="tiles">
+      @for (tile of learnerTiles; track tile.key) {
+        <div class="card tile">
+          <dt><app-icon [name]="tile.icon" [size]="18" /> {{ tile.label }}</dt>
+          <dd>{{ s[tile.key] }}</dd>
+        </div>
+      }
+    </dl>
+  </section>
+
+  <section class="mt-7" aria-labelledby="content-heading">
+    <h2 id="content-heading" class="group-title">Nội dung</h2>
+    <dl class="tiles">
+      @for (tile of contentTiles; track tile.key) {
+        <div class="card tile">
+          <dt><app-icon [name]="tile.icon" [size]="18" /> {{ tile.label }}</dt>
+          <dd>{{ s[tile.key] }}</dd>
+        </div>
+      }
+    </dl>
+  </section>
+} @else if (stats.error()) {
+  <div class="card mt-7">
+    <app-error-state title="Không tải được số liệu" message="Nếu backend chưa có GET /api/admin/stats, các mục bên dưới vẫn dùng được bình thường." (retry)="stats.reload()" />
+  </div>
+} @else {
+  <div class="mt-7"><app-skeleton variant="card" [rows]="3" /></div>
+}
+
+<section class="mt-10" aria-labelledby="shortcuts-heading">
+  <h2 id="shortcuts-heading" class="group-title">Quản lý nội dung</h2>
+  <div class="grid gap-4 sm:grid-cols-2">
+    <a class="card shortcut" routerLink="/admin/decks">
+      <span class="shortcut-icon"><app-icon name="decks" [size]="22" /></span>
+      <span class="min-w-0">
+        <span class="block font-semibold">Bộ từ hệ thống</span>
+        <span class="block text-sm text-ink-soft">Thêm bộ từ có sẵn, thêm và sửa thẻ trong bộ.</span>
+      </span>
+      <app-icon class="ml-auto text-ink-faint" name="chevron-right" />
+    </a>
+    <a class="card shortcut" routerLink="/admin/grammar">
+      <span class="shortcut-icon"><app-icon name="grammar" [size]="22" /></span>
+      <span class="min-w-0">
+        <span class="block font-semibold">Ngữ pháp</span>
+        <span class="block text-sm text-ink-soft">Viết bài lý thuyết, soạn câu hỏi trắc nghiệm và đáp án.</span>
+      </span>
+      <app-icon class="ml-auto text-ink-faint" name="chevron-right" />
+    </a>
+  </div>
+</section>
+
+<div class="form-alert form-alert-info mt-8" role="note">
+  <app-icon name="info" class="mt-px" />
+  <span>
+    Bộ từ, chủ đề hoặc câu hỏi <b>đã có người học</b> thì không xóa được, để không làm mất tiến độ và lịch sử làm bài của học viên.
+    Muốn chỉnh nội dung, hãy sửa thay vì xóa.
+  </span>
+</div>

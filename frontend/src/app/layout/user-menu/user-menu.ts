@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { AuthStore } from '../../core/auth/auth.store';
@@ -11,7 +12,7 @@ import { Icon } from '../../shared/ui/icon/icon';
 /** Avatar + menu tài khoản (đăng xuất...). variant "full": hiện cả tên và email (sidebar). */
 @Component({
   selector: 'app-user-menu',
-  imports: [Icon],
+  imports: [RouterLink, Icon],
   templateUrl: './user-menu.html',
   styleUrl: './user-menu.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -30,7 +31,9 @@ export class UserMenu {
   private readonly mockDb = inject(MockDb);
   private readonly toast = inject(ToastService);
 
-  protected readonly user = inject(AuthStore).user;
+  private readonly store = inject(AuthStore);
+  protected readonly user = this.store.user;
+  protected readonly isAdmin = this.store.isAdmin;
   protected readonly avatar = computed(() => initial(this.user()?.displayName));
   protected readonly open = signal(false);
   protected readonly isMock = APP_ENV.useMockApi;

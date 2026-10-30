@@ -1,0 +1,67 @@
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Tab gạch chân, nằm trên nền trắng để không lẫn với đường kẻ ô li phía sau */
+.tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 0 8px;
+  border: 1px solid var(--card-line);
+  border-radius: 12px;
+  background: var(--surface);
+  scrollbar-width: none;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 0 14px;
+  border-bottom: 2.5px solid transparent;
+  color: var(--ink-soft);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab.active {
+  border-bottom-color: var(--brand);
+  color: var(--brand);
+  font-weight: 600;
+}
+
+/* Điện thoại: bỏ icon, chia đều 3 tab cho vừa một hàng */
+@media (max-width: 639px) {
+  .tabs {
+    padding: 0 4px;
+  }
+
+  .tab {
+    flex: 1;
+    justify-content: center;
+    padding: 0 6px;
+    font-size: 14px;
+  }
+
+  .tab-icon {
+    display: none;
+  }
+}

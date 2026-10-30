@@ -1,0 +1,122 @@
+<div class="page-container page-pad">
+  <h1 class="page-title">Tài khoản</h1>
+  <p class="mt-1 text-ink-soft">Thông tin hiển thị và mật khẩu đăng nhập của bạn.</p>
+
+  @if (me.hasValue()) {
+    @let user = me.value();
+    <div class="mt-7 flex flex-col gap-6">
+      <!-- Hồ sơ -->
+      <section class="card section" aria-labelledby="profile-heading">
+        <div class="identity">
+          <span class="avatar" aria-hidden="true">{{ avatar() }}</span>
+          <div class="min-w-0">
+            <h2 id="profile-heading" class="section-title">Hồ sơ</h2>
+            <p class="m-0 truncate text-sm text-ink-soft">
+              {{ user.email }}
+              @if (user.role === 'ADMIN') { <span class="chip ml-1">Quản trị viên</span> }
+            </p>
+          </div>
+        </div>
+
+        <form class="mt-6 flex flex-col gap-5" [formGroup]="profileForm" (ngSubmit)="saveProfile()" novalidate>
+          @if (profileError(); as message) {
+            <div class="form-alert form-alert-error" role="alert">{{ message }}</div>
+          }
+
+          <div class="field">
+            <label class="label" for="display-name">Tên hiển thị</label>
+            @let name = profileForm.controls.displayName;
+            <input id="display-name" class="input" type="text" autocomplete="nickname" formControlName="displayName"
+              [attr.aria-invalid]="name.touched && name.invalid" aria-describedby="display-name-error" />
+            @if (name.touched && name.hasError('required')) {
+              <p id="display-name-error" class="field-error">Vui lòng nhập tên hiển thị</p>
+            } @else if (name.hasError('maxlength')) {
+              <p id="display-name-error" class="field-error">Tối đa {{ limits.displayName }} ký tự</p>
+            } @else if (name.hasError('server')) {
+              <p id="display-name-error" class="field-error">{{ name.getError('server') }}</p>
+            }
+          </div>
+
+          <div class="field">
+            <label class="label" for="bio">Giới thiệu <span class="font-normal text-ink-soft">(không bắt buộc)</span></label>
+            @let bio = profileForm.controls.bio;
+            <textarea id="bio" class="input" rows="3" formControlName="bio" placeholder="Mục tiêu học tiếng Anh của bạn, ví dụ IELTS 7.0 trong năm nay."
+              [attr.aria-invalid]="bio.invalid"></textarea>
+            <p class="field-hint" [class.field-error]="bio.invalid">
+              {{ bio.hasError('server') ? bio.getError('server') : bio.value.length + ' / ' + limits.bio + ' ký tự' }}
+            </p>
+          </div>
+
+          <div class="flex justify-end">
+            <button type="submit" class="btn btn-primary" [disabled]="savingProfile() || profileForm.pristine">
+              {{ savingProfile() ? 'Đang lưu...' : 'Lưu hồ sơ' }}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Mật khẩu -->
+      <section class="card section" aria-labelledby="password-heading">
+        <h2 id="password-heading" class="section-title">Đổi mật khẩu</h2>
+        <p class="m-0 mt-1 text-sm text-ink-soft">Mật khẩu từ {{ limits.passwordMin }} đến {{ limits.passwordMax }} ký tự.</p>
+
+        <form class="mt-6 flex flex-col gap-5" [formGroup]="passwordForm" (ngSubmit)="changePassword()" novalidate>
+          @if (passwordError(); as message) {
+            <div class="form-alert form-alert-error" role="alert">{{ message }}</div>
+          }
+
+          <div class="field">
+            <label class="label" for="current-password">Mật khẩu hiện tại</label>
+            @let current = passwordForm.controls.currentPassword;
+            <input id="current-password" class="input" type="password" autocomplete="current-password" formControlName="currentPassword"
+              [attr.aria-invalid]="current.touched && current.invalid" aria-describedby="current-password-error" />
+            @if (current.touched && current.hasError('required')) {
+              <p id="current-password-error" class="field-error">Vui lòng nhập mật khẩu hiện tại</p>
+            } @else if (current.hasError('server')) {
+              <p id="current-password-error" class="field-error">{{ current.getError('server') }}</p>
+            }
+          </div>
+
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div class="field">
+              <label class="label" for="new-password">Mật khẩu mới</label>
+              @let next = passwordForm.controls.newPassword;
+              <input id="new-password" class="input" type="password" autocomplete="new-password" formControlName="newPassword"
+                [attr.aria-invalid]="next.touched && next.invalid" aria-describedby="new-password-error" />
+              @if (next.touched && next.hasError('required')) {
+                <p id="new-password-error" class="field-error">Vui lòng nhập mật khẩu mới</p>
+              } @else if (next.touched && (next.hasError('minlength') || next.hasError('maxlength'))) {
+                <p id="new-password-error" class="field-error">Mật khẩu từ {{ limits.passwordMin }} đến {{ limits.passwordMax }} ký tự</p>
+              } @else if (next.hasError('server')) {
+                <p id="new-password-error" class="field-error">{{ next.getError('server') }}</p>
+              }
+            </div>
+
+            <div class="field">
+              <label class="label" for="confirm-password">Nhập lại mật khẩu mới</label>
+              @let confirm = passwordForm.controls.confirmPassword;
+              @let mismatch = confirm.touched && passwordForm.hasError('mismatch');
+              <input id="confirm-password" class="input" type="password" autocomplete="new-password" formControlName="confirmPassword"
+                [attr.aria-invalid]="(confirm.touched && confirm.invalid) || mismatch" aria-describedby="confirm-password-error" />
+              @if (confirm.touched && confirm.hasError('required')) {
+                <p id="confirm-password-error" class="field-error">Vui lòng nhập lại mật khẩu mới</p>
+              } @else if (mismatch) {
+                <p id="confirm-password-error" class="field-error">Hai mật khẩu chưa khớp nhau</p>
+              }
+            </div>
+          </div>
+
+          <div class="flex justify-end">
+            <button type="submit" class="btn btn-primary" [disabled]="savingPassword()">
+              {{ savingPassword() ? 'Đang đổi...' : 'Đổi mật khẩu' }}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  } @else if (me.error()) {
+    <div class="card mt-7"><app-error-state title="Không tải được thông tin tài khoản" (retry)="me.reload()" /></div>
+  } @else {
+    <div class="mt-7"><app-skeleton variant="card" [rows]="2" /></div>
+  }
+</div>

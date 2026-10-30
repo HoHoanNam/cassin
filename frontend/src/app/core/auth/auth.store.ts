@@ -46,6 +46,17 @@ export class AuthStore {
     writeSession(session);
   }
 
+  /** Cập nhật thông tin người dùng (sau khi sửa hồ sơ), GIỮ NGUYÊN token và hạn của phiên. */
+  updateUser(user: User): void {
+    const session = this.session();
+    if (!session) {
+      return;
+    }
+    const next: Session = { ...session, user };
+    this.session.set(next);
+    writeSession(next);
+  }
+
   clear(): void {
     this.session.set(null);
     writeSession(null);

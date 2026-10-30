@@ -1,0 +1,62 @@
+.group-title {
+  margin: 0 0 12px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
+  margin: 0;
+}
+
+.tile {
+  padding: 18px 20px;
+
+  dt {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ink-soft);
+    font-size: 14px;
+  }
+
+  dd {
+    margin: 6px 0 0;
+    font-family: var(--font-hand);
+    font-size: 40px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.shortcut {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  color: var(--ink);
+  text-decoration: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.shortcut:hover {
+  border-color: var(--brand-tint);
+  box-shadow: 0 10px 24px -20px rgba(35, 38, 74, 0.45);
+  color: var(--ink);
+}
+
+.shortcut-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 10px;
+  background: var(--brand-wash);
+  color: var(--brand);
+}

@@ -1,0 +1,61 @@
+<app-modal [open]="open()" [title]="question() ? 'Sửa câu hỏi' : 'Thêm câu hỏi'" (closed)="close()">
+  <form class="mt-5 flex flex-col gap-5" [formGroup]="form" (ngSubmit)="submit(false)" novalidate>
+    @if (serverError(); as message) {
+      <div class="form-alert form-alert-error" role="alert">{{ message }}</div>
+    }
+
+    <div class="field">
+      <label class="label" for="q-content">Đề bài</label>
+      @let content = form.controls.content;
+      <textarea id="q-content" class="input content" rows="2" formControlName="content" placeholder="She ___ in Hanoi since 2020."
+        [attr.aria-invalid]="content.touched && content.invalid" aria-describedby="q-content-hint"></textarea>
+      @if (content.touched && content.hasError('required')) {
+        <p id="q-content-hint" class="field-error">Vui lòng nhập đề bài</p>
+      } @else if (content.hasError('server')) {
+        <p id="q-content-hint" class="field-error">{{ content.getError('server') }}</p>
+      } @else {
+        <p id="q-content-hint" class="field-hint">Dùng ___ để đánh dấu chỗ trống.</p>
+      }
+    </div>
+
+    <fieldset class="m-0 flex flex-col gap-2.5 border-0 p-0" aria-describedby="q-options-hint">
+      <legend class="label mb-1.5">Đáp án <span class="font-normal text-ink-soft">(chọn ô tròn ở đáp án đúng)</span></legend>
+      @for (control of options.controls; track $index; let i = $index) {
+        <div class="option-row" [class.is-correct]="form.controls.correctIndex.value === i">
+          <span class="letter" aria-hidden="true">{{ letters[i] }}</span>
+          <input class="input" type="text" [formControl]="control" [attr.aria-label]="'Đáp án ' + letters[i]"
+            [attr.aria-invalid]="control.touched && control.invalid" />
+          <label class="correct-toggle">
+            <input type="radio" formControlName="correctIndex" [value]="i" [attr.aria-label]="'Đáp án ' + letters[i] + ' là đáp án đúng'" />
+            <span>Đúng</span>
+          </label>
+        </div>
+      }
+      @let optionsMessage = optionsError(form.controls.correctIndex.touched);
+      <p id="q-options-hint" [class]="optionsMessage ? 'field-error' : 'field-hint'">
+        {{ optionsMessage ?? 'Mỗi câu đúng 4 đáp án, đúng 1 đáp án đúng, không được trùng nhau.' }}
+      </p>
+    </fieldset>
+
+    <div class="field">
+      <label class="label" for="q-explanation">Lời giải thích</label>
+      @let explanation = form.controls.explanation;
+      <textarea id="q-explanation" class="input" rows="3" formControlName="explanation"
+        placeholder='Có "since" + mốc thời gian, việc vẫn còn tiếp diễn → hiện tại hoàn thành.'
+        [attr.aria-invalid]="explanation.touched && explanation.invalid" aria-describedby="q-explanation-hint"></textarea>
+      @if (explanation.touched && explanation.hasError('required')) {
+        <p id="q-explanation-hint" class="field-error">Vui lòng nhập lời giải thích</p>
+      } @else {
+        <p id="q-explanation-hint" class="field-hint">Học viên thấy lời giải thích này sau khi nộp bài.</p>
+      }
+    </div>
+
+    <div class="flex flex-wrap justify-end gap-2.5">
+      <button type="button" class="btn btn-secondary" [disabled]="saving()" (click)="close()">Hủy</button>
+      @if (!question()) {
+        <button type="button" class="btn btn-secondary" [disabled]="saving()" (click)="submit(true)">Lưu và soạn câu tiếp</button>
+      }
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">{{ saving() ? 'Đang lưu...' : 'Lưu câu hỏi' }}</button>
+    </div>
+  </form>
+</app-modal>

@@ -1,0 +1,73 @@
+<div class="flex flex-wrap items-center justify-between gap-4">
+  <div>
+    <h1 class="page-title">Bộ từ hệ thống</h1>
+    <p class="mt-1 text-ink-soft">Mọi học viên đều thấy và ôn được các bộ này. Học viên không sửa được.</p>
+  </div>
+  <button type="button" class="btn btn-primary" (click)="creating.set(true)">
+    <app-icon name="plus" [size]="18" [strokeWidth]="2" /> Tạo bộ từ
+  </button>
+</div>
+
+<div class="mt-6">
+  @if (decks.hasValue()) {
+    @if (decks.value().length === 0) {
+      <div class="card">
+        <app-empty-state title="Chưa có bộ từ hệ thống nào" description="Tạo bộ từ đầu tiên để học viên mới có sẵn từ vựng ôn ngay.">
+          <button type="button" class="btn btn-primary" (click)="creating.set(true)">Tạo bộ từ</button>
+        </app-empty-state>
+      </div>
+    } @else {
+      <div class="card overflow-hidden" [class.opacity-60]="decks.isLoading()">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Tên bộ</th>
+              <th scope="col" class="whitespace-nowrap">Số thẻ</th>
+              <th scope="col" class="hidden md:table-cell">Cập nhật</th>
+              <th scope="col"><span class="sr-only">Thao tác</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (deck of decks.value(); track deck.id) {
+              <tr>
+                <td>
+                  <a class="font-semibold text-ink no-underline hover:underline" [routerLink]="['/admin/decks', deck.id]">{{ deck.deckName }}</a>
+                  @if (deck.description) {
+                    <!-- Mô tả chỉ hiện trên màn rộng: chữ không xuống dòng (truncate) sẽ đẩy bảng tràn ngang trên điện thoại -->
+                    <span class="hidden max-w-[36em] truncate text-[13px] text-ink-soft lg:block">{{ deck.description }}</span>
+                  }
+                </td>
+                <td class="tabular-nums">{{ deck.cardCount }}</td>
+                <td class="hidden whitespace-nowrap text-ink-soft md:table-cell">
+                  {{ deck.updatedAt ? relativeDay(deck.updatedAt) : '' }}
+                </td>
+                <td>
+                  <div class="flex justify-end gap-1">
+                    <button type="button" class="btn btn-ghost btn-icon text-ink-soft" [attr.aria-label]="'Sửa bộ ' + deck.deckName"
+                      title="Sửa tên và mô tả" (click)="editing.set(deck)">
+                      <app-icon name="edit" [size]="18" />
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-icon text-ink-soft" [attr.aria-label]="'Xóa bộ ' + deck.deckName"
+                      title="Xóa bộ" (click)="toDelete.set(deck)">
+                      <app-icon name="trash" [size]="18" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  } @else if (decks.error()) {
+    <div class="card"><app-error-state title="Không tải được danh sách bộ từ" (retry)="decks.reload()" /></div>
+  } @else {
+    <app-skeleton [rows]="3" />
+  }
+</div>
+
+<app-deck-form-dialog scope="system" [open]="creating()" (closed)="creating.set(false)" (saved)="onCreated($event)" />
+<app-deck-form-dialog scope="system" [open]="editing() !== null" [deck]="editing()" (closed)="editing.set(null)" (saved)="onEdited($event)" />
+<app-confirm-dialog [open]="toDelete() !== null" [title]="'Xóa bộ “' + (toDelete()?.deckName ?? '') + '”?'"
+  [message]="(toDelete()?.cardCount ?? 0) + ' thẻ của bộ sẽ bị xóa. Bộ đã có học viên ôn thì hệ thống sẽ từ chối xóa.'"
+  confirmLabel="Xóa bộ từ" [busy]="deleting()" (cancelled)="toDelete.set(null)" (confirmed)="deleteDeck()" />

@@ -9,7 +9,7 @@ import { LoginRequest, LoginResponse, RegisterRequest, User } from '../models/us
  *   - Mock...Api : dữ liệu giả trong trình duyệt, chạy được khi chưa có backend
  *   - Http...Api : gọi backend thật bằng HttpClient
  * Component chỉ inject(AuthApi), không biết đang dùng bản nào.
- * Đổi giữa mock và thật: sửa MỘT dòng trong core/config/app-env.ts.
+ * Đổi giữa mock và thật: chọn lệnh chạy, `npm start` (thật) hoặc `npm run start:mock` (mock).
  *
  * Dùng abstract class (không dùng interface) vì Angular cần một thứ CÒN TỒN TẠI lúc chạy
  * để làm khóa inject; interface của TypeScript biến mất sau khi biên dịch.

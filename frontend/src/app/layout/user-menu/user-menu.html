@@ -19,6 +19,15 @@
           <p class="m-0 truncate text-xs text-ink-soft">{{ user()?.email }}</p>
         </div>
       }
+      <a role="menuitem" class="item" routerLink="/account" (click)="open.set(false)">
+        <app-icon name="user" [size]="18" /> Tài khoản
+      </a>
+      @if (isAdmin()) {
+        <!-- Điện thoại không có sidebar: vào khu vực quản trị từ đây -->
+        <a role="menuitem" class="item" routerLink="/admin" (click)="open.set(false)">
+          <app-icon name="shield" [size]="18" /> Quản trị
+        </a>
+      }
       @if (isMock) {
         <button type="button" role="menuitem" class="item" (click)="resetMockData()">
           <app-icon name="reset" [size]="18" /> Đặt lại dữ liệu mẫu

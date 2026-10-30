@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
+import { AuthStore } from '../../core/auth/auth.store';
 import { StudyStatsStore } from '../../core/state/study-stats.store';
 import { Icon } from '../../shared/ui/icon/icon';
 import { Logo } from '../../shared/ui/logo/logo';
-import { NAV_ITEMS } from '../nav-items';
+import { ADMIN_NAV_ITEM, NAV_ITEMS } from '../nav-items';
 import { UserMenu } from '../user-menu/user-menu';
 
 /** Thanh điều hướng bên trái (màn hình từ 768px trở lên). */
@@ -18,4 +19,6 @@ import { UserMenu } from '../user-menu/user-menu';
 export class Sidebar {
   protected readonly items = NAV_ITEMS;
   protected readonly stats = inject(StudyStatsStore);
+  protected readonly isAdmin = inject(AuthStore).isAdmin;
+  protected readonly adminItem = ADMIN_NAV_ITEM;
 }

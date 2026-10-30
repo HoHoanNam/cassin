@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, output, signal } from '@angular/core';
 import { FormControl, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
+import { AdminApi } from '../../../core/api/admin.api';
 import { DeckApi } from '../../../core/api/deck.api';
 import { ApiError, errorMessage } from '../../../core/models/common.models';
 import { CARD_LIMITS, Card, CardRequest, PartOfSpeech } from '../../../core/models/deck.models';
@@ -13,6 +14,7 @@ import { Modal } from '../../../shared/ui/modal/modal';
  * Hộp thoại thêm / sửa thẻ. card = null: thêm mới vào deckId.
  * Khi thêm mới có nút "Lưu và thêm tiếp": lưu xong giữ hộp thoại mở, xóa trắng form,
  * để nhập liền nhiều thẻ không phải mở lại hộp thoại.
+ * scope = 'system': thẻ của bộ HỆ THỐNG (admin) → gọi /api/admin/... thay vì /api/...
  */
 @Component({
   selector: 'app-card-form-dialog',
@@ -25,10 +27,12 @@ export class CardFormDialog {
   readonly open = input(false);
   readonly deckId = input.required<number>();
   readonly card = input<Card | null>(null);
+  readonly scope = input<'mine' | 'system'>('mine');
   readonly saved = output<{ card: Card; keepOpen: boolean }>();
   readonly closed = output<void>();
 
   private readonly api = inject(DeckApi);
+  private readonly adminApi = inject(AdminApi);
   private readonly fb = inject(NonNullableFormBuilder);
 
   protected readonly limits = CARD_LIMITS;
@@ -89,7 +93,8 @@ export class CardFormDialog {
     const card = this.card();
     this.saving.set(true);
     this.serverError.set(null);
-    (card ? this.api.updateCard(card.id, request) : this.api.createCard(this.deckId(), request)).subscribe({
+    const api = this.scope() === 'system' ? this.adminApi : this.api;
+    (card ? api.updateCard(card.id, request) : api.createCard(this.deckId(), request)).subscribe({
       next: (result) => {
         this.saving.set(false);
         this.saved.emit({ card: result, keepOpen });

@@ -72,4 +72,10 @@
 
 .item:hover {
   background: var(--chip);
+  color: var(--ink);
+}
+
+/* Mục là link (<a>): bỏ gạch chân, giữ màu chữ giống mục là nút */
+a.item {
+  text-decoration: none;
 }
