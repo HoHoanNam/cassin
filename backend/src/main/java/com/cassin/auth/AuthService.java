@@ -9,6 +9,7 @@ import com.cassin.auth.dto.LoginRequest;
 import com.cassin.auth.dto.LoginResponse;
 import com.cassin.auth.dto.RegisterRequest;
 import com.cassin.common.BusinessException;
+import com.cassin.common.PasswordRules;
 import com.cassin.user.User;
 import com.cassin.user.UserRepository;
 import com.cassin.user.dto.UserResponse;
@@ -35,6 +36,10 @@ public class AuthService {
     if (userRepository.existsByEmail(email)) {
       throw new BusinessException(HttpStatus.CONFLICT, "EMAIL_TAKEN", "Email này đã được đăng ký");
     }
+
+    // [THÊM] @Size(max = 72) đếm KÝ TỰ, BCrypt giới hạn 72 BYTE: mật khẩu tiếng Việt có dấu
+    // có thể qua được @Size nhưng làm encode() ném lỗi → 500. Xem giải thích trong PasswordRules.
+    PasswordRules.requireBcryptLength(request.password());
 
     // Không bao giờ lưu mật khẩu gốc. encode() tạo chuỗi băm, mỗi lần một khác (có muối ngẫu nhiên).
     String passwordHash = passwordEncoder.encode(request.password());

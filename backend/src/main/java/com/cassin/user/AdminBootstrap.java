@@ -7,6 +7,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.cassin.common.PasswordRules;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,8 +16,8 @@ import lombok.extern.slf4j.Slf4j;
  * @Slf4j: dùng để tự động tạo ra một đối tượng Logger trong class mà bạn không cần phải viết code khởi tạo dài dòng.
  * VD: private static final Logger log = LoggerFactory.getLogger(MyService.class);
  */
-@Slf4j 
-@Component 
+@Slf4j
+@Component
 @RequiredArgsConstructor
 // Chạy MỘT lần sau khi app khởi động xong
 public class AdminBootstrap implements ApplicationRunner {
@@ -33,7 +35,7 @@ public class AdminBootstrap implements ApplicationRunner {
   private String password;
 
   @Override
-  @Transactional 
+  @Transactional
   public void run(ApplicationArguments args) {
     // 1. Không cấu hình gì → bỏ qua (máy dev bình thường, test...)
     if (email.isBlank() && password.isBlank()) {
@@ -47,9 +49,11 @@ public class AdminBootstrap implements ApplicationRunner {
     }
     // [THÊM] Mật khẩu admin không qua RegisterRequest nên không có @Size kiểm tra hộ.
     // Không chặn thì ADMIN_PASSWORD=123 vẫn tạo được tài khoản có toàn quyền.
-    if (password.length() < MIN_PASSWORD || password.length() > MAX_PASSWORD) {
+    // [SỬA] Giới hạn trên đo bằng BYTE (PasswordRules.byteLength), không phải số ký tự:
+    // BCrypt giới hạn 72 byte, mật khẩu có dấu tiếng Việt vượt 72 byte dù chưa tới 72 ký tự.
+    if (password.length() < MIN_PASSWORD || PasswordRules.byteLength(password) > MAX_PASSWORD) {
       throw new IllegalStateException(
-          "ADMIN_PASSWORD phải từ " + MIN_PASSWORD + " đến " + MAX_PASSWORD + " ký tự");
+          "ADMIN_PASSWORD phải từ " + MIN_PASSWORD + " ký tự và không quá " + MAX_PASSWORD + " byte");
     }
 
     String normalized = User.normalizeEmail(email);

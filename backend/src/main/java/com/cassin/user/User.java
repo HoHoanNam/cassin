@@ -30,7 +30,8 @@ public class User {
   @Column(name = "password_hash", nullable = false)
   private String passwordHash;
 
-  // [SỬA] Thêm length = 100 cho khớp VARCHAR(100) trong V1 (mặc định của JPA là 255).
+  // [SỬA] Thêm length = 100 cho khớp VARCHAR(100) trong V1 (mặc định của JPA là
+  // 255).
   @Column(name = "display_name", nullable = false, length = 100)
   private String displayName;
 
@@ -44,12 +45,16 @@ public class User {
   @Column(nullable = false, length = 20)
   private Role role = Role.USER;
 
-  // Inverse side (Phía được ánh xạ): mappedBy = tên field ở phía @ManyToOne (Deck.owner).
+  // Inverse side (Phía được ánh xạ): mappedBy = tên field ở phía @ManyToOne
+  // (Deck.owner).
   // Chỉ để ĐỌC, khóa ngoại nằm ở bảng decks.
   // [SỬA] Bỏ cascade = ALL và orphanRemoval:
-  // - Xóa user thì DB tự xóa bộ cá nhân nhờ ON DELETE CASCADE (V2), không cần Hibernate làm.
-  // - Comment cũ về orphanRemoval bị nhầm: orphanRemoval = "bỏ 1 deck khỏi list decks thì XÓA
-  //   chính deck đó khỏi DB", không phải xóa thẻ bên trong. Rất dễ vô tình xóa mất dữ liệu.
+  // - Xóa user thì DB tự xóa bộ cá nhân nhờ ON DELETE CASCADE (V2), không cần
+  // Hibernate làm.
+  // - Comment cũ về orphanRemoval bị nhầm: orphanRemoval = "bỏ 1 deck khỏi list
+  // decks thì XÓA
+  // chính deck đó khỏi DB", không phải xóa thẻ bên trong. Rất dễ vô tình xóa mất
+  // dữ liệu.
   // [SỬA] Khởi tạo list rỗng, tránh NullPointerException.
   // Muốn lấy bộ của user thì nên dùng DeckRepository (có phân trang).
   @OneToMany(mappedBy = "owner")
@@ -59,8 +64,10 @@ public class User {
   @OneToMany(mappedBy = "user")
   private List<CardProgress> progresses = new ArrayList<>();
 
-  // [SỬA] @OneToOne → @OneToMany: một người làm NHIỀU lượt quiz, không phải đúng một lượt.
-  // Chỉ để đọc, không cascade. Lấy lịch sử làm bài thì dùng QuizAttemptRepository (có phân trang).
+  // [SỬA] @OneToOne → @OneToMany: một người làm NHIỀU lượt quiz, không phải đúng
+  // một lượt.
+  // Chỉ để đọc, không cascade. Lấy lịch sử làm bài thì dùng QuizAttemptRepository
+  // (có phân trang).
   @OneToMany(mappedBy = "user")
   private List<QuizAttempt> quizAttempts = new ArrayList<>();
 
@@ -71,9 +78,11 @@ public class User {
   private Instant updatedAt = Instant.now();
 
   public User(String email, String passwordHash, String displayName) {
-    // [SỬA] Chuẩn hóa email: "  An@Gmail.com " và "an@gmail.com" là một người.
-    // Không chuẩn hóa thì cùng một email đăng ký được 2 lần, vì UNIQUE trong DB phân biệt hoa thường.
-    // Locale.ROOT: tránh lỗi đổi chữ theo ngôn ngữ máy (ví dụ máy cài tiếng Thổ Nhĩ Kỳ, "I" → "ı").
+    // [SỬA] Chuẩn hóa email: " An@Gmail.com " và "an@gmail.com" là một người.
+    // Không chuẩn hóa thì cùng một email đăng ký được 2 lần, vì UNIQUE trong DB
+    // phân biệt hoa thường.
+    // Locale.ROOT: tránh lỗi đổi chữ theo ngôn ngữ máy (ví dụ máy cài tiếng Thổ Nhĩ
+    // Kỳ, "I" → "ı").
     this.email = normalizeEmail(email);
     this.passwordHash = requireText(passwordHash, "Mật khẩu");
     this.displayName = requireText(displayName, "Tên hiển thị");
@@ -97,5 +106,16 @@ public class User {
 
   public void promoteToAdmin() {
     this.role = Role.ADMIN;
+  }
+
+  public void updateProfile(String displayName, String bio) {
+    this.displayName = requireText(displayName, "Tên hiển thị");
+    this.bio = (bio == null || bio.isBlank()) ? null : bio.strip();
+    this.updatedAt = Instant.now(); // gán tay, cùng lý do với Deck.update
+  }
+
+  public void changePassword(String newPasswordHash) {
+    this.passwordHash = requireText(newPasswordHash, "Mật khẩu");
+    this.updatedAt = Instant.now();
   }
 }
