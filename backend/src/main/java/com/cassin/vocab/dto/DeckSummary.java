@@ -4,16 +4,20 @@ import java.time.Instant;
 
 import com.cassin.vocab.DeckType;
 
-// Một dòng kết quả của câu truy vấn danh sách bộ: có sẵn số thẻ, không phải tải thẻ lên.
+/**
+ * Một dòng kết quả của DeckRepository.findVisibleSummaries ("select new ...DeckSummary(...)").
+ * Thứ tự và kiểu tham số phải khớp ĐÚNG thứ tự trong câu JPQL.
+ * count(...) và sum(...) của JPQL trả về Long.
+ */
 public record DeckSummary(
-  Long id,
-  String deckName,
-  String description,
-  DeckType deckType,
-  Long ownerId,
-  Long cardCount,
-  // Số thẻ đến hạn và thẻ mới cho từng bộ
-  Long dueCount, 
-  Long newCount, 
-  Instant updatedAt
-) {}
+    Long id,
+    String deckName,
+    String description,
+    DeckType deckType,
+    Long ownerId,
+    Long wordCount,
+    Long dueCount,
+    Long newCount,
+    Instant updatedAt
+) {
+}
