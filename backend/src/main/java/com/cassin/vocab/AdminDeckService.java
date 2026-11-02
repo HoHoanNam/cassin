@@ -5,92 +5,136 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.cassin.common.BusinessException;
-import com.cassin.vocab.dto.CardRequest;
-import com.cassin.vocab.dto.CardResponse;
 import com.cassin.vocab.dto.DeckRequest;
 import com.cassin.vocab.dto.DeckResponse;
+import com.cassin.vocab.dto.WordRequest;
+import com.cassin.vocab.dto.WordResponse;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Admin quản lý BỘ HỆ THỐNG và TỪ HỆ THỐNG (owner = null).
+ * Bộ / từ của học viên → luôn 404 ở đây (admin không đụng vào dữ liệu cá nhân).
+ *
+ * [V10] Thẻ → Từ nhiều nghĩa. Một từ hệ thống nằm được trong nhiều bộ hệ thống:
+ *   POST /admin/decks/{id}/words          tạo từ hệ thống MỚI và đặt vào bộ
+ *   POST /admin/decks/{id}/words/{wordId} đặt một từ hệ thống CÓ SẴN vào bộ
+ *   DELETE /admin/decks/{id}/words/{wordId} bỏ từ khỏi bộ (từ vẫn còn)
+ *   PUT / DELETE /admin/words/{wordId}    sửa / xóa hẳn từ hệ thống
+ */
 @Service
 @RequiredArgsConstructor
 public class AdminDeckService {
   private final DeckRepository deckRepository;
-  private final CardRepository cardRepository;
+  private final WordRepository wordRepository;
   private final CardProgressRepository progressRepository;
+  private final DeckService deckService; // dùng lại linkWord (kiểm tra Deck.canContain)
 
-  /* DECK */
+  // ===================== Bộ hệ thống =====================
+
   @Transactional
   public DeckResponse createDeck(DeckRequest r) {
     Deck deck = deckRepository.save(Deck.system(r.deckName(), r.description()));
-    // 0L (hoặc 0l) có hậu tố L là một Long Literal,
-    // biểu thị số 0 có kiểu dữ liệu là long (chiếm 64-bit trong bộ nhớ).
+    // Admin không "học" bộ → due / new = 0. userId null → editable = false.
     return DeckResponse.from(deck, 0L, 0L, 0L, null);
   }
 
   @Transactional
   public DeckResponse updateDeck(Long deckId, DeckRequest r) {
-    Deck deck = findDeckSystem(deckId);
+    Deck deck = findSystemDeck(deckId);
     deck.update(r.deckName(), r.description());
-    // [SỬA] Trước đây trả cardCount = 0L → bộ đang có 50 thẻ, sửa tên xong màn admin hiện "0 thẻ".
-    // Chỉ due/new mới là 0 (admin không "học" bộ), còn số thẻ phải đếm thật.
-    // [SỬA nhỏ] Bỏ deckRepository.save(deck): deck lấy từ findById nên Hibernate đang theo dõi,
-    // dirty checking tự UPDATE cuối transaction (giống DeckService.updateDeck).
-    return DeckResponse.from(deck, cardRepository.countByDeckId(deckId), 0L, 0L, null);
+    return DeckResponse.from(deck, deckRepository.countWords(deckId), 0L, 0L, null);
   }
 
+  /**
+   * Chỉ xóa bộ (và dòng deck_words). Từ hệ thống trong bộ vẫn còn, có thể nằm trong bộ khác.
+   * Tìm bộ TRƯỚC (404 cho bộ cá nhân), kiểm tra người học SAU (409).
+   */
   @Transactional
   public void deleteDeck(Long deckId) {
-    // [SỬA] Đổi thứ tự: TÌM bộ trước, KIỂM TRA người học sau.
-    // Trước đây kiểm tra existsByCardDeckId trước → gọi DELETE với id một bộ CÁ NHÂN đã có người học
-    // thì nhận 409 "DECK_IN_USE" thay vì 404 → admin biết được "id này là bộ có thật của ai đó",
-    // phá luật "không để lộ" mà findDeckSystem đang giữ. Id không tồn tại cũng ra 404 đúng hơn.
-    Deck deck = findDeckSystem(deckId);
-    // Kiểm tra deck đã có người học chưa
-    if (progressRepository.existsByCardDeckId(deckId)) {
-      throw new BusinessException(HttpStatus.CONFLICT, "DECK_IN_USE",
-          "Bộ từ đã có người học, không thể xóa");
+    Deck deck = findSystemDeck(deckId);
+    if (progressRepository.existsInDeck(deckId)) {
+      throw new BusinessException(HttpStatus.CONFLICT, "DECK_IN_USE", "Bộ từ đã có người học, không thể xóa");
     }
     deckRepository.delete(deck);
   }
 
-  /* CARD */
+  // ===================== Từ hệ thống =====================
+
+  /** Tạo từ hệ thống mới (kèm nhiều nghĩa) và đặt vào bộ. deckIds trong request bị bỏ qua. */
   @Transactional
-  public CardResponse addCard(Long deckId, CardRequest r) {
-    Deck deck = findDeckSystem(deckId);
-    Card card = Card.create(r.word(), r.partOfSpeech(), r.phonetic(), r.definition(), r.examples(), deck);
-    return CardResponse.from(cardRepository.save(card));
+  public WordResponse createWord(Long deckId, WordRequest r) {
+    Deck deck = findSystemDeck(deckId);
+    if (wordRepository.existsByOwnerIsNullAndTermIgnoreCase(r.term().strip())) {
+      throw new BusinessException(HttpStatus.CONFLICT, "WORD_EXISTS",
+          "Từ \"" + r.term().strip() + "\" đã có trong hệ thống. Hãy đặt từ có sẵn vào bộ hoặc thêm nghĩa cho từ đó.");
+    }
+    Word word = WordService.guard(() -> {
+      Word w = Word.system(r.term(), r.phonetic());
+      w.replaceSenses(r.senseInputs());
+      return w;
+    });
+    wordRepository.save(word);
+    deckService.linkWord(deck, word);
+    return toResponse(word);
+  }
+
+  /** Đặt một từ hệ thống CÓ SẴN vào bộ hệ thống (từ dùng chung cho nhiều bộ). */
+  @Transactional
+  public void addWord(Long deckId, Long wordId) {
+    deckService.linkWord(findSystemDeck(deckId), findSystemWord(wordId));
   }
 
   @Transactional
-  public CardResponse updateCard(Long cardId, CardRequest r) {
-    Card card = findCardSystem(cardId);
-    card.update(r.word(), r.partOfSpeech(), r.phonetic(), r.definition(), r.examples());
-    // [SỬA nhỏ] Bỏ save(card): cùng lý do với updateDeck.
-    return CardResponse.from(card);
+  public void removeWord(Long deckId, Long wordId) {
+    Deck deck = findSystemDeck(deckId);
+    if (deckRepository.removeWord(deck.getId(), wordId) > 0) {
+      deck.touch();
+    }
   }
 
-  // [GHI CHÚ] Xóa MỘT thẻ thì DB xóa luôn tiến độ của mọi người với thẻ đó (ON DELETE CASCADE, V5).
-  // Mình KHÔNG chặn như deleteDeck: xóa một thẻ sai/trùng là thao tác sửa nội dung bình thường,
-  // người học chỉ mất tiến độ của đúng thẻ đó. Còn xóa cả bộ là mất toàn bộ quá trình học.
+  /** Sửa từ hệ thống + toàn bộ nghĩa (giữ id nghĩa → giữ tiến độ của học viên). */
   @Transactional
-  public void deleteCard(Long cardId) {
-    cardRepository.delete(findCardSystem(cardId));
+  public WordResponse updateWord(Long wordId, WordRequest r) {
+    Word word = findSystemWord(wordId);
+    boolean renamed = !word.getTerm().equalsIgnoreCase(r.term().strip());
+    if (renamed && wordRepository.existsByOwnerIsNullAndTermIgnoreCase(r.term().strip())) {
+      throw new BusinessException(HttpStatus.CONFLICT, "WORD_EXISTS",
+          "Từ \"" + r.term().strip() + "\" đã có trong hệ thống");
+    }
+    WordService.guard(() -> {
+      word.update(r.term(), r.phonetic());
+      word.replaceSenses(r.senseInputs());
+      return word;
+    });
+    return toResponse(word);
   }
 
-  // HELPERS: ADMIN chỉ quản lý bộ hệ thống. Bộ cá nhân của user → 404, giống luật
-  // "không để lộ" ở DeckService.
-  // [SỬA] public → private: chỉ dùng trong class này. Để public thì service khác có thể gọi
-  // findDeckSystem mà không qua /api/admin/** → bỏ qua lớp kiểm tra quyền ADMIN của SecurityConfig.
-  private Deck findDeckSystem(Long deckId) {
+  /**
+   * Xóa hẳn một từ hệ thống. Tiến độ của học viên với từ này bị xóa theo (giống xóa thẻ trước V10):
+   * xóa một từ sai / trùng là sửa nội dung bình thường, khác với xóa cả bộ.
+   */
+  @Transactional
+  public void deleteWord(Long wordId) {
+    wordRepository.delete(findSystemWord(wordId));
+  }
+
+  // ===================== helpers =====================
+
+  private Deck findSystemDeck(Long deckId) {
     return deckRepository.findById(deckId)
         .filter(d -> d.getDeckType() == DeckType.SYSTEM_DECK)
-        .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "DECK_NOT_FOUND", "Không tìm thấy bộ từ"));
+        .orElseThrow(DeckService::deckNotFound);
   }
 
-  private Card findCardSystem(Long cardId) {
-    return cardRepository.findById(cardId)
-        .filter(c -> c.getDeck().getDeckType() == DeckType.SYSTEM_DECK)
-        .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "CARD_NOT_FOUND", "Không tìm thấy thẻ"));
+  private Word findSystemWord(Long wordId) {
+    return wordRepository.findById(wordId)
+        .filter(w -> w.isSystem())
+        .orElseThrow(DeckService::wordNotFound);
+  }
+
+  private WordResponse toResponse(Word word) {
+    // Chỉ liệt kê bộ hệ thống. userId null → editable = false (admin sửa qua /api/admin, không qua /api/words).
+    return WordResponse.from(word, deckRepository.findSystemContaining(word.getId()), null);
   }
 }
