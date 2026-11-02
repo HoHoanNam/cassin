@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.LocalDate;
-import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,15 +31,16 @@ class CardProgressTest {
   // Dùng object thật thay vì mock: User, Deck, Card đều tạo được bằng constructor / factory method,
   // và CardProgress chỉ cần chúng khác null. Không lưu DB nên id của chúng là null, không sao.
   private final User user = new User("an@gmail.com", "hash", "An");
-  private final Deck deck = Deck.system("1000 từ thông dụng", null);
-  private final Card card = Card.create("improve", PartOfSpeech.VERB, null, "cải thiện", List.of(), deck);
+  // [V10] Tiến độ gắn với NGHĨA (Sense) thay cho Card: lấy nghĩa đầu tiên của một từ mẫu.
+  private final Sense sense = VocabFixtures.word(1L, "improve", null,
+      VocabFixtures.sense(PartOfSpeech.VERB, "cải thiện")).getSenses().get(0);
 
   // ===================== start(...) =====================
 
   @Test
   @DisplayName("Thẻ mới: hộp 1, đến hạn ngay hôm nay, chưa ôn lần nào")
   void start_newCard_box1_dueToday() {
-    CardProgress p = CardProgress.start(user, card, DAY_1);
+    CardProgress p = CardProgress.start(user, sense, DAY_1);
 
     assertThat(p.getBox()).isEqualTo(CardProgress.MIN_BOX);
     assertThat(p.getDueDate()).isEqualTo(DAY_1);
@@ -53,9 +53,9 @@ class CardProgressTest {
   @Test
   @DisplayName("start() chặn tham số null (fail fast)")
   void start_rejectsNull() {
-    assertThatThrownBy(() -> CardProgress.start(null, card, DAY_1)).isInstanceOf(NullPointerException.class);
+    assertThatThrownBy(() -> CardProgress.start(null, sense, DAY_1)).isInstanceOf(NullPointerException.class);
     assertThatThrownBy(() -> CardProgress.start(user, null, DAY_1)).isInstanceOf(NullPointerException.class);
-    assertThatThrownBy(() -> CardProgress.start(user, card, null)).isInstanceOf(NullPointerException.class);
+    assertThatThrownBy(() -> CardProgress.start(user, sense, null)).isInstanceOf(NullPointerException.class);
   }
 
   // ===================== review(true): Nhớ =====================
@@ -63,7 +63,7 @@ class CardProgressTest {
   @Test
   @DisplayName("Thẻ mới ôn được ngay trong ngày tạo (bug cũ: lastReviewedOn = today chặn lần ôn đầu)")
   void review_newCard_canBeReviewedOnFirstDay() {
-    CardProgress p = CardProgress.start(user, card, DAY_1);
+    CardProgress p = CardProgress.start(user, sense, DAY_1);
 
     p.review(true, DAY_1);
 
@@ -75,7 +75,7 @@ class CardProgressTest {
   @Test
   @DisplayName("Nhớ liên tục: đi đúng bảng hộp → số ngày (2, 4, 7, 15), dừng ở hộp 5")
   void review_rememberedEveryTime_followsIntervalTable() {
-    CardProgress p = CardProgress.start(user, card, DAY_1);
+    CardProgress p = CardProgress.start(user, sense, DAY_1);
 
     // Mỗi dòng: { hộp sau khi nhớ, số ngày tới lần ôn sau }
     int[][] expected = {
@@ -105,7 +105,7 @@ class CardProgressTest {
   @Test
   @DisplayName("Quên: về hộp 1, tăng số lần quên, ôn lại vào ngày mai")
   void review_forgotten_backToBox1() {
-    CardProgress p = CardProgress.start(user, card, DAY_1);
+    CardProgress p = CardProgress.start(user, sense, DAY_1);
     p.review(true, DAY_1);                     // hộp 2, hạn DAY_1 + 2
     LocalDate day3 = DAY_1.plusDays(2);
     p.review(true, day3);                      // hộp 3, hạn day3 + 4
@@ -122,7 +122,7 @@ class CardProgressTest {
   @Test
   @DisplayName("Quên ngay từ hộp 1: vẫn ở hộp 1 (không xuống dưới MIN_BOX)")
   void review_forgottenInBox1_staysInBox1() {
-    CardProgress p = CardProgress.start(user, card, DAY_1);
+    CardProgress p = CardProgress.start(user, sense, DAY_1);
 
     p.review(false, DAY_1);
 
@@ -135,7 +135,7 @@ class CardProgressTest {
   @Test
   @DisplayName("Ôn 2 lần trong một ngày: bị chặn, và trạng thái KHÔNG đổi")
   void review_twiceSameDay_isRejected_andStateUnchanged() {
-    CardProgress p = CardProgress.start(user, card, DAY_1);
+    CardProgress p = CardProgress.start(user, sense, DAY_1);
     p.review(true, DAY_1);                     // hộp 2
 
     assertThatThrownBy(() -> p.review(true, DAY_1))
@@ -151,7 +151,7 @@ class CardProgressTest {
   @Test
   @DisplayName("Ôn trước hạn: bị chặn")
   void review_beforeDueDate_isRejected() {
-    CardProgress p = CardProgress.start(user, card, DAY_1);
+    CardProgress p = CardProgress.start(user, sense, DAY_1);
     p.review(true, DAY_1);                     // hạn mới: DAY_1 + 2
 
     assertThatThrownBy(() -> p.review(true, DAY_1.plusDays(1)))
@@ -163,7 +163,7 @@ class CardProgressTest {
   @Test
   @DisplayName("Ôn trễ hạn vẫn được; hạn mới tính từ ngày ôn thật, không phải từ hạn cũ")
   void review_overdue_isAllowed_andIntervalCountsFromToday() {
-    CardProgress p = CardProgress.start(user, card, DAY_1);
+    CardProgress p = CardProgress.start(user, sense, DAY_1);
     p.review(true, DAY_1);                     // hạn DAY_1 + 2, nhưng người học bỏ 10 ngày
     LocalDate late = DAY_1.plusDays(12);
 
@@ -176,7 +176,7 @@ class CardProgressTest {
   @Test
   @DisplayName("review() chặn today = null")
   void review_rejectsNullToday() {
-    CardProgress p = CardProgress.start(user, card, DAY_1);
+    CardProgress p = CardProgress.start(user, sense, DAY_1);
     assertThatThrownBy(() -> p.review(true, null)).isInstanceOf(NullPointerException.class);
   }
 
@@ -185,12 +185,38 @@ class CardProgressTest {
   @Test
   @DisplayName("isDue: trước hạn = false, đúng hạn = true, quá hạn = true")
   void isDue_boundaries() {
-    CardProgress p = CardProgress.start(user, card, DAY_1);
+    CardProgress p = CardProgress.start(user, sense, DAY_1);
     p.review(true, DAY_1);                     // hạn DAY_1 + 2
     LocalDate due = DAY_1.plusDays(2);
 
     assertThat(p.isDue(due.minusDays(1))).isFalse();
     assertThat(p.isDue(due)).isTrue();
     assertThat(p.isDue(due.plusDays(30))).isTrue();
+  }
+
+  // ===================== [V10] dueSoon(...): luyện tập làm sai =====================
+
+  @Test
+  @DisplayName("dueSoon: hạn còn xa → kéo về NGÀY MAI, không đổi hộp, không tăng lapseCount")
+  void dueSoon_pullsDueDateToTomorrow() {
+    CardProgress p = CardProgress.start(user, sense, DAY_1);
+    p.review(true, DAY_1);                         // hộp 2, hạn DAY_1 + 2
+    p.review(true, DAY_1.plusDays(2));             // hộp 3, hạn DAY_1 + 6
+
+    p.dueSoon(DAY_1.plusDays(3));
+
+    assertThat(p.getDueDate()).isEqualTo(DAY_1.plusDays(4));
+    assertThat(p.getBox()).isEqualTo(3);
+    assertThat(p.getLapseCount()).isZero();
+  }
+
+  @Test
+  @DisplayName("dueSoon: hạn đã là hôm nay / ngày mai → giữ nguyên, không đẩy lùi")
+  void dueSoon_keepsEarlierDueDate() {
+    CardProgress p = CardProgress.start(user, sense, DAY_1);   // hạn = DAY_1
+
+    p.dueSoon(DAY_1);
+
+    assertThat(p.getDueDate()).isEqualTo(DAY_1);
   }
 }
