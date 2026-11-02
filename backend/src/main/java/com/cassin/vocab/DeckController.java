@@ -7,42 +7,20 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import com.cassin.auth.AuthUser;
+import com.cassin.common.dto.PageResponse;
 import com.cassin.vocab.dto.DeckRequest;
 import com.cassin.vocab.dto.DeckResponse;
+import com.cassin.vocab.dto.WordSummary;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-// [SỬA] Thêm dấu "/" đầu cho thống nhất với các controller khác ("/api/auth", "/api").
-// Spring vẫn tự thêm nếu thiếu, nhưng viết đủ thì đọc code không phải đoán.
 @RequestMapping("/api/decks")
 @RequiredArgsConstructor
 public class DeckController {
   private final DeckService deckService;
 
-  // [CÂU HỎI] Giải thích thêm về @AuthenticationPrincipal - Tại sao cần dùng
-  // annotation này ở đây? Có phải dùng để xác thực Role của người dùng?
-  //
-  // [TRẢ LỜI] KHÔNG. Nó không xác thực, không kiểm tra role. Nó chỉ LẤY RA "người đang gọi API".
-  //
-  // Lúc request tới, JwtAuthenticationFilter đã đọc token và cất vào SecurityContext:
-  //     new UsernamePasswordAuthenticationToken(authUser, null, authorities)
-  //                                             ^ principal = AuthUser(id, email, role)
-  // @AuthenticationPrincipal bảo Spring: "lấy principal đó, truyền vào tham số này".
-  // Nó tương đương viết tay:
-  //     AuthUser user = (AuthUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-  //
-  // Ba việc khác nhau, nằm ở ba chỗ khác nhau:
-  //   - Xác thực (bạn là ai?)        → JwtAuthenticationFilter kiểm tra chữ ký token
-  //   - Phân quyền theo role         → SecurityConfig: hasRole("ADMIN"), anyRequest().authenticated()
-  //   - Quyền theo dữ liệu (bộ này có phải của bạn?) → DeckService.checkReadable / checkEditable
-  //
-  // Tại sao cần ở đây: service cần user.id() để biết lọc "bộ của ai".
-  // Lấy id từ token (đã ký, không giả được) chứ KHÔNG nhận userId từ URL hay body:
-  // nếu API là GET /api/decks?userId=5 thì ai cũng sửa số 5 thành số khác để xem bộ người khác.
-  //
-  // user không bao giờ null ở đây: không có token hợp lệ thì SecurityConfig đã trả 401 trước khi tới controller.
   @GetMapping
   public List<DeckResponse> list(@AuthenticationPrincipal AuthUser user) {
     return deckService.listDecks(user.id());
@@ -60,15 +38,40 @@ public class DeckController {
   }
 
   @PutMapping("/{deckId}")
-  public DeckResponse update(@PathVariable Long deckId, @Valid @RequestBody DeckRequest request, @AuthenticationPrincipal AuthUser user) {
+  public DeckResponse update(@PathVariable Long deckId, @Valid @RequestBody DeckRequest request,
+      @AuthenticationPrincipal AuthUser user) {
     return deckService.updateDeck(deckId, request, user.id());
   }
 
-  // [SỬA] Thiếu dấu "}": "/{deckId" → "/{deckId}". Lỗi này làm app KHÔNG KHỞI ĐỘNG ĐƯỢC
-  // (Spring báo lỗi cú pháp đường dẫn khi đăng ký các API lúc khởi động).
   @DeleteMapping("/{deckId}")
-  @ResponseStatus(HttpStatus.NO_CONTENT) // 204: xóa thành công, không có nội dung trả về
+  @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(@PathVariable Long deckId, @AuthenticationPrincipal AuthUser user) {
     deckService.deleteDeck(deckId, user.id());
+  }
+
+  // ===================== [V10] Từ trong bộ (thay /decks/{id}/cards) =====================
+
+  @GetMapping("/{deckId}/words")
+  public PageResponse<WordSummary> words(
+      @PathVariable Long deckId,
+      @RequestParam(defaultValue = "") String q,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size,
+      @AuthenticationPrincipal AuthUser user) {
+    return deckService.listWords(deckId, q, page, size, user.id());
+  }
+
+  /** Đặt một từ có sẵn (của mình hoặc từ hệ thống) vào bộ. Tạo từ MỚI thì dùng POST /api/words kèm deckIds. */
+  @PostMapping("/{deckId}/words/{wordId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void addWord(@PathVariable Long deckId, @PathVariable Long wordId, @AuthenticationPrincipal AuthUser user) {
+    deckService.addWord(deckId, wordId, user.id());
+  }
+
+  /** Bỏ từ khỏi bộ, từ vẫn còn trong sổ từ. */
+  @DeleteMapping("/{deckId}/words/{wordId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void removeWord(@PathVariable Long deckId, @PathVariable Long wordId, @AuthenticationPrincipal AuthUser user) {
+    deckService.removeWord(deckId, wordId, user.id());
   }
 }
