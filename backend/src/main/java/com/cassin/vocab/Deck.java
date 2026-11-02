@@ -1,9 +1,9 @@
 package com.cassin.vocab;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 import com.cassin.user.User;
 
@@ -13,7 +13,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * Bộ từ vựng. Có 2 loại:
+ * Bộ từ vựng = NHÃN CHỦ ĐỀ gom các từ lại (từ V10, từ không còn "thuộc về" bộ). Có 2 loại:
  * - SYSTEM_DECK: bộ hệ thống, không có chủ (owner = null), mọi người dùng đều ôn được.
  * - USER_DECK: bộ cá nhân, luôn có đúng một chủ.
  *
@@ -50,15 +50,19 @@ public class Deck {
   @JoinColumn(name = "owner_id")
   private User owner;
 
-  // Inverse side (Phía được ánh xạ): chỉ để ĐỌC danh sách thẻ, khóa ngoại nằm ở bảng cards.
-  // [SỬA] Bỏ cascade = CascadeType.ALL. Xóa bộ thì DB tự xóa thẻ nhờ ON DELETE CASCADE (V3).
-  // Nếu để cascade ở JPA, xóa 1 bộ có 1000 thẻ, Hibernate sẽ tải cả 1000 thẻ lên rồi
-  // chạy 1000 câu DELETE (cộng thêm câu xóa ví dụ của từng thẻ).
-  // [SỬA] Khởi tạo sẵn list rỗng, tránh NullPointerException với bộ vừa tạo.
-  // Lưu ý: muốn lấy thẻ của bộ thì nên dùng CardRepository (có phân trang),
-  // gọi getCards() sẽ tải TOÀN BỘ thẻ của bộ.
-  @OneToMany(mappedBy = "deck")
-  private List<Card> cards = new ArrayList<>();
+  // [V10] Bộ ↔ từ là NHIỀU-NHIỀU qua bảng deck_words (trước đây: bộ 1-nhiều thẻ).
+  // Một từ nằm được trong nhiều bộ; xóa bộ chỉ xóa dòng trong deck_words, từ vẫn còn trong sổ từ.
+  //
+  // Đây là owning side (khai báo @JoinTable). Nhưng KHÔNG thêm / bỏ từ bằng cách sửa Set này:
+  // getWords().add(...) buộc Hibernate tải TOÀN BỘ từ của bộ lên trước. Dùng
+  // DeckRepository.addWord / removeWord (1 câu SQL). Set này chỉ để viết JPQL "join d.words".
+  // Cột added_at của deck_words không map ở đây: DB tự điền DEFAULT now().
+  @ManyToMany
+  @JoinTable(
+      name = "deck_words",
+      joinColumns = @JoinColumn(name = "deck_id"),
+      inverseJoinColumns = @JoinColumn(name = "word_id"))
+  private Set<Word> words = new HashSet<>();
 
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt = Instant.now();
@@ -121,6 +125,23 @@ public class Deck {
     }
     // Dùng Objects.equals thay vì ==: Long là object, so sánh bằng == chỉ đúng với số nhỏ (-128..127).
     return Objects.equals(owner.getId(), userId);
+  }
+
+  /** [V10] Có thay đổi danh sách từ (thêm / bỏ từ): cập nhật thời gian để danh sách bộ sắp xếp đúng. */
+  public void touch() {
+    this.updatedAt = Instant.now();
+  }
+
+  /**
+   * [V10] Bộ này nhận được từ này không?
+   *   - Bộ hệ thống: chỉ chứa từ hệ thống (học viên không thể "nhét" từ riêng vào bộ chung).
+   *   - Bộ cá nhân: chứa từ của chính chủ bộ, hoặc từ hệ thống (vd. gom từ hệ thống vào bộ "IELTS" của mình).
+   */
+  public boolean canContain(Word word) {
+    if (deckType == DeckType.SYSTEM_DECK) {
+      return word.isSystem();
+    }
+    return word.isSystem() || word.isOwnedBy(owner.getId());
   }
 
   @PreUpdate
