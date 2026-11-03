@@ -30,6 +30,7 @@ public class ReviewEvent {
   private User user;
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  // Hibernate đọc dòng này để tự sinh "ON s.id = e.sense_id"
   @JoinColumn(name = "sense_id", nullable = false)
   private Sense sense;
 
