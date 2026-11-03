@@ -17,6 +17,7 @@ import com.cassin.practice.dto.MistakeItem;
 public interface ReviewEventRepository extends JpaRepository<ReviewEvent, Long> {
 
   /*
+   * Sổ lỗi sai: các nghĩa user làm sai và CHƯA làm đúng lại, từ mốc `since` đến nay.
    * ===================== @Param hoạt động thế nào? =====================
    *
    * Hình dung câu query như một HÀM, :userId là THAM SỐ của hàm đó:
@@ -68,16 +69,22 @@ public interface ReviewEventRepository extends JpaRepository<ReviewEvent, Long> 
    */
   @Query("""
       select new com.cassin.practice.dto.MistakeItem(
-        s.id, w.id, w.term, s.partOfSpeech, s.definition, count(e), max(e.reviewedAt)
+        s.id, w.id, w.term, s.partOfSpeech, s.definition,
+        sum(case when e.correct = false then 1 else 0 end),
+        max(case when e.correct = false then e.reviewedAt end)
       )
       from ReviewEvent e
       join e.sense s
       join s.word w
       where e.user.id = :userId
-        and e.correct = false
         and e.reviewedAt >= :since
       group by s.id, w.id, w.term, s.partOfSpeech, s.definition
-      order by count(e) desc, max(e.reviewedAt) desc
+      having max(case when e.correct = false then e.reviewedAt end) is not null
+        and (max(case when e.correct = true then e.reviewedAt end) is null
+          or max(case when e.correct = false then e.reviewedAt end)
+          > max(case when e.correct = true then e.reviewedAt end))
+      order by sum(case when e.correct = false then 1 else 0 end) desc,
+        max(case when e.correct = false then e.reviewedAt end) desc
             """)
   List<MistakeItem> findMistakes(
       @Param("userId") Long userId,
