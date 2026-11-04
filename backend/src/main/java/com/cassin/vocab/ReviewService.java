@@ -16,6 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.cassin.common.BusinessException;
+import com.cassin.practice.PracticeMode;
+import com.cassin.practice.ReviewEvent;
+import com.cassin.practice.ReviewEventRepository;
 import com.cassin.user.UserRepository;
 import com.cassin.vocab.dto.BoxCount;
 import com.cassin.vocab.dto.ReviewCardResponse;
@@ -47,6 +50,7 @@ public class ReviewService {
   private final DeckService deckService;
   private final WordService wordService;
   private final StudyDayRepository studyDayRepository;
+  private final ReviewEventRepository eventRepository;
   private final Clock clock;
 
   /**
@@ -57,7 +61,7 @@ public class ReviewService {
   @Transactional(readOnly = true)
   public List<ReviewCardResponse> getQueue(Long deckId, int newLimit, Long userId) {
     if (deckId != null) {
-      deckService.findReadable(deckId, userId);   // bộ của người khác → 404
+      deckService.findReadable(deckId, userId); // bộ của người khác → 404
     }
     LocalDate today = LocalDate.now(clock);
     PageRequest dueLimit = PageRequest.of(0, MAX_DUE_PER_QUEUE);
@@ -84,9 +88,12 @@ public class ReviewService {
     return queue;
   }
 
-  /** POST /api/senses/{senseId}/review */
+  /**
+   * POST /api/senses/{senseId}/review
+   * [THÊM] durationMs: thời gian từ lúc hiện thẻ đến lúc chấm (null = client không gửi → ghi 0).
+   */
   @Transactional
-  public ReviewResultResponse review(Long senseId, boolean remembered, Long userId) {
+  public ReviewResultResponse review(Long senseId, boolean remembered, Integer durationMs, Long userId) {
     // [V10] Quyền nằm ở TỪ: ôn được nghĩa của từ mình hoặc từ hệ thống (không cần đi qua bộ).
     Sense sense = wordService.findReadableSense(senseId, userId);
     LocalDate today = LocalDate.now(clock);
@@ -107,6 +114,14 @@ public class ReviewService {
     CardProgress saved = progressRepository.save(progress);
     // Chỉ đánh dấu "hôm nay có học" khi lượt ôn hợp lệ và đã lưu.
     studyDayRepository.markStudied(userId, today);
+
+    // [THÊM] Ghi nhật ký FLASHCARD: Sổ lỗi sai + Thống kê luyện tập đọc từ review_events.
+    // Đặt SAU khi chấm thành công: lượt bị 409 (đã ôn hôm nay / chưa đến hạn) không được ghi.
+    // (vocab dùng practice → hai package phụ thuộc lẫn nhau; chấp nhận cho đơn giản.
+    //  Muốn tách hẳn thì phát Spring event ở đây, practice tự nghe và ghi.)
+    eventRepository.save(ReviewEvent.of(
+        userRepository.getReferenceById(userId), sense, PracticeMode.FLASHCARD,
+        remembered, durationMs == null ? 0 : durationMs));
     return ReviewResultResponse.from(saved);
   }
 

@@ -43,7 +43,8 @@ public class ReviewController {
       @PathVariable Long senseId,
       @Valid @RequestBody ReviewRequest request,
       @AuthenticationPrincipal AuthUser user) {
-    return reviewService.review(senseId, request.remembered(), user.id());
+    // [SỬA] Truyền thêm thời gian trả lời để ghi nhật ký FLASHCARD (review_events.duration_ms).
+    return reviewService.review(senseId, request.remembered(), request.durationMs(), user.id());
   }
 
   @GetMapping("/review/stats")

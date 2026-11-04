@@ -9,8 +9,11 @@ export abstract class ReviewApi {
    * deckId = null: ôn cả sổ từ. Thẻ đến hạn trước, rồi tối đa newLimit thẻ mới.
    */
   abstract queue(deckId: number | null, newLimit: number): Observable<ReviewCard[]>;
-  /** POST /api/senses/{senseId}/review → 409 REVIEW_NOT_ALLOWED nếu đã ôn hôm nay / chưa đến hạn */
-  abstract review(senseId: number, remembered: boolean): Observable<ReviewResult>;
+  /**
+   * POST /api/senses/{senseId}/review → 409 REVIEW_NOT_ALLOWED nếu đã ôn hôm nay / chưa đến hạn.
+   * durationMs: thời gian từ lúc hiện thẻ đến lúc chấm (backend ghi vào review_events, mode FLASHCARD).
+   */
+  abstract review(senseId: number, remembered: boolean, durationMs: number): Observable<ReviewResult>;
   /** GET /api/review/stats */
   abstract stats(): Observable<ReviewStats>;
 }

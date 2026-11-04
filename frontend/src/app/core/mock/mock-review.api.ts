@@ -44,7 +44,8 @@ export class MockReviewApi extends ReviewApi {
     });
   }
 
-  review(senseId: number, remembered: boolean): Observable<ReviewResult> {
+  // durationMs chỉ để khớp hợp đồng: mock chưa có bảng review_events.
+  review(senseId: number, remembered: boolean, _durationMs: number): Observable<ReviewResult> {
     return simulate(() => {
       const userId = this.session.userId();
       const sense = this.db.senses.find((s) => s.id === senseId);

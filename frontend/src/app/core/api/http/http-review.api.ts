@@ -19,8 +19,8 @@ export class HttpReviewApi extends ReviewApi {
     return this.http.get<ReviewCard[]>(`${this.base}/review-queue`, { params });
   }
 
-  review(senseId: number, remembered: boolean): Observable<ReviewResult> {
-    return this.http.post<ReviewResult>(`${this.base}/senses/${senseId}/review`, { remembered });
+  review(senseId: number, remembered: boolean, durationMs: number): Observable<ReviewResult> {
+    return this.http.post<ReviewResult>(`${this.base}/senses/${senseId}/review`, { remembered, durationMs });
   }
 
   stats(): Observable<ReviewStats> {

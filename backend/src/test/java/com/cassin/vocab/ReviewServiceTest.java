@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
@@ -28,6 +29,9 @@ import org.springframework.http.HttpStatus;
 
 import com.cassin.common.BusinessException;
 import com.cassin.common.TimeConfig;
+import com.cassin.practice.PracticeMode;
+import com.cassin.practice.ReviewEvent;
+import com.cassin.practice.ReviewEventRepository;
 import com.cassin.user.User;
 import com.cassin.user.UserRepository;
 import com.cassin.vocab.dto.BoxCount;
@@ -50,6 +54,7 @@ class ReviewServiceTest {
   @Mock DeckService deckService;
   @Mock WordService wordService;
   @Mock StudyDayRepository studyDayRepository;
+  @Mock ReviewEventRepository eventRepository;
 
   private ReviewService reviewService;
 
@@ -66,7 +71,7 @@ class ReviewServiceTest {
   void setUp() {
     Clock fixedClock = Clock.fixed(TODAY.atStartOfDay(TimeConfig.APP_ZONE).toInstant(), TimeConfig.APP_ZONE);
     reviewService = new ReviewService(progressRepository, senseRepository, userRepository,
-        deckService, wordService, studyDayRepository, fixedClock);
+        deckService, wordService, studyDayRepository, eventRepository, fixedClock);
   }
 
   // ===================== getQueue =====================
@@ -146,7 +151,7 @@ class ReviewServiceTest {
     when(userRepository.getReferenceById(USER_ID)).thenReturn(me);
     when(progressRepository.save(any(CardProgress.class))).thenAnswer(inv -> inv.getArgument(0));
 
-    ReviewResultResponse result = reviewService.review(31L, true, USER_ID);
+    ReviewResultResponse result = reviewService.review(31L, true, null, USER_ID);
 
     assertThat(result.senseId()).isEqualTo(31L);
     assertThat(result.box()).isEqualTo(2);
@@ -162,9 +167,9 @@ class ReviewServiceTest {
     when(wordService.findReadableSense(30L, USER_ID)).thenReturn(lightNoun);
     when(progressRepository.findByUserIdAndSenseId(USER_ID, 30L)).thenReturn(Optional.of(progress));
 
-    assertStatus(() -> reviewService.review(30L, true, USER_ID), HttpStatus.CONFLICT, "REVIEW_NOT_ALLOWED");
+    assertStatus(() -> reviewService.review(30L, true, null, USER_ID), HttpStatus.CONFLICT, "REVIEW_NOT_ALLOWED");
     verify(progressRepository, never()).save(any());
-    verifyNoInteractions(studyDayRepository);
+    verifyNoInteractions(studyDayRepository, eventRepository);   // lượt 409 không ghi nhật ký
   }
 
   @Test
@@ -173,8 +178,42 @@ class ReviewServiceTest {
     when(wordService.findReadableSense(99L, USER_ID))
         .thenThrow(new BusinessException(HttpStatus.NOT_FOUND, "SENSE_NOT_FOUND", "Không tìm thấy nghĩa"));
 
-    assertStatus(() -> reviewService.review(99L, true, USER_ID), HttpStatus.NOT_FOUND, "SENSE_NOT_FOUND");
-    verifyNoInteractions(progressRepository, studyDayRepository);
+    assertStatus(() -> reviewService.review(99L, true, null, USER_ID), HttpStatus.NOT_FOUND, "SENSE_NOT_FOUND");
+    verifyNoInteractions(progressRepository, studyDayRepository, eventRepository);
+  }
+
+  @Test
+  @DisplayName("Chấm thẻ: ghi 1 dòng FLASHCARD, correct = remembered, thiếu durationMs thì ghi 0")
+  void review_logsFlashcardEvent() {
+    when(wordService.findReadableSense(31L, USER_ID)).thenReturn(lightAdj);
+    when(progressRepository.findByUserIdAndSenseId(USER_ID, 31L)).thenReturn(Optional.empty());
+    when(userRepository.getReferenceById(USER_ID)).thenReturn(me);
+    when(progressRepository.save(any(CardProgress.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    reviewService.review(31L, false, null, USER_ID);
+
+    ArgumentCaptor<ReviewEvent> event = ArgumentCaptor.forClass(ReviewEvent.class);
+    verify(eventRepository).save(event.capture());
+    assertThat(event.getValue().getMode()).isEqualTo(PracticeMode.FLASHCARD);
+    assertThat(event.getValue().isCorrect()).isFalse();
+    assertThat(event.getValue().getDurationMs()).isZero();
+    assertThat(event.getValue().getSense()).isSameAs(lightAdj);
+  }
+
+  @Test
+  @DisplayName("Chấm thẻ có gửi durationMs: ghi đúng thời gian")
+  void review_keepsDuration() {
+    when(wordService.findReadableSense(31L, USER_ID)).thenReturn(lightAdj);
+    when(progressRepository.findByUserIdAndSenseId(USER_ID, 31L)).thenReturn(Optional.empty());
+    when(userRepository.getReferenceById(USER_ID)).thenReturn(me);
+    when(progressRepository.save(any(CardProgress.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    reviewService.review(31L, true, 3_500, USER_ID);
+
+    ArgumentCaptor<ReviewEvent> event = ArgumentCaptor.forClass(ReviewEvent.class);
+    verify(eventRepository).save(event.capture());
+    assertThat(event.getValue().isCorrect()).isTrue();
+    assertThat(event.getValue().getDurationMs()).isEqualTo(3_500);
   }
 
   // ===================== getStats / streak =====================
