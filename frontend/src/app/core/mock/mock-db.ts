@@ -31,20 +31,35 @@ export interface DbDeck {
   updatedAt: string;
 }
 
-export interface DbCard {
+/** [V10] Bảng words. ownerId = null: từ hệ thống (dùng chung, admin quản lý). */
+export interface DbWord {
   id: number;
-  deckId: number;
-  word: string;
-  partOfSpeech: PartOfSpeech;
+  ownerId: number | null;
+  term: string;
   phonetic: string | null;
-  definition: string;
-  examples: string[];
   createdAt: string;
+}
+
+/** [V10] Bảng senses (+ sense_examples gộp vào mảng examples). Mỗi nghĩa là một thẻ ôn. */
+export interface DbSense {
+  id: number;
+  wordId: number;
+  position: number;
+  partOfSpeech: PartOfSpeech;
+  definition: string;
+  /** Giữ nguyên dấu [ ] đánh dấu từ đích */
+  examples: string[];
+}
+
+/** [V10] Bảng deck_words: từ nào nằm trong bộ nào (nhiều-nhiều). */
+export interface DbDeckWord {
+  deckId: number;
+  wordId: number;
 }
 
 export interface DbProgress {
   userId: number;
-  cardId: number;
+  senseId: number;
   box: number;
   dueDate: string;
   lastReviewedOn: string | null;
@@ -90,7 +105,9 @@ interface DbState {
   seq: number;
   users: DbUser[];
   decks: DbDeck[];
-  cards: DbCard[];
+  words: DbWord[];
+  senses: DbSense[];
+  deckWords: DbDeckWord[];
   progresses: DbProgress[];
   topics: DbTopic[];
   questions: DbQuestion[];
@@ -103,11 +120,12 @@ const STORAGE_KEY = 'cassin.mockdb';
 /**
  * Tăng số này mỗi khi đổi cấu trúc dữ liệu mẫu: trình duyệt đang giữ bản cũ sẽ tự dựng lại từ đầu.
  * 2: thêm tài khoản admin + field bio cho user.
+ * 3: [V10] thẻ → từ nhiều nghĩa (words, senses, deck_words), tiến độ theo nghĩa.
  */
-const VERSION = 2;
+const VERSION = 3;
 
 /**
- * Lưu vào localStorage sau mỗi lần ghi: tải lại trang vẫn còn bộ từ / thẻ / tiến độ vừa tạo.
+ * Lưu vào localStorage sau mỗi lần ghi: tải lại trang vẫn còn bộ từ / từ / tiến độ vừa tạo.
  * Muốn làm lại từ đầu: gọi reset() (nút "Đặt lại dữ liệu mẫu" trong menu tài khoản).
  */
 @Injectable({ providedIn: 'root' })
@@ -120,8 +138,14 @@ export class MockDb {
   get decks() {
     return this.state.decks;
   }
-  get cards() {
-    return this.state.cards;
+  get words() {
+    return this.state.words;
+  }
+  get senses() {
+    return this.state.senses;
+  }
+  get deckWords() {
+    return this.state.deckWords;
   }
   get progresses() {
     return this.state.progresses;
@@ -143,7 +167,7 @@ export class MockDb {
   }
 
   /** Xóa các dòng thỏa điều kiện khỏi một bảng (giống DELETE ... WHERE). */
-  removeWhere<K extends 'decks' | 'cards' | 'progresses' | 'attempts' | 'topics' | 'questions'>(
+  removeWhere<K extends 'decks' | 'words' | 'senses' | 'deckWords' | 'progresses' | 'attempts' | 'topics' | 'questions'>(
     table: K,
     predicate: (row: DbState[K][number]) => boolean,
   ): void {
@@ -195,7 +219,9 @@ function buildSeed(): DbState {
     seq: 1000,
     users: [],
     decks: [],
-    cards: [],
+    words: [],
+    senses: [],
+    deckWords: [],
     progresses: [],
     topics: [],
     questions: [],
@@ -229,33 +255,46 @@ function buildSeed(): DbState {
     state.decks.push(deck);
     return deck;
   };
-  const addCards = (deckId: number, cards: SeedCard[]) =>
-    cards.map(([word, partOfSpeech, phonetic, definition, examples], index) => {
-      const card: DbCard = {
-        id: id(),
-        deckId,
-        word,
-        partOfSpeech,
-        phonetic,
-        definition,
-        examples,
-        createdAt: new Date(Date.now() - (cards.length - index) * 60_000).toISOString(),
-      };
-      state.cards.push(card);
-      return card;
+  /**
+   * Thêm các dòng mẫu vào một bộ. Các dòng cùng cách viết (vd "light" danh từ + "light" tính từ)
+   * gộp thành MỘT từ nhiều nghĩa, giống cách V10 gộp thẻ cũ. Trả về các nghĩa theo thứ tự.
+   */
+  const addWords = (deckId: number, ownerId: number | null, rows: SeedCard[]): DbSense[] => {
+    const byTerm = new Map<string, DbWord>();
+    const added: DbSense[] = [];
+    rows.forEach(([term, partOfSpeech, phonetic, definition, examples], index) => {
+      let word = byTerm.get(term.toLowerCase());
+      if (!word) {
+        word = {
+          id: id(),
+          ownerId,
+          term,
+          phonetic,
+          createdAt: new Date(Date.now() - (rows.length - index) * 60_000).toISOString(),
+        };
+        byTerm.set(term.toLowerCase(), word);
+        state.words.push(word);
+        state.deckWords.push({ deckId, wordId: word.id });
+      }
+      const position = state.senses.filter((s) => s.wordId === word.id).length;
+      const sense: DbSense = { id: id(), wordId: word.id, position, partOfSpeech, definition, examples };
+      state.senses.push(sense);
+      added.push(sense);
     });
+    return added;
+  };
 
   // Tiến độ mẫu: [hộp, hạn ôn (số ngày so với hôm nay, âm = quá hạn)]
   const plan: [number, number][] = [
     [1, 0], [2, -1], [3, 0], [1, -2], [4, 0], [2, 1], [5, 9], [3, 2],
     [2, 0], [4, 5], [1, 0], [3, -1], [5, 12], [2, 0], [4, 3], [1, 1],
   ];
-  const addProgress = (cards: DbCard[], count: number) =>
-    cards.slice(0, count).forEach((card, i) => {
+  const addProgress = (senses: DbSense[], count: number) =>
+    senses.slice(0, count).forEach((sense, i) => {
       const [box, dueIn] = plan[i % plan.length];
       state.progresses.push({
         userId: nam.id,
-        cardId: card.id,
+        senseId: sense.id,
         box,
         dueDate: addDays(today, dueIn),
         lastReviewedOn: dueIn > 0 ? today : addDays(today, -2),
@@ -265,12 +304,11 @@ function buildSeed(): DbState {
     });
 
   const system = addDeck(SEED_SYSTEM_DECK.deckName, SEED_SYSTEM_DECK.description, 'SYSTEM_DECK', null, 0);
-  addProgress(addCards(system.id, SEED_SYSTEM_DECK.cards), 16);
+  addProgress(addWords(system.id, null, SEED_SYSTEM_DECK.cards), 16);
 
   SEED_USER_DECKS.forEach((seed, index) => {
     const deck = addDeck(seed.deckName, seed.description, 'USER_DECK', nam.id, index === 0 ? 1 : 10);
-    const cards = addCards(deck.id, seed.cards);
-    addProgress(cards, index === 0 ? 10 : 0);
+    addProgress(addWords(deck.id, nam.id, seed.cards), index === 0 ? 10 : 0);
   });
 
   for (const seed of SEED_TOPICS) {

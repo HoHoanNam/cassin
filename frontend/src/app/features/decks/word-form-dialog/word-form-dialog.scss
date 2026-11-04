@@ -1,0 +1,18 @@
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+/* Mỗi nghĩa một khung riêng, viền mảnh như một ô trên trang vở. */
+.sense {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--card-line);
+  border-radius: 12px;
+  background: var(--surface);
+}

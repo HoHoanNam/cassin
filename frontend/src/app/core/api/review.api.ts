@@ -2,18 +2,15 @@ import { Observable } from 'rxjs';
 
 import { ReviewCard, ReviewResult, ReviewStats } from '../models/review.models';
 
-/** Ôn thẻ theo hộp Leitner. */
+/** Ôn thẻ theo hộp Leitner. [V10] Mỗi thẻ là MỘT nghĩa của một từ. */
 export abstract class ReviewApi {
-  /** GET /api/decks/{deckId}/review-queue?newLimit= */
-  abstract deckQueue(deckId: number, newLimit: number): Observable<ReviewCard[]>;
   /**
-   * [CẦN BE BỔ SUNG] GET /api/review-queue?newLimit=
-   * Hàng đợi gộp MỌI bộ từ (nút "Bắt đầu ôn 18 thẻ" ở trang Hôm nay).
-   * Backend hiện chỉ có hàng đợi theo từng bộ.
+   * GET /api/review-queue?deckId=&newLimit=
+   * deckId = null: ôn cả sổ từ. Thẻ đến hạn trước, rồi tối đa newLimit thẻ mới.
    */
-  abstract allQueue(newLimit: number): Observable<ReviewCard[]>;
-  /** POST /api/cards/{cardId}/review */
-  abstract review(cardId: number, remembered: boolean): Observable<ReviewResult>;
+  abstract queue(deckId: number | null, newLimit: number): Observable<ReviewCard[]>;
+  /** POST /api/senses/{senseId}/review → 409 REVIEW_NOT_ALLOWED nếu đã ôn hôm nay / chưa đến hạn */
+  abstract review(senseId: number, remembered: boolean): Observable<ReviewResult>;
   /** GET /api/review/stats */
   abstract stats(): Observable<ReviewStats>;
 }

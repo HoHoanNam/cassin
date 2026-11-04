@@ -36,7 +36,7 @@ export class AdminOverviewPage {
 
   protected readonly contentTiles: StatTile[] = [
     { key: 'systemDecks', label: 'Bộ từ hệ thống', icon: 'decks' },
-    { key: 'systemCards', label: 'Thẻ hệ thống', icon: 'cards' },
+    { key: 'systemCards', label: 'Từ hệ thống', icon: 'cards' },
     { key: 'topics', label: 'Chủ đề ngữ pháp', icon: 'grammar' },
     { key: 'questions', label: 'Câu hỏi', icon: 'check' },
   ];

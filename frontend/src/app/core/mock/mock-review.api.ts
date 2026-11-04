@@ -11,55 +11,54 @@ import {
   ReviewStats,
 } from '../models/review.models';
 import { addDays, todayIso } from '../util/dates';
-import { DbCard, DbProgress, MockDb } from './mock-db';
-import { toCard } from './mock-deck.api';
+import { plainExample } from '../util/example-markup';
+import { DbProgress, DbSense, MockDb } from './mock-db';
 import { MockSession } from './mock-session';
 import { conflict, notFound, simulate } from './mock-utils';
+import { MockVocab } from './mock-vocab';
 
 const MAX_DUE_PER_QUEUE = 100;
 const MAX_NEW_PER_QUEUE = 50;
 
-/** Giả lập ReviewService + luật Leitner trong CardProgress ở backend. */
+/**
+ * Giả lập ReviewService + luật Leitner trong CardProgress ở backend.
+ * [V10] Đơn vị ôn là NGHĨA. deckId = null: ôn cả sổ từ.
+ */
 @Injectable()
 export class MockReviewApi extends ReviewApi {
   private readonly db = inject(MockDb);
+  private readonly vocab = inject(MockVocab);
   private readonly session = inject(MockSession);
 
-  deckQueue(deckId: number, newLimit: number): Observable<ReviewCard[]> {
+  queue(deckId: number | null, newLimit: number): Observable<ReviewCard[]> {
     return simulate(() => {
       const userId = this.session.userId();
-      const deck = this.db.decks.find((d) => d.id === deckId);
-      if (!deck || (deck.deckType !== 'SYSTEM_DECK' && deck.ownerId !== userId)) {
-        throw notFound('DECK_NOT_FOUND', 'Không tìm thấy bộ từ');
+      let wordIds: Set<number>;
+      if (deckId !== null) {
+        this.vocab.readableDeck(deckId, userId);
+        wordIds = this.vocab.wordIdsIn(deckId);
+      } else {
+        wordIds = new Set(this.vocab.notebookWords(userId).map((w) => w.id));
       }
-      return this.buildQueue(userId, new Set([deckId]), newLimit);
+      return this.buildQueue(userId, wordIds, newLimit);
     });
   }
 
-  allQueue(newLimit: number): Observable<ReviewCard[]> {
+  review(senseId: number, remembered: boolean): Observable<ReviewResult> {
     return simulate(() => {
       const userId = this.session.userId();
-      const readable = this.db.decks
-        .filter((d) => d.deckType === 'SYSTEM_DECK' || d.ownerId === userId)
-        .map((d) => d.id);
-      return this.buildQueue(userId, new Set(readable), newLimit);
-    });
-  }
-
-  review(cardId: number, remembered: boolean): Observable<ReviewResult> {
-    return simulate(() => {
-      const userId = this.session.userId();
-      const card = this.db.cards.find((c) => c.id === cardId);
-      const deck = card && this.db.decks.find((d) => d.id === card.deckId);
-      if (!card || !deck || (deck.deckType !== 'SYSTEM_DECK' && deck.ownerId !== userId)) {
-        throw notFound('CARD_NOT_FOUND', 'Không tìm thấy thẻ');
+      const sense = this.db.senses.find((s) => s.id === senseId);
+      const word = sense && this.db.words.find((w) => w.id === sense.wordId);
+      // WordService.findReadableSense: nghĩa của từ mình hoặc từ hệ thống
+      if (!sense || !word || (word.ownerId !== null && word.ownerId !== userId)) {
+        throw notFound('SENSE_NOT_FOUND', 'Không tìm thấy nghĩa');
       }
       const today = todayIso();
-      let progress = this.db.progresses.find((p) => p.userId === userId && p.cardId === cardId);
+      let progress = this.db.progresses.find((p) => p.userId === userId && p.senseId === senseId);
       const isNew = !progress;
       progress ??= {
         userId,
-        cardId,
+        senseId,
         box: MIN_BOX,
         dueDate: today,
         lastReviewedOn: null,
@@ -91,7 +90,7 @@ export class MockReviewApi extends ReviewApi {
       this.db.markStudied(userId, today);
       this.db.save();
       return {
-        cardId,
+        senseId,
         box: progress.box,
         dueDate: progress.dueDate,
         reviewCount: progress.reviewCount,
@@ -114,29 +113,50 @@ export class MockReviewApi extends ReviewApi {
     });
   }
 
-  /** Thẻ đến hạn trước (quá hạn lâu nhất lên đầu), rồi tới tối đa newLimit thẻ mới. */
-  private buildQueue(userId: number, deckIds: Set<number>, newLimit: number): ReviewCard[] {
+  /** Nghĩa đến hạn trước (quá hạn lâu nhất lên đầu), rồi tới tối đa newLimit nghĩa mới. */
+  private buildQueue(userId: number, wordIds: Set<number>, newLimit: number): ReviewCard[] {
     const today = todayIso();
-    const cards = this.db.cards.filter((c) => deckIds.has(c.deckId));
-    const progressByCard = new Map<number, DbProgress>(
-      this.db.progresses.filter((p) => p.userId === userId).map((p) => [p.cardId, p]),
+    const senses = this.db.senses.filter((s) => wordIds.has(s.wordId));
+    const progressBySense = new Map<number, DbProgress>(
+      this.db.progresses.filter((p) => p.userId === userId).map((p) => [p.senseId, p]),
     );
 
-    const due = cards
-      .map((card) => ({ card, progress: progressByCard.get(card.id) }))
-      .filter((x): x is { card: DbCard; progress: DbProgress } => !!x.progress && x.progress.dueDate <= today)
+    const due = senses
+      .map((sense) => ({ sense, progress: progressBySense.get(sense.id) }))
+      .filter((x): x is { sense: DbSense; progress: DbProgress } => !!x.progress && x.progress.dueDate <= today)
       .sort((a, b) => a.progress.dueDate.localeCompare(b.progress.dueDate) || a.progress.box - b.progress.box)
       .slice(0, MAX_DUE_PER_QUEUE)
-      .map(({ card, progress }) => ({ card: toCard(card), box: progress.box, isNew: false }));
+      .map(({ sense, progress }) => this.toCard(sense, progress.box, false));
 
+    const createdAt = new Map(this.db.words.map((w) => [w.id, w.createdAt] as const));
     const limit = Math.min(Math.max(newLimit, 0), MAX_NEW_PER_QUEUE);
-    const fresh = cards
-      .filter((c) => !progressByCard.has(c.id))
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    const fresh = senses
+      .filter((s) => !progressBySense.has(s.id))
+      .sort((a, b) => (createdAt.get(a.wordId) ?? '').localeCompare(createdAt.get(b.wordId) ?? '') || a.position - b.position)
       .slice(0, limit)
-      .map((card) => ({ card: toCard(card), box: MIN_BOX, isNew: true }));
+      .map((sense) => this.toCard(sense, MIN_BOX, true));
 
     return [...due, ...fresh];
+  }
+
+  /** ReviewCardResponse.of: kèm các nghĩa KHÁC của cùng từ, câu ví dụ đã bỏ dấu [ ]. */
+  private toCard(sense: DbSense, box: number, isNew: boolean): ReviewCard {
+    const word = this.db.words.find((w) => w.id === sense.wordId)!;
+    return {
+      senseId: sense.id,
+      wordId: word.id,
+      term: word.term,
+      phonetic: word.phonetic,
+      partOfSpeech: sense.partOfSpeech,
+      definition: sense.definition,
+      examples: sense.examples.map(plainExample),
+      otherSenses: this.vocab
+        .sensesOf(word.id)
+        .filter((s) => s.id !== sense.id)
+        .map((s) => ({ partOfSpeech: s.partOfSpeech, definition: s.definition })),
+      box,
+      isNew,
+    };
   }
 }
 

@@ -6,16 +6,28 @@
 
   @if (!flipped()) {
     <span class="face" aria-hidden="true">
-      <span class="word">{{ item().card.word }}</span>
-      @if (item().card.phonetic) {
-        <span class="text-lg text-ink-soft">{{ item().card.phonetic }}</span>
+      <span class="word">{{ item().term }}</span>
+      @if (item().phonetic) {
+        <span class="text-lg text-ink-soft">{{ item().phonetic }}</span>
+      }
+      <!-- Từ nhiều nghĩa: mặt trước gợi ý đang hỏi nghĩa nào (theo loại từ) -->
+      @if (item().otherSenses.length > 0) {
+        <span class="text-sm text-ink-soft">Từ có {{ item().otherSenses.length + 1 }} nghĩa, thẻ này hỏi nghĩa {{ posLabel() }}</span>
       }
     </span>
   } @else {
     <span class="face" aria-hidden="true">
-      <span class="hand meaning">{{ item().card.definition }}</span>
-      @for (example of item().card.examples; track $index) {
+      <span class="hand meaning">{{ item().definition }}</span>
+      @for (example of item().examples; track $index) {
         <span class="max-w-[32em] italic text-ink-soft">{{ example }}</span>
+      }
+      @if (item().otherSenses.length > 0) {
+        <span class="others">
+          <span class="text-[12px] uppercase tracking-wide">Nghĩa khác</span>
+          @for (other of item().otherSenses; track $index) {
+            <span><i>{{ pos[other.partOfSpeech].short || pos[other.partOfSpeech].label }}</i> {{ other.definition }}</span>
+          }
+        </span>
       }
     </span>
   }

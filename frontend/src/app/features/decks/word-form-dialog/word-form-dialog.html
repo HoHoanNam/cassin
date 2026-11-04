@@ -1,0 +1,190 @@
+<app-modal [open]="open()" [title]="isEdit() ? 'Sửa từ' : 'Thêm từ'" (closed)="close()">
+  <form class="mt-5 flex flex-col gap-5" [formGroup]="form" (ngSubmit)="submit(false)" novalidate>
+    @if (serverError(); as message) {
+      <div class="form-alert form-alert-error" role="alert">{{ message }}</div>
+    }
+
+    @if (loading()) {
+      <p class="m-0 text-ink-soft" aria-live="polite">Đang tải từ...</p>
+    }
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div class="field">
+        <label class="label" for="word-term">Từ</label>
+        @let term = form.controls.term;
+        <input
+          id="word-term"
+          class="input"
+          type="text"
+          placeholder="light"
+          autocomplete="off"
+          autocapitalize="off"
+          formControlName="term"
+          [attr.aria-invalid]="term.touched && term.invalid"
+          aria-describedby="word-term-error"
+        />
+        @if (term.touched && term.hasError('required')) {
+          <p id="word-term-error" class="field-error">Vui lòng nhập từ</p>
+        } @else if (term.hasError('maxlength')) {
+          <p id="word-term-error" class="field-error">Tối đa {{ limits.term }} ký tự</p>
+        } @else if (term.hasError('server')) {
+          <p id="word-term-error" class="field-error">{{ term.getError('server') }}</p>
+        }
+      </div>
+      <div class="field">
+        <label class="label" for="word-phonetic"
+          >Phiên âm <span class="font-normal text-ink-soft">(không bắt buộc)</span></label
+        >
+        <input
+          id="word-phonetic"
+          class="input"
+          type="text"
+          placeholder="/laɪt/"
+          autocomplete="off"
+          formControlName="phonetic"
+        />
+      </div>
+    </div>
+
+    <!-- Các nghĩa: mỗi nghĩa là một thẻ ôn riêng -->
+    <div class="flex flex-col gap-3">
+      <div class="flex items-baseline justify-between gap-3">
+        <h3 class="label m-0">
+          Nghĩa
+          <span class="font-normal text-ink-soft"
+            >({{ senses.length }}/{{ limits.maxSenses }})</span
+          >
+        </h3>
+        <span class="text-[13px] text-ink-soft">Mỗi nghĩa là một thẻ ôn riêng</span>
+      </div>
+
+      @for (sense of senses.controls; track sense; let i = $index) {
+        <fieldset class="sense m-0" [formGroup]="sense">
+          <legend class="sr-only">Nghĩa {{ i + 1 }}</legend>
+          <div class="flex items-center justify-between gap-2">
+            <span class="hand text-lg text-brand">Nghĩa {{ i + 1 }}</span>
+            @if (senses.length > 1) {
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm text-ink-soft"
+                [attr.aria-label]="'Xóa nghĩa ' + (i + 1)"
+                (click)="removeSense(i)"
+              >
+                <app-icon name="trash" [size]="16" /> Xóa nghĩa
+              </button>
+            }
+          </div>
+
+          <div class="grid gap-3 sm:grid-cols-[170px_minmax(0,1fr)]">
+            <div class="field">
+              <label class="label" [attr.for]="'sense-pos-' + i">Loại từ</label>
+              <select [id]="'sense-pos-' + i" class="input" formControlName="partOfSpeech">
+                @for (option of posOptions; track option.value) {
+                  <option [value]="option.value">{{ option.label }}</option>
+                }
+              </select>
+            </div>
+            <div class="field">
+              <label class="label" [attr.for]="'sense-def-' + i">Nghĩa</label>
+              @let definition = sense.controls.definition;
+              <input
+                [id]="'sense-def-' + i"
+                class="input"
+                type="text"
+                placeholder="ánh sáng"
+                autocomplete="off"
+                formControlName="definition"
+                [attr.aria-invalid]="definition.touched && definition.invalid"
+              />
+              @if (definition.touched && definition.hasError('required')) {
+                <p class="field-error">Vui lòng nhập nghĩa</p>
+              } @else if (definition.hasError('maxlength')) {
+                <p class="field-error">Tối đa {{ limits.definition }} ký tự</p>
+              } @else if (definition.hasError('server')) {
+                <p class="field-error">{{ definition.getError('server') }}</p>
+              }
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <span class="text-[13px] font-semibold"
+              >Câu ví dụ
+              <span class="font-normal text-ink-soft">(tối đa {{ limits.maxExamples }})</span></span
+            >
+            @for (control of sense.controls.examples.controls; track control; let j = $index) {
+              <div class="flex items-start gap-2">
+                <input
+                  class="input"
+                  type="text"
+                  [attr.aria-label]="'Nghĩa ' + (i + 1) + ', câu ví dụ ' + (j + 1)"
+                  placeholder="Turn on the [light], please."
+                  [formControl]="control"
+                  [attr.aria-invalid]="control.invalid"
+                />
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-icon mt-1 text-ink-soft"
+                  [attr.aria-label]="'Xóa câu ví dụ ' + (j + 1) + ' của nghĩa ' + (i + 1)"
+                  (click)="removeExample(sense, j)"
+                >
+                  <app-icon name="trash" [size]="18" />
+                </button>
+              </div>
+              @if (control.hasError('markup')) {
+                <p class="field-error">{{ control.getError('markup') }}</p>
+              } @else if (control.hasError('maxlength')) {
+                <p class="field-error">Mỗi câu ví dụ tối đa {{ limits.example }} ký tự</p>
+              }
+            }
+            @if (sense.controls.examples.length < limits.maxExamples) {
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm self-start"
+                (click)="addExample(sense)"
+              >
+                <app-icon name="plus" [size]="18" /> Thêm câu ví dụ
+              </button>
+            }
+          </div>
+        </fieldset>
+      }
+
+      @if (senses.length < limits.maxSenses) {
+        <button type="button" class="btn btn-secondary btn-sm self-start" (click)="addSense()">
+          <app-icon name="plus" [size]="18" /> Thêm nghĩa
+        </button>
+      }
+
+      @if (isEdit()) {
+        <p class="field-hint m-0">
+          Xóa một nghĩa đã lưu sẽ xóa luôn tiến độ ôn của nghĩa đó. Sửa nghĩa thì tiến độ được giữ
+          nguyên.
+        </p>
+      }
+      <p class="field-hint m-0">
+        Đặt từ cần điền trong dấu ngoặc vuông, đúng dạng trong câu:
+        <i>Her English has [improved] a lot.</i> Câu có đánh dấu sẽ được dùng cho bài luyện
+        <b>Điền từ</b>.
+      </p>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn btn-secondary" [disabled]="saving()" (click)="close()">
+        Hủy
+      </button>
+      @if (!isEdit()) {
+        <button
+          type="button"
+          class="btn btn-secondary"
+          [disabled]="saving()"
+          (click)="submit(true)"
+        >
+          Lưu và thêm tiếp
+        </button>
+      }
+      <button type="submit" class="btn btn-primary" [disabled]="saving() || loading()">
+        {{ saving() ? 'Đang lưu...' : 'Lưu từ' }}
+      </button>
+    </div>
+  </form>
+</app-modal>

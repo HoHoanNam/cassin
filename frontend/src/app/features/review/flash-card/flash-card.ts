@@ -4,7 +4,8 @@ import { ReviewCard } from '../../../core/models/review.models';
 import { PART_OF_SPEECH } from '../../../core/util/part-of-speech';
 
 /**
- * Thẻ học kẻ dòng. Mặt trước: từ + phiên âm. Mặt sau: nghĩa + câu ví dụ.
+ * Thẻ học kẻ dòng. Mặt trước: từ + phiên âm + loại từ. Mặt sau: nghĩa + câu ví dụ.
+ * [V10] Mặt sau hiện mờ các nghĩa KHÁC của cùng từ, tránh nhầm "đúng từ, sai nghĩa".
  * Cả thẻ là MỘT nút bấm để lật (bàn phím và trình đọc màn hình dùng được).
  */
 @Component({
@@ -18,10 +19,11 @@ export class FlashCard {
   readonly flipped = input(false);
   readonly flip = output<void>();
 
-  protected readonly posLabel = computed(() => PART_OF_SPEECH[this.item().card.partOfSpeech].label);
+  protected readonly pos = PART_OF_SPEECH;
+  protected readonly posLabel = computed(() => PART_OF_SPEECH[this.item().partOfSpeech].label);
   protected readonly label = computed(() =>
     this.flipped()
-      ? `Nghĩa: ${this.item().card.definition}`
-      : `Từ: ${this.item().card.word}. Bấm để lật thẻ`,
+      ? `Nghĩa: ${this.item().definition}`
+      : `Từ: ${this.item().term}, ${this.posLabel()}. Bấm để lật thẻ`,
   );
 }

@@ -22,7 +22,7 @@
           <thead>
             <tr>
               <th scope="col">Tên bộ</th>
-              <th scope="col" class="whitespace-nowrap">Số thẻ</th>
+              <th scope="col" class="whitespace-nowrap">Số từ</th>
               <th scope="col" class="hidden md:table-cell">Cập nhật</th>
               <th scope="col"><span class="sr-only">Thao tác</span></th>
             </tr>
@@ -37,7 +37,7 @@
                     <span class="hidden max-w-[36em] truncate text-[13px] text-ink-soft lg:block">{{ deck.description }}</span>
                   }
                 </td>
-                <td class="tabular-nums">{{ deck.cardCount }}</td>
+                <td class="tabular-nums">{{ deck.wordCount }}</td>
                 <td class="hidden whitespace-nowrap text-ink-soft md:table-cell">
                   {{ deck.updatedAt ? relativeDay(deck.updatedAt) : '' }}
                 </td>
@@ -69,5 +69,5 @@
 <app-deck-form-dialog scope="system" [open]="creating()" (closed)="creating.set(false)" (saved)="onCreated($event)" />
 <app-deck-form-dialog scope="system" [open]="editing() !== null" [deck]="editing()" (closed)="editing.set(null)" (saved)="onEdited($event)" />
 <app-confirm-dialog [open]="toDelete() !== null" [title]="'Xóa bộ “' + (toDelete()?.deckName ?? '') + '”?'"
-  [message]="(toDelete()?.cardCount ?? 0) + ' thẻ của bộ sẽ bị xóa. Bộ đã có học viên ôn thì hệ thống sẽ từ chối xóa.'"
+  [message]="'Chỉ xóa bộ: ' + (toDelete()?.wordCount ?? 0) + ' từ hệ thống trong bộ vẫn còn. Bộ đã có học viên ôn thì hệ thống sẽ từ chối xóa.'"
   confirmLabel="Xóa bộ từ" [busy]="deleting()" (cancelled)="toDelete.set(null)" (confirmed)="deleteDeck()" />

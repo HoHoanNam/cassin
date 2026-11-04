@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import { APP_ENV } from '../../config/app-env';
 import { AdminQuestion, AdminStats, QuestionRequest, TopicRequest } from '../../models/admin.models';
-import { Card, CardRequest, Deck, DeckRequest } from '../../models/deck.models';
+import { Deck, DeckRequest, Word, WordRequest } from '../../models/deck.models';
 import { TopicDetail } from '../../models/grammar.models';
 import { AdminApi } from '../admin.api';
 
@@ -29,16 +29,24 @@ export class HttpAdminApi extends AdminApi {
     return this.http.delete<void>(`${this.base}/decks/${deckId}`);
   }
 
-  createCard(deckId: number, request: CardRequest): Observable<Card> {
-    return this.http.post<Card>(`${this.base}/decks/${deckId}/cards`, request);
+  createWord(deckId: number, request: WordRequest): Observable<Word> {
+    return this.http.post<Word>(`${this.base}/decks/${deckId}/words`, request);
   }
 
-  updateCard(cardId: number, request: CardRequest): Observable<Card> {
-    return this.http.put<Card>(`${this.base}/cards/${cardId}`, request);
+  addWord(deckId: number, wordId: number): Observable<void> {
+    return this.http.post<void>(`${this.base}/decks/${deckId}/words/${wordId}`, null);
   }
 
-  deleteCard(cardId: number): Observable<void> {
-    return this.http.delete<void>(`${this.base}/cards/${cardId}`);
+  removeWord(deckId: number, wordId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/decks/${deckId}/words/${wordId}`);
+  }
+
+  updateWord(wordId: number, request: WordRequest): Observable<Word> {
+    return this.http.put<Word>(`${this.base}/words/${wordId}`, request);
+  }
+
+  deleteWord(wordId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/words/${wordId}`);
   }
 
   createTopic(request: TopicRequest): Observable<TopicDetail> {

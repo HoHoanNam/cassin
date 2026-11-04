@@ -10,13 +10,13 @@ import {
   TOPIC_LIMITS,
   TopicRequest,
 } from '../models/admin.models';
-import { Card, CardRequest, Deck, DeckRequest } from '../models/deck.models';
+import { Deck, DeckRequest, Word, WordRequest } from '../models/deck.models';
 import { CEFR_LEVELS, TopicDetail } from '../models/grammar.models';
 import { todayIso } from '../util/dates';
-import { DbCard, DbDeck, DbQuestion, DbTopic, MockDb } from './mock-db';
-import { assertCardNotDuplicate, cleanExamples, toCard, validateCard, validateDeck } from './mock-deck.api';
+import { DbDeck, DbQuestion, DbTopic, MockDb } from './mock-db';
 import { MockSession } from './mock-session';
 import { businessError, conflict, forbidden, isBlank, notFound, simulate, tooLong, validate } from './mock-utils';
+import { MockVocab, validateDeck } from './mock-vocab';
 
 /**
  * Giả lập AdminDeckController + AdminGrammarController + AdminStatsController.
@@ -30,6 +30,7 @@ import { businessError, conflict, forbidden, isBlank, notFound, simulate, tooLon
 export class MockAdminApi extends AdminApi {
   private readonly db = inject(MockDb);
   private readonly session = inject(MockSession);
+  private readonly vocab = inject(MockVocab);
 
   stats(): Observable<AdminStats> {
     return simulate(() => {
@@ -39,7 +40,8 @@ export class MockAdminApi extends AdminApi {
       return {
         users: this.db.users.length,
         systemDecks: systemDeckIds.size,
-        systemCards: this.db.cards.filter((c) => systemDeckIds.has(c.deckId)).length,
+        // [V10] Đếm TỪ hệ thống (wordRepository.countByOwnerIsNull), không còn là thẻ.
+        systemCards: this.db.words.filter((w) => w.ownerId === null).length,
         topics: this.db.topics.length,
         questions: this.db.questions.length,
         quizAttempts: this.db.attempts.length,
@@ -88,62 +90,71 @@ export class MockAdminApi extends AdminApi {
       this.requireAdmin();
       // Tìm bộ TRƯỚC, kiểm tra người học SAU (giống bản sửa ở AdminDeckService).
       const deck = this.findSystemDeck(deckId);
-      const cardIds = new Set(this.db.cards.filter((c) => c.deckId === deck.id).map((c) => c.id));
-      if (this.db.progresses.some((p) => cardIds.has(p.cardId))) {
+      if (this.vocab.deckInUse(deck.id)) {
         throw conflict('DECK_IN_USE', 'Bộ từ đã có người học, không thể xóa');
       }
-      this.db.removeWhere('cards', (c) => c.deckId === deck.id);
+      // [V10] Chỉ xóa bộ + deck_words. Từ hệ thống vẫn còn (có thể nằm trong bộ khác).
+      this.db.removeWhere('deckWords', (dw) => dw.deckId === deck.id);
       this.db.removeWhere('decks', (d) => d.id === deck.id);
       this.db.save();
     });
   }
 
-  createCard(deckId: number, request: CardRequest): Observable<Card> {
+  // ===================== Từ hệ thống =====================
+
+  createWord(deckId: number, request: WordRequest): Observable<Word> {
     return simulate(() => {
       this.requireAdmin();
       const deck = this.findSystemDeck(deckId);
-      validateCard(request);
-      assertCardNotDuplicate(this.db, deck.id, request, null);
-      const card: DbCard = {
-        id: this.db.nextId(),
-        deckId: deck.id,
-        word: request.word.trim(),
-        partOfSpeech: request.partOfSpeech,
-        phonetic: request.phonetic?.trim() || null,
-        definition: request.definition.trim(),
-        examples: cleanExamples(request.examples),
-        createdAt: new Date().toISOString(),
-      };
-      this.db.cards.push(card);
-      deck.updatedAt = card.createdAt;
+      if (this.vocab.termExists(null, request.term ?? '')) {
+        throw conflict(
+          'WORD_EXISTS',
+          `Từ "${request.term.trim()}" đã có trong hệ thống. Hãy đặt từ có sẵn vào bộ hoặc thêm nghĩa cho từ đó.`,
+        );
+      }
+      this.vocab.validateWord(request, null);
+      const word = this.vocab.createWord(null, request);
+      this.vocab.linkWord(deck, word);
       this.db.save();
-      return toCard(card);
+      return this.vocab.toWord(word, null);
     });
   }
 
-  updateCard(cardId: number, request: CardRequest): Observable<Card> {
+  addWord(deckId: number, wordId: number): Observable<void> {
     return simulate(() => {
       this.requireAdmin();
-      const card = this.findSystemCard(cardId);
-      validateCard(request);
-      assertCardNotDuplicate(this.db, card.deckId, request, card.id);
-      card.word = request.word.trim();
-      card.partOfSpeech = request.partOfSpeech;
-      card.phonetic = request.phonetic?.trim() || null;
-      card.definition = request.definition.trim();
-      card.examples = cleanExamples(request.examples);
+      this.vocab.linkWord(this.findSystemDeck(deckId), this.vocab.systemWord(wordId));
       this.db.save();
-      return toCard(card);
     });
   }
 
-  deleteCard(cardId: number): Observable<void> {
+  removeWord(deckId: number, wordId: number): Observable<void> {
     return simulate(() => {
       this.requireAdmin();
-      const card = this.findSystemCard(cardId);
-      // Xóa MỘT thẻ: tiến độ của thẻ đó bị xóa theo (ON DELETE CASCADE), không chặn như xóa cả bộ.
-      this.db.removeWhere('progresses', (p) => p.cardId === card.id);
-      this.db.removeWhere('cards', (c) => c.id === card.id);
+      this.vocab.unlinkWord(this.findSystemDeck(deckId), wordId);
+      this.db.save();
+    });
+  }
+
+  updateWord(wordId: number, request: WordRequest): Observable<Word> {
+    return simulate(() => {
+      this.requireAdmin();
+      const word = this.vocab.systemWord(wordId);
+      if (this.vocab.termExists(null, request.term ?? '', word.id)) {
+        throw conflict('WORD_EXISTS', `Từ "${request.term.trim()}" đã có trong hệ thống`);
+      }
+      this.vocab.validateWord(request, word);
+      this.vocab.replaceSenses(word, request);
+      this.db.save();
+      return this.vocab.toWord(word, null);
+    });
+  }
+
+  deleteWord(wordId: number): Observable<void> {
+    return simulate(() => {
+      this.requireAdmin();
+      // Xóa MỘT từ: tiến độ của học viên với từ này bị xóa theo, không chặn như xóa cả bộ.
+      this.vocab.deleteWord(this.vocab.systemWord(wordId));
       this.db.save();
     });
   }
@@ -268,15 +279,6 @@ export class MockAdminApi extends AdminApi {
     return deck;
   }
 
-  private findSystemCard(cardId: number): DbCard {
-    const card = this.db.cards.find((c) => c.id === cardId);
-    const deck = card && this.db.decks.find((d) => d.id === card.deckId);
-    if (!card || deck?.deckType !== 'SYSTEM_DECK') {
-      throw notFound('CARD_NOT_FOUND', 'Không tìm thấy thẻ');
-    }
-    return card;
-  }
-
   private findTopic(topicId: number): DbTopic {
     const topic = this.db.topics.find((t) => t.id === topicId);
     if (!topic) {
@@ -295,17 +297,7 @@ export class MockAdminApi extends AdminApi {
 
   /** Admin không "học" bộ hệ thống → dueCount / newCount = 0, editable = false (giống backend). */
   private toDeck(deck: DbDeck): Deck {
-    return {
-      id: deck.id,
-      deckName: deck.deckName,
-      description: deck.description,
-      deckType: deck.deckType,
-      cardCount: this.db.cards.filter((c) => c.deckId === deck.id).length,
-      editable: false,
-      dueCount: 0,
-      newCount: 0,
-      updatedAt: deck.updatedAt,
-    };
+    return this.vocab.toDeck(deck, null);
   }
 
   private toTopicDetail(topic: DbTopic): TopicDetail {

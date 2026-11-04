@@ -7,6 +7,7 @@ import { MockDeckApi } from '../mock/mock-deck.api';
 import { MockGrammarApi } from '../mock/mock-grammar.api';
 import { MockQuizApi } from '../mock/mock-quiz.api';
 import { MockReviewApi } from '../mock/mock-review.api';
+import { MockWordApi } from '../mock/mock-word.api';
 import { AccountApi } from './account.api';
 import { AdminApi } from './admin.api';
 import { AuthApi } from './auth.api';
@@ -19,8 +20,10 @@ import { HttpDeckApi } from './http/http-deck.api';
 import { HttpGrammarApi } from './http/http-grammar.api';
 import { HttpQuizApi } from './http/http-quiz.api';
 import { HttpReviewApi } from './http/http-review.api';
+import { HttpWordApi } from './http/http-word.api';
 import { QuizApi } from './quiz.api';
 import { ReviewApi } from './review.api';
+import { WordApi } from './word.api';
 
 /**
  * Chọn bản cài đặt cho từng "hợp đồng" API.
@@ -31,6 +34,7 @@ export function provideApi(useMock: boolean): EnvironmentProviders {
     ? [
         { provide: AuthApi, useClass: MockAuthApi },
         { provide: DeckApi, useClass: MockDeckApi },
+        { provide: WordApi, useClass: MockWordApi },
         { provide: ReviewApi, useClass: MockReviewApi },
         { provide: GrammarApi, useClass: MockGrammarApi },
         { provide: QuizApi, useClass: MockQuizApi },
@@ -40,6 +44,7 @@ export function provideApi(useMock: boolean): EnvironmentProviders {
     : [
         { provide: AuthApi, useClass: HttpAuthApi },
         { provide: DeckApi, useClass: HttpDeckApi },
+        { provide: WordApi, useClass: HttpWordApi },
         { provide: ReviewApi, useClass: HttpReviewApi },
         { provide: GrammarApi, useClass: HttpGrammarApi },
         { provide: QuizApi, useClass: HttpQuizApi },

@@ -1,31 +1,33 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, numberAttribute, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
+import { Observable } from 'rxjs';
 
 import { AdminApi } from '../../core/api/admin.api';
 import { DeckApi } from '../../core/api/deck.api';
 import { ApiError, errorMessage } from '../../core/models/common.models';
-import { Card, Deck } from '../../core/models/deck.models';
+import { Deck, Word, WordSummary } from '../../core/models/deck.models';
 import { ToastService } from '../../core/ui/toast.service';
-import { PART_OF_SPEECH } from '../../core/util/part-of-speech';
 import { ConfirmDialog } from '../../shared/ui/confirm-dialog/confirm-dialog';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
 import { ErrorState } from '../../shared/ui/error-state/error-state';
 import { Icon } from '../../shared/ui/icon/icon';
 import { Pager } from '../../shared/ui/pager/pager';
 import { Skeleton } from '../../shared/ui/skeleton/skeleton';
-import { CardFormDialog } from '../decks/card-form-dialog/card-form-dialog';
 import { DeckFormDialog } from '../decks/deck-form-dialog/deck-form-dialog';
+import { WordFormDialog } from '../decks/word-form-dialog/word-form-dialog';
+import { WordList } from '../decks/word-list/word-list';
 
 const PAGE_SIZE = 20;
 
 /**
- * Quản lý MỘT bộ từ hệ thống: sửa bộ, thêm / sửa / xóa thẻ.
- * Đọc dùng DeckApi (GET /api/decks/{id}, /cards), ghi dùng AdminApi qua các hộp thoại scope="system".
+ * Quản lý MỘT bộ từ hệ thống: sửa bộ, thêm / sửa từ hệ thống, bỏ từ khỏi bộ, xóa hẳn từ.
+ * Đọc dùng DeckApi (GET /api/decks/{id}, /words), ghi dùng AdminApi (scope="system").
+ * [V10] Một từ hệ thống nằm được trong nhiều bộ: "Bỏ khỏi bộ" khác "Xóa từ".
  */
 @Component({
   selector: 'app-admin-deck-page',
-  imports: [RouterLink, CardFormDialog, ConfirmDialog, DeckFormDialog, EmptyState, ErrorState, Icon, Pager, Skeleton],
+  imports: [RouterLink, ConfirmDialog, DeckFormDialog, EmptyState, ErrorState, Icon, Pager, Skeleton, WordFormDialog, WordList],
   templateUrl: './admin-deck-page.html',
   styleUrl: './admin-deck-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,7 +40,6 @@ export class AdminDeckPage {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
 
-  protected readonly pos = PART_OF_SPEECH;
   protected readonly page = signal(0);
 
   protected readonly deck = rxResource({
@@ -46,9 +47,9 @@ export class AdminDeckPage {
     stream: ({ params }) => this.deckApi.getDeck(params),
   });
 
-  protected readonly cards = rxResource({
+  protected readonly words = rxResource({
     params: () => ({ deckId: this.deckId(), page: this.page() }),
-    stream: ({ params }) => this.deckApi.listCards(params.deckId, params.page, PAGE_SIZE),
+    stream: ({ params }) => this.deckApi.listWords(params.deckId, '', params.page, PAGE_SIZE),
   });
 
   /** 404, hoặc bộ tồn tại nhưng là bộ CÁ NHÂN của ai đó: admin không quản lý ở đây. */
@@ -60,30 +61,30 @@ export class AdminDeckPage {
     return this.deck.hasValue() && this.deck.value().deckType !== 'SYSTEM_DECK';
   });
 
-  protected readonly cardDialogOpen = signal(false);
-  protected readonly editingCard = signal<Card | null>(null);
+  protected readonly wordDialogOpen = signal(false);
+  protected readonly editingWordId = signal<number | null>(null);
   protected readonly editingDeck = signal(false);
-  protected readonly cardToDelete = signal<Card | null>(null);
+  protected readonly wordToRemove = signal<WordSummary | null>(null);
+  protected readonly wordToDelete = signal<WordSummary | null>(null);
   protected readonly confirmDeleteDeck = signal(false);
-  protected readonly deleting = signal(false);
+  protected readonly busy = signal(false);
 
-  protected openAddCard(): void {
-    this.editingCard.set(null);
-    this.cardDialogOpen.set(true);
+  protected openAddWord(): void {
+    this.editingWordId.set(null);
+    this.wordDialogOpen.set(true);
   }
 
-  protected openEditCard(card: Card): void {
-    this.editingCard.set(card);
-    this.cardDialogOpen.set(true);
+  protected openEditWord(word: WordSummary): void {
+    this.editingWordId.set(word.id);
+    this.wordDialogOpen.set(true);
   }
 
-  protected onCardSaved(event: { card: Card; keepOpen: boolean }): void {
-    const isEdit = this.editingCard() !== null;
-    this.toast.success(isEdit ? `Đã lưu thẻ "${event.card.word}"` : `Đã thêm thẻ "${event.card.word}"`);
+  protected onWordSaved(event: { word: Word; created: boolean; keepOpen: boolean }): void {
+    this.toast.success(event.created ? `Đã thêm từ "${event.word.term}"` : `Đã lưu từ "${event.word.term}"`);
     if (!event.keepOpen) {
-      this.cardDialogOpen.set(false);
+      this.wordDialogOpen.set(false);
     }
-    this.cards.reload();
+    this.words.reload();
     this.deck.reload();
   }
 
@@ -93,43 +94,56 @@ export class AdminDeckPage {
     this.deck.reload();
   }
 
-  protected deleteCard(): void {
-    const card = this.cardToDelete();
-    if (!card) {
-      return;
+  /** Bỏ khỏi bộ: từ hệ thống vẫn còn, có thể nằm trong bộ khác. */
+  protected removeWord(): void {
+    const word = this.wordToRemove();
+    if (word) {
+      this.run(this.adminApi.removeWord(this.deckId(), word.id), `Đã bỏ "${word.term}" khỏi bộ`, () => this.wordToRemove.set(null));
     }
-    this.deleting.set(true);
-    this.adminApi.deleteCard(card.id).subscribe({
+  }
+
+  /** Xóa hẳn từ hệ thống: mất luôn tiến độ của mọi học viên với từ này. */
+  protected deleteWord(): void {
+    const word = this.wordToDelete();
+    if (word) {
+      this.run(this.adminApi.deleteWord(word.id), `Đã xóa từ "${word.term}"`, () => this.wordToDelete.set(null));
+    }
+  }
+
+  protected deleteDeck(): void {
+    const deck = this.deck.value();
+    this.busy.set(true);
+    this.adminApi.deleteDeck(this.deckId()).subscribe({
       next: () => {
-        this.deleting.set(false);
-        this.cardToDelete.set(null);
-        this.toast.success(`Đã xóa thẻ "${card.word}"`);
-        if (this.cards.hasValue() && this.cards.value().content.length === 1 && this.page() > 0) {
-          this.page.update((p) => p - 1);
-        } else {
-          this.cards.reload();
-        }
-        this.deck.reload();
+        this.busy.set(false);
+        this.toast.success(`Đã xóa bộ "${deck?.deckName}"`);
+        void this.router.navigateByUrl('/admin/decks');
       },
       error: (error: unknown) => {
-        this.deleting.set(false);
+        this.busy.set(false);
+        this.confirmDeleteDeck.set(false);
         this.toast.error(errorMessage(error));
       },
     });
   }
 
-  protected deleteDeck(): void {
-    const deck = this.deck.value();
-    this.deleting.set(true);
-    this.adminApi.deleteDeck(this.deckId()).subscribe({
+  /** Chạy một thao tác bỏ / xóa từ, rồi tải lại danh sách (lùi trang nếu vừa xóa dòng cuối). */
+  private run(call: Observable<void>, success: string, done: () => void): void {
+    this.busy.set(true);
+    call.subscribe({
       next: () => {
-        this.deleting.set(false);
-        this.toast.success(`Đã xóa bộ "${deck?.deckName}"`);
-        void this.router.navigateByUrl('/admin/decks');
+        this.busy.set(false);
+        done();
+        this.toast.success(success);
+        if (this.words.hasValue() && this.words.value().content.length === 1 && this.page() > 0) {
+          this.page.update((p) => p - 1);
+        } else {
+          this.words.reload();
+        }
+        this.deck.reload();
       },
       error: (error: unknown) => {
-        this.deleting.set(false);
-        this.confirmDeleteDeck.set(false);
+        this.busy.set(false);
         this.toast.error(errorMessage(error));
       },
     });

@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import { APP_ENV } from '../../config/app-env';
 import { PageResponse } from '../../models/common.models';
-import { Card, CardRequest, Deck, DeckRequest } from '../../models/deck.models';
+import { Deck, DeckRequest, WordSummary } from '../../models/deck.models';
 import { DeckApi } from '../deck.api';
 
 @Injectable()
@@ -32,20 +32,16 @@ export class HttpDeckApi extends DeckApi {
     return this.http.delete<void>(`${this.base}/decks/${deckId}`);
   }
 
-  listCards(deckId: number, page: number, size: number): Observable<PageResponse<Card>> {
-    const params = new HttpParams().set('page', page).set('size', size);
-    return this.http.get<PageResponse<Card>>(`${this.base}/decks/${deckId}/cards`, { params });
+  listWords(deckId: number, q: string, page: number, size: number): Observable<PageResponse<WordSummary>> {
+    const params = new HttpParams().set('q', q).set('page', page).set('size', size);
+    return this.http.get<PageResponse<WordSummary>>(`${this.base}/decks/${deckId}/words`, { params });
   }
 
-  createCard(deckId: number, request: CardRequest): Observable<Card> {
-    return this.http.post<Card>(`${this.base}/decks/${deckId}/cards`, request);
+  addWord(deckId: number, wordId: number): Observable<void> {
+    return this.http.post<void>(`${this.base}/decks/${deckId}/words/${wordId}`, null);
   }
 
-  updateCard(cardId: number, request: CardRequest): Observable<Card> {
-    return this.http.put<Card>(`${this.base}/cards/${cardId}`, request);
-  }
-
-  deleteCard(cardId: number): Observable<void> {
-    return this.http.delete<void>(`${this.base}/cards/${cardId}`);
+  removeWord(deckId: number, wordId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/decks/${deckId}/words/${wordId}`);
   }
 }

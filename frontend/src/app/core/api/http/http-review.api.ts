@@ -11,18 +11,16 @@ export class HttpReviewApi extends ReviewApi {
   private readonly http = inject(HttpClient);
   private readonly base = APP_ENV.apiBaseUrl;
 
-  deckQueue(deckId: number, newLimit: number): Observable<ReviewCard[]> {
-    const params = new HttpParams().set('newLimit', newLimit);
-    return this.http.get<ReviewCard[]>(`${this.base}/decks/${deckId}/review-queue`, { params });
-  }
-
-  allQueue(newLimit: number): Observable<ReviewCard[]> {
-    const params = new HttpParams().set('newLimit', newLimit);
+  queue(deckId: number | null, newLimit: number): Observable<ReviewCard[]> {
+    let params = new HttpParams().set('newLimit', newLimit);
+    if (deckId !== null) {
+      params = params.set('deckId', deckId);
+    }
     return this.http.get<ReviewCard[]>(`${this.base}/review-queue`, { params });
   }
 
-  review(cardId: number, remembered: boolean): Observable<ReviewResult> {
-    return this.http.post<ReviewResult>(`${this.base}/cards/${cardId}/review`, { remembered });
+  review(senseId: number, remembered: boolean): Observable<ReviewResult> {
+    return this.http.post<ReviewResult>(`${this.base}/senses/${senseId}/review`, { remembered });
   }
 
   stats(): Observable<ReviewStats> {

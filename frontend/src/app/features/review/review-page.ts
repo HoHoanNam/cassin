@@ -19,7 +19,7 @@ const NEW_CARDS_PER_SESSION = 10;
 
 /**
  * Chế độ ôn tập trung: không sidebar, chỉ có nút Thoát + thanh tiến độ.
- *   /review               → ôn mọi thẻ đến hạn (mọi bộ)
+ *   /review               → ôn mọi thẻ đến hạn trong sổ từ
  *   /decks/:deckId/review → ôn một bộ, kèm tối đa 10 thẻ mới
  *
  * Chấm điểm kiểu "lạc quan": bấm Nhớ/Quên là sang thẻ kế tiếp NGAY, kết quả gửi lên server phía sau.
@@ -46,9 +46,8 @@ export class ReviewPage {
   protected readonly queue = rxResource({
     params: () => ({ deckId: this.deckId() }),
     stream: ({ params }) =>
-      params.deckId !== undefined
-        ? this.reviewApi.deckQueue(params.deckId, NEW_CARDS_PER_SESSION)
-        : this.reviewApi.allQueue(0),
+      // [V10] Một endpoint cho cả 2 phạm vi. Ôn tất cả: chỉ thẻ đến hạn (newLimit = 0).
+      this.reviewApi.queue(params.deckId ?? null, params.deckId !== undefined ? NEW_CARDS_PER_SESSION : 0),
   });
 
   protected readonly deck = rxResource({
@@ -125,14 +124,14 @@ export class ReviewPage {
   }
 
   private send(item: ReviewCard, remembered: boolean): void {
-    this.reviewApi.review(item.card.id, remembered).subscribe({
+    this.reviewApi.review(item.senseId, remembered).subscribe({
       error: (error: unknown) => {
         // 409 = đã chấm thẻ này hôm nay (ví dụ mở 2 tab): không cần báo lỗi.
         if (error instanceof ApiError && error.status === 409) {
           return;
         }
         this.failed.update((n) => n + 1);
-        this.toast.error(`Chưa lưu được kết quả thẻ "${item.card.word}".`, {
+        this.toast.error(`Chưa lưu được kết quả thẻ "${item.term}".`, {
           label: 'Thử lại',
           run: () => {
             this.failed.update((n) => n - 1);

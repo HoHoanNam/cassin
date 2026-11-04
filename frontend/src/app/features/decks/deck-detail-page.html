@@ -17,21 +17,22 @@
           <p class="mb-0 mt-2 max-w-[44em] text-ink-soft">{{ d.description }}</p>
         }
         <dl class="stats">
-          <div><dt>Số thẻ</dt><dd>{{ d.cardCount }}</dd></div>
-          <div><dt>Đến hạn</dt><dd [class.text-brand]="(d.dueCount ?? 0) > 0">{{ d.dueCount ?? 0 }}</dd></div>
-          <div><dt>Chưa học</dt><dd>{{ d.newCount ?? 0 }}</dd></div>
+          <div><dt>Số từ</dt><dd>{{ d.wordCount }}</dd></div>
+          <div><dt>Thẻ đến hạn</dt><dd [class.text-brand]="d.dueCount > 0">{{ d.dueCount }}</dd></div>
+          <div><dt>Thẻ chưa học</dt><dd>{{ d.newCount }}</dd></div>
         </dl>
+        <p class="mb-0 mt-1.5 text-[13px] text-ink-soft">Mỗi nghĩa của một từ là một thẻ ôn.</p>
       </div>
 
       <div class="flex flex-wrap gap-2.5">
-        @if ((d.dueCount ?? 0) > 0 || (d.newCount ?? 0) > 0) {
+        @if (d.dueCount > 0 || d.newCount > 0) {
           <a class="btn btn-primary" [routerLink]="['/decks', d.id, 'review']">
-            {{ (d.dueCount ?? 0) > 0 ? 'Ôn ' + d.dueCount + ' thẻ đến hạn' : 'Học thẻ mới' }}
+            {{ d.dueCount > 0 ? 'Ôn ' + d.dueCount + ' thẻ đến hạn' : 'Học thẻ mới' }}
           </a>
         }
         @if (d.editable) {
-          <button type="button" class="btn btn-secondary" (click)="openAddCard()">
-            <app-icon name="plus" [size]="18" [strokeWidth]="2" /> Thêm thẻ
+          <button type="button" class="btn btn-secondary" (click)="openAddWord()">
+            <app-icon name="plus" [size]="18" [strokeWidth]="2" /> Thêm từ
           </button>
           <button type="button" class="btn btn-ghost btn-icon text-ink-soft" aria-label="Sửa bộ từ" title="Sửa bộ từ" (click)="editingDeck.set(true)">
             <app-icon name="edit" />
@@ -50,69 +51,56 @@
       </div>
     }
 
-    <!-- Danh sách thẻ -->
-    <section class="mt-8" aria-labelledby="cards-heading">
-      <h2 id="cards-heading" class="section-title">Thẻ trong bộ</h2>
+    <!-- Danh sách từ -->
+    <section class="mt-8" aria-labelledby="words-heading">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h2 id="words-heading" class="section-title">Từ trong bộ</h2>
+        @if (d.wordCount > 0) {
+          <div class="relative w-full sm:w-72">
+            <label for="word-search" class="sr-only">Tìm từ trong bộ</label>
+            <app-icon class="pointer-events-none absolute left-3 top-3 text-ink-soft" name="search" [size]="18" [strokeWidth]="2" />
+            <input id="word-search" class="input min-h-11 pl-10 text-[15px]" type="search" placeholder="Tìm từ, rồi nhấn Enter"
+              [value]="query()" (change)="onSearch($event)" (search)="onSearch($event)" />
+          </div>
+        }
+      </div>
       <div class="mt-3.5">
-        @if (cards.hasValue()) {
-          @let pageData = cards.value();
-          @if (pageData.totalElements === 0) {
+        @if (words.hasValue()) {
+          @let pageData = words.value();
+          @if (pageData.totalElements === 0 && query()) {
             <div class="card">
-              <app-empty-state icon="cards" title="Bộ này chưa có thẻ nào" description="Mỗi thẻ gồm một từ, loại từ, một nghĩa và câu ví dụ.">
+              <app-empty-state icon="search" [title]="'Không có từ nào khớp “' + query() + '”'" description="Thử từ khóa khác, hoặc xóa ô tìm kiếm." />
+            </div>
+          } @else if (pageData.totalElements === 0) {
+            <div class="card">
+              <app-empty-state icon="cards" title="Bộ này chưa có từ nào" description="Mỗi từ có thể có nhiều nghĩa, mỗi nghĩa kèm câu ví dụ.">
                 @if (d.editable) {
-                  <button type="button" class="btn btn-primary" (click)="openAddCard()">Thêm thẻ đầu tiên</button>
+                  <button type="button" class="btn btn-primary" (click)="openAddWord()">Thêm từ đầu tiên</button>
                 }
               </app-empty-state>
             </div>
           } @else {
-            <ul class="card list-card" [class.opacity-60]="cards.isLoading()">
-              @for (card of pageData.content; track card.id) {
-                <li class="list-row items-start">
-                  <div class="word-col">
-                    <span class="hand text-2xl leading-tight text-brand">{{ card.word }}</span>
-                    <span class="text-[13px] text-ink-soft">
-                      <i>{{ pos[card.partOfSpeech].short || pos[card.partOfSpeech].label }}</i>
-                      @if (card.phonetic) { · {{ card.phonetic }} }
-                    </span>
-                  </div>
-                  <div class="min-w-0 flex-[1_1_240px]">
-                    <p class="m-0 font-semibold">{{ card.definition }}</p>
-                    @for (example of card.examples; track $index) {
-                      <p class="m-0 mt-0.5 text-sm italic text-ink-soft">{{ example }}</p>
-                    }
-                  </div>
-                  @if (d.editable) {
-                    <div class="ml-auto flex gap-1">
-                      <button type="button" class="btn btn-ghost btn-icon text-ink-soft" [attr.aria-label]="'Sửa thẻ ' + card.word" (click)="openEditCard(card)">
-                        <app-icon name="edit" [size]="18" />
-                      </button>
-                      <button type="button" class="btn btn-ghost btn-icon text-ink-soft" [attr.aria-label]="'Xóa thẻ ' + card.word" (click)="cardToDelete.set(card)">
-                        <app-icon name="trash" [size]="18" />
-                      </button>
-                    </div>
-                  }
-                </li>
-              }
-            </ul>
-            <app-pager [page]="pageData.page" [totalPages]="pageData.totalPages" [disabled]="cards.isLoading()" (pageChange)="goToPage($event)" />
+            <app-word-list [words]="pageData.content" [busy]="words.isLoading()" [removable]="d.editable" [markSystem]="d.editable"
+              (editWord)="openEditWord($event)" (removeWord)="wordToRemove.set($event)" />
+            <app-pager [page]="pageData.page" [totalPages]="pageData.totalPages" [disabled]="words.isLoading()" (pageChange)="goToPage($event)" />
           }
-        } @else if (cards.error()) {
-          <div class="card"><app-error-state title="Không tải được danh sách thẻ" (retry)="cards.reload()" /></div>
+        } @else if (words.error()) {
+          <div class="card"><app-error-state title="Không tải được danh sách từ" (retry)="words.reload()" /></div>
         } @else {
           <app-skeleton [rows]="5" />
         }
       </div>
     </section>
 
-    <app-card-form-dialog [open]="cardDialogOpen()" [deckId]="d.id" [card]="editingCard()"
-      (closed)="cardDialogOpen.set(false)" (saved)="onCardSaved($event)" />
+    <app-word-form-dialog [open]="wordDialogOpen()" [deckId]="d.id" [wordId]="editingWordId()"
+      (closed)="wordDialogOpen.set(false)" (saved)="onWordSaved($event)" />
     <app-deck-form-dialog [open]="editingDeck()" [deck]="d" (closed)="editingDeck.set(false)" (saved)="onDeckSaved($event)" />
     <app-confirm-dialog [open]="confirmDeleteDeck()" [title]="'Xóa bộ “' + d.deckName + '”?'"
-      [message]="d.cardCount + ' thẻ và tiến độ ôn của bộ này sẽ bị xóa. Không thể hoàn tác.'"
-      confirmLabel="Xóa bộ từ" [busy]="deleting()" (cancelled)="confirmDeleteDeck.set(false)" (confirmed)="deleteDeck()" />
-    <app-confirm-dialog [open]="cardToDelete() !== null" [title]="'Xóa thẻ “' + (cardToDelete()?.word ?? '') + '”?'"
-      message="Tiến độ ôn của thẻ này cũng bị xóa. Không thể hoàn tác."
-      confirmLabel="Xóa thẻ" [busy]="deleting()" (cancelled)="cardToDelete.set(null)" (confirmed)="deleteCard()" />
+      [message]="'Chỉ xóa bộ. ' + d.wordCount + ' từ trong bộ vẫn còn trong sổ từ của bạn, tiến độ ôn giữ nguyên.'"
+      confirmLabel="Xóa bộ từ" [busy]="busy()" (cancelled)="confirmDeleteDeck.set(false)" (confirmed)="deleteDeck()" />
+    <app-confirm-dialog [open]="wordToRemove() !== null" [title]="'Bỏ “' + (wordToRemove()?.term ?? '') + '” khỏi bộ?'"
+      message="Từ vẫn còn trong sổ từ, tiến độ ôn giữ nguyên. Bạn có thể đặt lại vào bộ bất cứ lúc nào."
+      confirmLabel="Bỏ khỏi bộ" [busy]="busy()" (cancelled)="wordToRemove.set(null)" (confirmed)="removeWord()" />
   } @else if (notFound()) {
     <div class="card mt-6">
       <app-empty-state icon="decks" title="Không tìm thấy bộ từ này" description="Bộ từ có thể đã bị xóa, hoặc đường dẫn bị gõ sai.">

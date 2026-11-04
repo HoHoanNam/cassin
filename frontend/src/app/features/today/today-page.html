@@ -63,13 +63,13 @@
                   <span class="min-w-0 flex-[1_1_220px]">
                     <a class="font-semibold text-ink no-underline hover:underline" [routerLink]="['/decks', deck.id]">{{ deck.deckName }}</a>
                     <span class="block text-[13px] text-ink-soft">
-                      {{ deck.deckType === 'SYSTEM_DECK' ? 'Bộ có sẵn' : 'Của bạn' }}, {{ deck.cardCount }} thẻ
+                      {{ deck.deckType === 'SYSTEM_DECK' ? 'Bộ có sẵn' : 'Của bạn' }}, {{ deck.wordCount }} từ
                     </span>
                   </span>
-                  @if ((deck.dueCount ?? 0) > 0) {
+                  @if (deck.dueCount > 0) {
                     <span class="text-sm font-semibold text-brand">{{ deck.dueCount }} thẻ đến hạn</span>
                     <a class="btn btn-secondary btn-sm" [routerLink]="['/decks', deck.id, 'review']">Ôn bộ này</a>
-                  } @else if ((deck.newCount ?? 0) > 0) {
+                  } @else if (deck.newCount > 0) {
                     <span class="text-sm text-ink-soft">{{ deck.newCount }} thẻ mới</span>
                     <a class="btn btn-secondary btn-sm" [routerLink]="['/decks', deck.id, 'review']">Học thẻ mới</a>
                   } @else {

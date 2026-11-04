@@ -1,0 +1,60 @@
+<ul class="card list-card" [class.opacity-60]="busy()">
+  @for (word of words(); track word.id) {
+    <li class="list-row items-start">
+      <div class="word-col">
+        <span class="hand text-2xl leading-tight text-brand">{{ word.term }}</span>
+        @if (word.phonetic) {
+          <span class="text-[13px] text-ink-soft">{{ word.phonetic }}</span>
+        }
+        @if (word.system && markSystem()) {
+          <span class="chip mt-1 self-start text-[12px]">Có sẵn</span>
+        }
+      </div>
+
+      <ol class="senses">
+        @for (sense of word.senses; track sense.id) {
+          <li>
+            <i class="pos">{{ pos[sense.partOfSpeech].short || pos[sense.partOfSpeech].label }}</i>
+            <span class="font-semibold">{{ sense.definition }}</span>
+          </li>
+        }
+      </ol>
+
+      <div class="ml-auto flex gap-1">
+        @if (canEdit(word)) {
+          <button
+            type="button"
+            class="btn btn-ghost btn-icon text-ink-soft"
+            [attr.aria-label]="'Sửa từ ' + word.term"
+            title="Sửa từ"
+            (click)="editWord.emit(word)"
+          >
+            <app-icon name="edit" [size]="18" />
+          </button>
+        }
+        @if (removable()) {
+          <button
+            type="button"
+            class="btn btn-ghost btn-icon text-ink-soft"
+            [attr.aria-label]="'Bỏ ' + word.term + ' khỏi bộ'"
+            title="Bỏ khỏi bộ"
+            (click)="removeWord.emit(word)"
+          >
+            <app-icon name="close" [size]="18" />
+          </button>
+        }
+        @if (deletable()) {
+          <button
+            type="button"
+            class="btn btn-ghost btn-icon text-danger-dark"
+            [attr.aria-label]="'Xóa hẳn từ ' + word.term"
+            title="Xóa hẳn từ"
+            (click)="deleteWord.emit(word)"
+          >
+            <app-icon name="trash" [size]="18" />
+          </button>
+        }
+      </div>
+    </li>
+  }
+</ul>

@@ -1,9 +1,13 @@
 import { Observable } from 'rxjs';
 
 import { PageResponse } from '../models/common.models';
-import { Card, CardRequest, Deck, DeckRequest } from '../models/deck.models';
+import { Deck, DeckRequest, WordSummary } from '../models/deck.models';
 
-/** Bộ từ và thẻ. Xem giải thích kiểu "hợp đồng" trong auth.api.ts. */
+/**
+ * Bộ từ. Xem giải thích kiểu "hợp đồng" trong auth.api.ts.
+ * [V10] Bộ là NHÃN chủ đề chứa từ (nhiều-nhiều): một từ nằm được trong nhiều bộ.
+ * Tạo / sửa / xóa TỪ nằm ở WordApi.
+ */
 export abstract class DeckApi {
   /** GET /api/decks */
   abstract listDecks(): Observable<Deck[]>;
@@ -13,15 +17,13 @@ export abstract class DeckApi {
   abstract createDeck(request: DeckRequest): Observable<Deck>;
   /** PUT /api/decks/{deckId} */
   abstract updateDeck(deckId: number, request: DeckRequest): Observable<Deck>;
-  /** DELETE /api/decks/{deckId} → 204 */
+  /** DELETE /api/decks/{deckId} → 204. Chỉ xóa bộ, từ vẫn còn trong sổ từ. */
   abstract deleteDeck(deckId: number): Observable<void>;
 
-  /** GET /api/decks/{deckId}/cards?page=&size= */
-  abstract listCards(deckId: number, page: number, size: number): Observable<PageResponse<Card>>;
-  /** POST /api/decks/{deckId}/cards → 201 */
-  abstract createCard(deckId: number, request: CardRequest): Observable<Card>;
-  /** PUT /api/cards/{cardId} */
-  abstract updateCard(cardId: number, request: CardRequest): Observable<Card>;
-  /** DELETE /api/cards/{cardId} → 204 */
-  abstract deleteCard(cardId: number): Observable<void>;
+  /** GET /api/decks/{deckId}/words?q=&page=&size= */
+  abstract listWords(deckId: number, q: string, page: number, size: number): Observable<PageResponse<WordSummary>>;
+  /** POST /api/decks/{deckId}/words/{wordId} → 204. Đã có trong bộ thì không làm gì. */
+  abstract addWord(deckId: number, wordId: number): Observable<void>;
+  /** DELETE /api/decks/{deckId}/words/{wordId} → 204. Chỉ bỏ khỏi bộ, không xóa từ. */
+  abstract removeWord(deckId: number, wordId: number): Observable<void>;
 }

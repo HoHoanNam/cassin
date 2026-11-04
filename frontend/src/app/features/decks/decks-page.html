@@ -40,7 +40,7 @@
             <thead>
               <tr>
                 <th scope="col">Tên bộ</th>
-                <th scope="col" class="hidden sm:table-cell">Số thẻ</th>
+                <th scope="col" class="hidden sm:table-cell">Số từ</th>
                 <th scope="col">Đến hạn</th>
                 <th scope="col" class="hidden md:table-cell">Cập nhật</th>
                 <th scope="col"><span class="sr-only">Thao tác</span></th>
@@ -54,21 +54,21 @@
                     @if (deck.deckType === 'SYSTEM_DECK') {
                       <span class="chip ml-1.5">Có sẵn</span>
                     }
-                    <span class="block text-[13px] text-ink-soft sm:hidden">{{ deck.cardCount }} thẻ</span>
+                    <span class="block text-[13px] text-ink-soft sm:hidden">{{ deck.wordCount }} từ</span>
                   </td>
-                  <td class="hidden tabular-nums sm:table-cell">{{ deck.cardCount }}</td>
+                  <td class="hidden tabular-nums sm:table-cell">{{ deck.wordCount }}</td>
                   <td>
-                    @if ((deck.dueCount ?? 0) > 0) {
+                    @if (deck.dueCount > 0) {
                       <span class="font-semibold text-brand">{{ deck.dueCount }} thẻ</span>
                     } @else {
                       <span class="whitespace-nowrap text-ink-soft">Không có</span>
                     }
                   </td>
-                  <td class="hidden text-ink-soft md:table-cell">{{ deck.updatedAt ? relativeDay(deck.updatedAt) : '' }}</td>
+                  <td class="hidden text-ink-soft md:table-cell">{{ relativeDay(deck.updatedAt) }}</td>
                   <td class="text-right">
-                    @if ((deck.dueCount ?? 0) > 0) {
+                    @if (deck.dueCount > 0) {
                       <a class="btn btn-secondary btn-sm" [routerLink]="['/decks', deck.id, 'review']">Ôn</a>
-                    } @else if ((deck.newCount ?? 0) > 0) {
+                    } @else if (deck.newCount > 0) {
                       <a class="btn btn-secondary btn-sm" [routerLink]="['/decks', deck.id, 'review']">Học mới</a>
                     }
                   </td>

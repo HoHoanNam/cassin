@@ -1,15 +1,31 @@
-import { Card } from './deck.models';
+import { PartOfSpeech } from './deck.models';
 
-/** Khớp ReviewCardResponse: một thẻ trong hàng đợi ôn. */
+/** Khớp ReviewCardResponse.OtherSense: nghĩa KHÁC của cùng từ (mặt sau thẻ hiện mờ). */
+export interface OtherSense {
+  partOfSpeech: PartOfSpeech;
+  definition: string;
+}
+
+/**
+ * Khớp ReviewCardResponse: một thẻ trong hàng đợi ôn = MỘT nghĩa của một từ.
+ * [V10] examples đã bỏ dấu [ ] (chỉ để đọc).
+ */
 export interface ReviewCard {
-  card: Card;
+  senseId: number;
+  wordId: number;
+  term: string;
+  phonetic: string | null;
+  partOfSpeech: PartOfSpeech;
+  definition: string;
+  examples: string[];
+  otherSenses: OtherSense[];
   box: number;
   isNew: boolean;
 }
 
 /** Khớp ReviewResultResponse: kết quả sau khi chấm Nhớ / Quên. */
 export interface ReviewResult {
-  cardId: number;
+  senseId: number;
   box: number;
   /** yyyy-MM-dd (LocalDate của Java) */
   dueDate: string;
@@ -23,14 +39,11 @@ export interface BoxCount {
   total: number;
 }
 
-/**
- * Khớp ReviewStatsResponse.
- * [CẦN BE BỔ SUNG] streakDays: số ngày học liên tiếp (cần bảng nhật ký ôn).
- */
+/** Khớp ReviewStatsResponse. */
 export interface ReviewStats {
   dueToday: number;
   boxes: BoxCount[];
-  streakDays?: number;
+  streakDays: number;
 }
 
 /** Số ngày giữa hai lần ôn theo từng hộp: khớp CardProgress.intervalDays ở backend. */

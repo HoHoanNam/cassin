@@ -50,8 +50,8 @@ export class TodayPage {
     }
     const parts = this.decks
       .value()
-      .filter((d) => (d.dueCount ?? 0) > 0)
-      .sort((a, b) => (b.dueCount ?? 0) - (a.dueCount ?? 0))
+      .filter((d) => d.dueCount > 0)
+      .sort((a, b) => b.dueCount - a.dueCount)
       .map((d) => `${d.dueCount} thẻ từ "${d.deckName}"`);
     if (parts.length <= 1) {
       return parts.length === 1 ? parts[0] + '.' : '';
@@ -64,7 +64,7 @@ export class TodayPage {
     if (!this.decks.hasValue()) {
       return null;
     }
-    return [...this.decks.value()].filter((d) => (d.newCount ?? 0) > 0).sort((a, b) => (b.newCount ?? 0) - (a.newCount ?? 0))[0] ?? null;
+    return [...this.decks.value()].filter((d) => d.newCount > 0).sort((a, b) => b.newCount - a.newCount)[0] ?? null;
   });
 
   protected readonly topDecks = computed(() => (this.decks.hasValue() ? this.decks.value().slice(0, 4) : []));

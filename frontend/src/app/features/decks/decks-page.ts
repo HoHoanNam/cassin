@@ -56,9 +56,9 @@ export class DecksPage {
       return '';
     }
     const list = this.decks.value();
-    const cards = list.reduce((sum, d) => sum + d.cardCount, 0);
-    const due = list.reduce((sum, d) => sum + (d.dueCount ?? 0), 0);
-    return `${list.length} bộ, ${cards} thẻ.` + (due > 0 ? ` ${due} thẻ đến hạn hôm nay.` : ' Hôm nay đã ôn xong.');
+    const words = list.reduce((sum, d) => sum + d.wordCount, 0);
+    const due = list.reduce((sum, d) => sum + d.dueCount, 0);
+    return `${list.length} bộ, ${words} từ.` + (due > 0 ? ` ${due} thẻ đến hạn hôm nay.` : ' Hôm nay đã ôn xong.');
   });
 
   protected onQuery(event: Event): void {

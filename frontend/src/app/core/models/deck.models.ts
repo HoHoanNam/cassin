@@ -16,21 +16,18 @@ export type PartOfSpeech =
 
 /**
  * Khớp DeckResponse.
- *
- * [CẦN BE BỔ SUNG] dueCount, newCount, updatedAt: giao diện cần hiện "12 thẻ đến hạn" cho từng bộ,
- * nhưng DeckResponse hiện chưa có. Đánh dấu optional (?) để khi nối API thật mà BE chưa thêm,
- * giao diện vẫn chạy (chỉ ẩn phần số liệu đó).
+ * [V10] Bộ chứa TỪ (wordCount). dueCount / newCount đếm theo NGHĨA, vì mỗi nghĩa là một thẻ ôn.
  */
 export interface Deck {
   id: number;
   deckName: string;
   description: string | null;
   deckType: DeckType;
-  cardCount: number;
+  wordCount: number;
+  dueCount: number;
+  newCount: number;
   editable: boolean;
-  dueCount?: number;
-  newCount?: number;
-  updatedAt?: string;
+  updatedAt: string;
 }
 
 /** Khớp DeckRequest (dùng cho cả tạo và sửa) */
@@ -39,32 +36,83 @@ export interface DeckRequest {
   description: string | null;
 }
 
-/** Khớp CardResponse */
-export interface Card {
+// ===================== [V10] Từ và nghĩa =====================
+
+/** Khớp WordSummary.SenseBrief: một nghĩa trong danh sách từ (không có câu ví dụ). */
+export interface SenseBrief {
   id: number;
-  word: string;
   partOfSpeech: PartOfSpeech;
+  definition: string;
+}
+
+/** Khớp WordSummary: một dòng trong danh sách từ (sổ từ, từ trong bộ). */
+export interface WordSummary {
+  id: number;
+  term: string;
   phonetic: string | null;
+  /** true = từ của chính mình (hiện nút Sửa). Từ hệ thống luôn false. */
+  editable: boolean;
+  system: boolean;
+  senses: SenseBrief[];
+}
+
+/**
+ * Khớp SenseResponse. examples giữ NGUYÊN dấu [ ] đánh dấu từ cần điền,
+ * để form sửa hiện đúng chỗ đã đánh dấu. Muốn hiển thị thì dùng plainExample().
+ */
+export interface Sense {
+  id: number;
+  position: number;
+  partOfSpeech: PartOfSpeech;
   definition: string;
   examples: string[];
 }
 
-/** Khớp CardRequest */
-export interface CardRequest {
-  word: string;
-  partOfSpeech: PartOfSpeech;
+/** Khớp WordResponse.DeckRef: bộ đang chứa từ (đủ để hiện nhãn + link). */
+export interface DeckRef {
+  id: number;
+  deckName: string;
+}
+
+/** Khớp WordResponse: chi tiết một từ. */
+export interface Word {
+  id: number;
+  term: string;
   phonetic: string | null;
+  editable: boolean;
+  system: boolean;
+  senses: Sense[];
+  /** Các bộ mình XEM được đang chứa từ này */
+  decks: DeckRef[];
+}
+
+/** Khớp SenseRequest. id = null: nghĩa mới; có id: sửa nghĩa cũ (giữ tiến độ ôn của nghĩa đó). */
+export interface SenseRequest {
+  id: number | null;
+  partOfSpeech: PartOfSpeech;
   definition: string;
   examples: string[];
 }
 
-/** Giới hạn khớp với validation ở backend (Card.MAX_EXAMPLES, @Size...). */
-export const CARD_LIMITS = {
-  word: 100,
+/**
+ * Khớp WordRequest. Gửi ĐỦ mọi nghĩa: nghĩa cũ không có trong danh sách sẽ bị xóa.
+ * deckIds: các bộ CÁ NHÂN muốn đặt từ vào. null = không đổi (khi sửa). Bản admin bỏ qua field này.
+ */
+export interface WordRequest {
+  term: string;
+  phonetic: string | null;
+  senses: SenseRequest[];
+  deckIds: number[] | null;
+}
+
+/** Giới hạn khớp validation ở backend (Word.MAX_SENSES, Sense.MAX_EXAMPLES, @Size...). */
+export const WORD_LIMITS = {
+  term: 100,
   phonetic: 100,
   definition: 255,
   example: 500,
   maxExamples: 5,
+  maxSenses: 10,
 } as const;
 
 export const DECK_LIMITS = {
