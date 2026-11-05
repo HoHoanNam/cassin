@@ -7,12 +7,15 @@ export interface NavItem {
   link: string;
   /** Hiện số thẻ đến hạn cạnh mục này */
   showDue?: boolean;
+  /** Chỉ hiện ở sidebar. Thanh dưới đáy điện thoại chỉ đủ chỗ cho 5 mục. */
+  desktopOnly?: boolean;
 }
 
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Hôm nay', icon: 'today', link: '/today' },
   { label: 'Ôn thẻ', icon: 'cards', link: '/review', showDue: true },
   { label: 'Bộ từ', icon: 'decks', link: '/decks' },
+  { label: 'Thư viện', icon: 'library', link: '/library', desktopOnly: true },
   { label: 'Ngữ pháp', icon: 'grammar', link: '/grammar' },
   { label: 'Lịch sử', icon: 'history', link: '/quiz-history' },
 ];

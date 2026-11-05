@@ -1,0 +1,51 @@
+.word-col {
+  display: flex;
+  flex-direction: column;
+  width: 180px;
+  min-width: 0;
+}
+
+/* Nghĩa đánh số như trong từ điển (giống word-list) */
+.senses {
+  display: flex;
+  flex: 1 1 240px;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  margin: 0;
+  padding-left: 1.25em;
+
+  li::marker {
+    color: var(--ink-soft);
+    font-size: 13px;
+  }
+}
+
+.pos {
+  margin-right: 6px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+/* Mỗi bộ một dòng chọn, cả dòng bấm được */
+.deck-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--card-line);
+  border-radius: 10px;
+  cursor: pointer;
+
+  &:has(input:checked) {
+    border-color: var(--brand);
+    background: color-mix(in srgb, var(--brand) 6%, transparent);
+  }
+}
+
+@media (max-width: 640px) {
+  .word-col {
+    width: 100%;
+  }
+}

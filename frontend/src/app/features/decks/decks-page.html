@@ -4,9 +4,15 @@
       <h1 class="page-title">Bộ từ</h1>
       <p class="mt-1 min-h-[1.6em] text-ink-soft">{{ summary() }}</p>
     </div>
-    <button type="button" class="btn btn-primary" (click)="creating.set(true)">
-      <app-icon name="plus" [size]="18" [strokeWidth]="2" /> Tạo bộ từ
-    </button>
+    <div class="flex flex-wrap gap-2.5">
+      <!-- Trên điện thoại, thanh dưới đáy không có mục Thư viện: vào từ đây -->
+      <a class="btn btn-secondary" routerLink="/library">
+        <app-icon name="library" [size]="18" /> Thư viện từ
+      </a>
+      <button type="button" class="btn btn-primary" (click)="creating.set(true)">
+        <app-icon name="plus" [size]="18" [strokeWidth]="2" /> Tạo bộ từ
+      </button>
+    </div>
   </div>
 
   <div class="mt-7 flex flex-wrap items-center justify-between gap-3">

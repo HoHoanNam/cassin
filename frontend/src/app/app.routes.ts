@@ -76,6 +76,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/decks/deck-detail-page').then((m) => m.DeckDetailPage),
       },
       {
+        path: 'library',
+        title: 'Thư viện từ | Cassin',
+        loadComponent: () => import('./features/library/library-page').then((m) => m.LibraryPage),
+      },
+      {
         path: 'grammar',
         title: 'Ngữ pháp | Cassin',
         loadComponent: () => import('./features/grammar/grammar-page').then((m) => m.GrammarPage),

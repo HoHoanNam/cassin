@@ -1,0 +1,106 @@
+<div class="page-container page-pad">
+  <header class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <h1 class="page-title">Thư viện từ</h1>
+      <p class="mb-0 mt-1 text-ink-soft">Mọi từ có sẵn của Cassin. Thêm từ vào bộ của bạn để bắt đầu ôn.</p>
+    </div>
+  </header>
+
+  <div class="mt-6 flex flex-wrap items-center gap-3">
+    <div class="relative w-full sm:w-80">
+      <label for="library-search" class="sr-only">Tìm từ trong thư viện</label>
+      <app-icon class="pointer-events-none absolute left-3 top-3 text-ink-soft" name="search" [size]="18" [strokeWidth]="2" />
+      <input id="library-search" class="input min-h-11 pl-10 text-[15px]" type="search" placeholder="Tìm từ, rồi nhấn Enter"
+        [value]="query()" (change)="onSearch($event)" (search)="onSearch($event)" />
+    </div>
+    <label class="flex cursor-pointer items-center gap-2 text-[15px]">
+      <input id="library-only-new" type="checkbox" class="size-4 accent-[var(--brand)]" [checked]="onlyNew()" (change)="toggleOnlyNew($event)" />
+      Chỉ từ chưa có trong sổ từ
+    </label>
+  </div>
+
+  <section class="mt-5" aria-label="Danh sách từ">
+    @if (words.hasValue()) {
+      @let pageData = words.value();
+      @if (pageData.totalElements === 0) {
+        <div class="card">
+          @if (query()) {
+            <app-empty-state icon="search" [title]="'Không có từ nào khớp “' + query() + '”'" description="Thử từ khóa khác, hoặc xóa ô tìm kiếm." />
+          } @else if (onlyNew()) {
+            <app-empty-state icon="check" title="Bạn đã có hết từ trong thư viện" description="Bỏ chọn “Chỉ từ chưa có” để xem lại toàn bộ." />
+          } @else {
+            <app-empty-state icon="library" title="Thư viện chưa có từ nào" description="Quản trị viên sẽ sớm bổ sung." />
+          }
+        </div>
+      } @else {
+        <p class="mb-2 mt-0 text-[13px] text-ink-soft">{{ pageData.totalElements }} từ</p>
+        <ul class="card list-card" [class.opacity-60]="words.isLoading()">
+          @for (word of pageData.content; track word.id) {
+            <li class="list-row items-start">
+              <div class="word-col">
+                <span class="hand text-2xl leading-tight text-brand">{{ word.term }}</span>
+                @if (word.phonetic) {
+                  <span class="text-[13px] text-ink-soft">{{ word.phonetic }}</span>
+                }
+                <span class="mt-1 flex flex-wrap gap-1">
+                  @if (word.inMyDecks) {
+                    <span class="chip text-[12px]">Đã trong bộ</span>
+                  }
+                  @if (word.studying) {
+                    <span class="chip text-[12px]">Đang học</span>
+                  }
+                </span>
+              </div>
+              <ol class="senses">
+                @for (sense of word.senses; track sense.id) {
+                  <li>
+                    <i class="pos">{{ pos[sense.partOfSpeech].short || pos[sense.partOfSpeech].label }}</i>
+                    <span class="font-semibold">{{ sense.definition }}</span>
+                  </li>
+                }
+              </ol>
+              <button type="button" class="btn btn-secondary btn-sm ml-auto" [attr.aria-label]="'Thêm ' + word.term + ' vào bộ'" (click)="openAdd(word)">
+                <app-icon name="plus" [size]="16" /> Thêm vào bộ
+              </button>
+            </li>
+          }
+        </ul>
+        <app-pager [page]="pageData.page" [totalPages]="pageData.totalPages" [disabled]="words.isLoading()" (pageChange)="page.set($event)" />
+      }
+    } @else if (words.error()) {
+      <div class="card"><app-error-state title="Không tải được thư viện từ" (retry)="words.reload()" /></div>
+    } @else {
+      <app-skeleton [rows]="6" />
+    }
+  </section>
+</div>
+
+<app-modal [open]="adding() !== null" [title]="'Thêm “' + (adding()?.term ?? '') + '” vào bộ'" (closed)="closeAdd()">
+  <div class="mt-5 flex flex-col gap-4">
+    @if (myDecks().length === 0) {
+      <p class="m-0">Bạn chưa có bộ từ riêng nào. Hãy tạo một bộ trước, rồi quay lại thêm từ.</p>
+      <div class="flex justify-end gap-2.5">
+        <button type="button" class="btn btn-secondary" (click)="closeAdd()">Đóng</button>
+        <a class="btn btn-primary" routerLink="/decks">Tạo bộ từ</a>
+      </div>
+    } @else {
+      <fieldset class="m-0 flex flex-col gap-2 border-0 p-0">
+        <legend class="label mb-1">Chọn bộ của bạn</legend>
+        @for (deck of myDecks(); track deck.id) {
+          <label class="deck-option">
+            <input type="radio" name="library-deck" [value]="deck.id" [checked]="selectedDeckId() === deck.id" (change)="selectedDeckId.set(deck.id)" />
+            <span class="font-semibold">{{ deck.deckName }}</span>
+            <span class="ml-auto text-[13px] text-ink-soft">{{ deck.wordCount }} từ</span>
+          </label>
+        }
+      </fieldset>
+      <p class="m-0 text-[13px] text-ink-soft">Từ đã có trong bộ thì không bị thêm trùng.</p>
+      <div class="flex justify-end gap-2.5">
+        <button type="button" class="btn btn-secondary" [disabled]="saving()" (click)="closeAdd()">Hủy</button>
+        <button type="button" class="btn btn-primary" [disabled]="saving() || selectedDeckId() === null" (click)="confirmAdd()">
+          {{ saving() ? 'Đang thêm...' : 'Thêm vào bộ' }}
+        </button>
+      </div>
+    }
+  </div>
+</app-modal>

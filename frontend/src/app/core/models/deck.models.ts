@@ -119,3 +119,16 @@ export const DECK_LIMITS = {
   deckName: 100,
   description: 500,
 } as const;
+
+/**
+ * Khớp LibraryWord: một từ HỆ THỐNG trong Thư viện từ, kèm trạng thái của người đang xem.
+ * inMyDecks: đã nằm trong ít nhất một bộ của tôi. studying: đã học ít nhất một nghĩa.
+ */
+export interface LibraryWord {
+  id: number;
+  term: string;
+  phonetic: string | null;
+  senses: SenseBrief[];
+  inMyDecks: boolean;
+  studying: boolean;
+}

@@ -14,6 +14,6 @@ import { NAV_ITEMS } from '../nav-items';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BottomNav {
-  protected readonly items = NAV_ITEMS;
+  protected readonly items = NAV_ITEMS.filter((item) => !item.desktopOnly);
   protected readonly stats = inject(StudyStatsStore);
 }

@@ -5,6 +5,7 @@ import { MockAdminApi } from '../mock/mock-admin.api';
 import { MockAuthApi } from '../mock/mock-auth.api';
 import { MockDeckApi } from '../mock/mock-deck.api';
 import { MockGrammarApi } from '../mock/mock-grammar.api';
+import { MockLibraryApi } from '../mock/mock-library.api';
 import { MockQuizApi } from '../mock/mock-quiz.api';
 import { MockReviewApi } from '../mock/mock-review.api';
 import { MockWordApi } from '../mock/mock-word.api';
@@ -13,11 +14,13 @@ import { AdminApi } from './admin.api';
 import { AuthApi } from './auth.api';
 import { DeckApi } from './deck.api';
 import { GrammarApi } from './grammar.api';
+import { LibraryApi } from './library.api';
 import { HttpAccountApi } from './http/http-account.api';
 import { HttpAdminApi } from './http/http-admin.api';
 import { HttpAuthApi } from './http/http-auth.api';
 import { HttpDeckApi } from './http/http-deck.api';
 import { HttpGrammarApi } from './http/http-grammar.api';
+import { HttpLibraryApi } from './http/http-library.api';
 import { HttpQuizApi } from './http/http-quiz.api';
 import { HttpReviewApi } from './http/http-review.api';
 import { HttpWordApi } from './http/http-word.api';
@@ -35,6 +38,7 @@ export function provideApi(useMock: boolean): EnvironmentProviders {
         { provide: AuthApi, useClass: MockAuthApi },
         { provide: DeckApi, useClass: MockDeckApi },
         { provide: WordApi, useClass: MockWordApi },
+        { provide: LibraryApi, useClass: MockLibraryApi },
         { provide: ReviewApi, useClass: MockReviewApi },
         { provide: GrammarApi, useClass: MockGrammarApi },
         { provide: QuizApi, useClass: MockQuizApi },
@@ -45,6 +49,7 @@ export function provideApi(useMock: boolean): EnvironmentProviders {
         { provide: AuthApi, useClass: HttpAuthApi },
         { provide: DeckApi, useClass: HttpDeckApi },
         { provide: WordApi, useClass: HttpWordApi },
+        { provide: LibraryApi, useClass: HttpLibraryApi },
         { provide: ReviewApi, useClass: HttpReviewApi },
         { provide: GrammarApi, useClass: HttpGrammarApi },
         { provide: QuizApi, useClass: HttpQuizApi },
