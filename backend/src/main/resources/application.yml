@@ -29,6 +29,11 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+    servlet:
+    multipart:
+      max-file-size: 1MB # một file
+      max-request-size: 1MB # cả request
+
 server:
   port: 8080
 
