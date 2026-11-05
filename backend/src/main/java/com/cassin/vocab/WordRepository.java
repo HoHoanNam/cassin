@@ -121,4 +121,14 @@ public interface WordRepository extends JpaRepository<Word, Long> {
       where p.user.id = :userId and p.sense.word.id in :wordIds
       """)
   List<Long> findStudiedWords(@Param("userId") Long userId, @Param("wordIds") Collection<Long> wordIds);
+
+  /**
+   * Nhập file CSV: trong các cách viết termsLower (đã viết thường), những từ nào TÔI đã có.
+   * Một câu SQL cho cả file thay vì hỏi từng từ (500 dòng = 1 câu, không phải 500 câu).
+   */
+  @Query("""
+      select lower(w.term) from Word w
+      where w.owner.id = :userId and lower(w.term) in :termsLower
+      """)
+  List<String> findOwnTermsLower(@Param("userId") Long userId, @Param("termsLower") Collection<String> termsLower);
 }
