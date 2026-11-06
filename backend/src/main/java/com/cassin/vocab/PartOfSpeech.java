@@ -10,5 +10,7 @@ public enum PartOfSpeech {
   CONJUNCTION,
   INTERJECTION,
   ARTICLE,
+  IDIOM,
+  PHRASAL_VERB,
   OTHER
 }

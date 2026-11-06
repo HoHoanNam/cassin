@@ -275,7 +275,9 @@ public class WordImportService {
   /** "noun", " Noun " → NOUN. Không khớp giá trị nào → null (không ném, để checkRow gom lỗi). */
   static PartOfSpeech parsePartOfSpeech(String raw) {
     try {
-      return PartOfSpeech.valueOf(raw.strip().toUpperCase(Locale.ROOT));
+      // "phrasal verb" / "Phrasal-Verb" → "PHRASAL_VERB"
+      String name = raw.strip().toUpperCase(Locale.ROOT).replaceAll("[\\s-]+", "_");
+      return PartOfSpeech.valueOf(name);
     } catch (IllegalArgumentException ex) {
       return null;
     }
