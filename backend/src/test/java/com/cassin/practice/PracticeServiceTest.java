@@ -245,6 +245,73 @@ class PracticeServiceTest {
     assertThat(PracticeService.normalize(null)).isEmpty();
   }
 
+  // ===================== [THÊM] Thành ngữ & cụm động từ =====================
+  // PracticeService KHÔNG cần sửa: các test này chốt rằng luồng cũ đã chạy đúng với cụm nhiều chữ.
+
+  // [THÊM] Từ 6 → nghĩa 60 (quy ước id của VocabFixtures).
+  private final Word breakTheIce = VocabFixtures.word(6L, "break the ice", null,
+      sense(PartOfSpeech.IDIOM, "phá vỡ sự ngại ngùng ban đầu",
+          "He told a funny story to [break the ice]."));
+  // [THÊM] Từ 7 → nghĩa 70. Câu đánh dấu dạng QUÁ KHỨ "gave up".
+  private final Word giveUp = VocabFixtures.word(7L, "give up", null,
+      sense(PartOfSpeech.PHRASAL_VERB, "từ bỏ", "He [gave up] smoking last year."));
+
+  @Test
+  @DisplayName("[THÊM] Fill blank thành ngữ: che cả cụm, gợi ý chữ cái đầu 'b', độ dài tính cả khoảng trắng")
+  void fillBlank_idiom_hidesWholePhrase() {
+    when(wordService.practiceSenses(null, USER_ID)).thenReturn(List.of(breakTheIce.getSenses().get(0)));
+
+    List<FillBlankQuestion> questions = practiceService.fillBlank(null, 10, USER_ID);
+
+    assertThat(questions).singleElement().satisfies(q -> {
+      assertThat(q.senseId()).isEqualTo(60L);
+      assertThat(q.sentence()).isEqualTo("He told a funny story to ____.").doesNotContain("ice");
+      assertThat(q.partOfSpeech()).isEqualTo(PartOfSpeech.IDIOM);
+      assertThat(q.firstLetter()).isEqualTo("b");
+      assertThat(q.answerLength()).isEqualTo("break the ice".length());   // 13
+    });
+  }
+
+  @Test
+  @DisplayName("[THÊM] Chấm thành ngữ: hoa thường và khoảng trắng thừa GIỮA các chữ không tính là sai")
+  void check_idiom_looseCompare() {
+    when(wordService.findReadableSense(60L, USER_ID)).thenReturn(breakTheIce.getSenses().get(0));
+    when(userRepository.getReferenceById(USER_ID)).thenReturn(me);
+
+    PracticeResult result = practiceService.check(
+        new PracticeAnswer(60L, 0, PracticeMode.FILL_BLANK, "  Break   the ICE ", 3_000), USER_ID);
+
+    assertThat(result.correct()).isTrue();
+    assertThat(result.expected()).isEqualTo("break the ice");
+  }
+
+  @Test
+  @DisplayName("[THÊM] Cụm động từ gõ dạng gốc 'give up' khi câu cần 'gave up': sai + gợi ý chia dạng")
+  void check_phrasalVerb_baseForm_hint() {
+    when(wordService.findReadableSense(70L, USER_ID)).thenReturn(giveUp.getSenses().get(0));
+    when(userRepository.getReferenceById(USER_ID)).thenReturn(me);
+
+    PracticeResult result = practiceService.check(
+        new PracticeAnswer(70L, 0, PracticeMode.FILL_BLANK, "Give up", 3_000), USER_ID);
+
+    assertThat(result.correct()).isFalse();
+    assertThat(result.expected()).isEqualTo("gave up");
+    assertThat(result.hint()).isNotNull();
+  }
+
+  @Test
+  @DisplayName("[THÊM] Sentence build với thành ngữ: term hiển thị cả cụm, mảnh xáo đủ chữ")
+  void sentenceBuild_idiom() {
+    when(wordService.practiceSenses(null, USER_ID)).thenReturn(List.of(breakTheIce.getSenses().get(0)));
+
+    List<SentenceBuildQuestion> questions = practiceService.sentenceBuild(null, 10, USER_ID);
+
+    assertThat(questions).singleElement().satisfies(q -> {
+      assertThat(q.term()).isEqualTo("break the ice");
+      assertThat(q.tokens()).containsExactlyInAnyOrder("He", "told", "a", "funny", "story", "to", "break", "the", "ice.");
+    });
+  }
+
   // ===================== helper =====================
 
   private static PracticeAnswer answer(PracticeMode mode, String text) {

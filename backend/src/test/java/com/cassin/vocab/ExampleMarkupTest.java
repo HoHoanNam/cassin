@@ -58,4 +58,45 @@ class ExampleMarkupTest {
     assertThatThrownBy(() -> ExampleMarkup.validate("[Turn] on the [light].")).isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> ExampleMarkup.validate("Turn on the [].")).isInstanceOf(IllegalArgumentException.class);
   }
+
+  // ===================== [THÊM] Thành ngữ & cụm động từ: [ ] bao NHIỀU chữ =====================
+
+  @Test
+  @DisplayName("[THÊM] Thành ngữ nhiều chữ: cả cụm là từ đích, che bằng MỘT chỗ trống")
+  void parse_multiWordIdiom() {
+    ExampleMarkup m = ExampleMarkup.parse("He told a joke to [break the ice].").orElseThrow();
+
+    assertThat(m.plain()).isEqualTo("He told a joke to break the ice.");
+    assertThat(m.target()).isEqualTo("break the ice");
+    assertThat(m.start()).isEqualTo("He told a joke to ".length());
+    assertThat(m.blanked()).isEqualTo("He told a joke to ____.");
+  }
+
+  @Test
+  @DisplayName("[THÊM] Cụm động từ đã chia (gave up, không phải give up): đáp án là đúng dạng trong câu")
+  void parse_inflectedPhrasalVerb() {
+    ExampleMarkup m = ExampleMarkup.parse("He [gave up] smoking last year.").orElseThrow();
+
+    assertThat(m.target()).isEqualTo("gave up");
+    assertThat(m.blanked()).isEqualTo("He ____ smoking last year.");
+  }
+
+  @Test
+  @DisplayName("[THÊM] Thành ngữ đứng đầu câu: start = 0, giữ dấu câu phía sau")
+  void parse_idiomAtSentenceStart() {
+    ExampleMarkup m = ExampleMarkup.parse("[Better late than never]!").orElseThrow();
+
+    assertThat(m.start()).isZero();
+    assertThat(m.blanked()).isEqualTo("____!");
+    assertThat(ExampleMarkup.plainOf("[Better late than never]!")).isEqualTo("Better late than never!");
+  }
+
+  @Test
+  @DisplayName("[THÊM] validate: một đánh dấu nhiều chữ là hợp lệ; hai cụm đánh dấu vẫn bị từ chối")
+  void validate_multiWord() {
+    assertThatCode(() -> ExampleMarkup.validate("She [let the cat out of the bag] about the party."))
+        .doesNotThrowAnyException();
+    assertThatThrownBy(() -> ExampleMarkup.validate("[Give up] or [carry on]?"))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
 }

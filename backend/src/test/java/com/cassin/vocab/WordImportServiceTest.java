@@ -17,6 +17,9 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -199,6 +202,49 @@ class WordImportServiceTest {
         .thenThrow(new BusinessException(HttpStatus.FORBIDDEN, "DECK_READ_ONLY", "Bộ từ hệ thống chỉ để ôn"));
 
     assertCode(() -> importService.importWords(DECK_ID, csv(HEADER), false, USER_ID), "DECK_READ_ONLY", null);
+  }
+
+  // ===================== [THÊM] Thành ngữ & cụm động từ =====================
+
+  // [THÊM] File CSV do người dùng tự gõ: chấp nhận cả "phrasal verb", "Phrasal-Verb", không chỉ "PHRASAL_VERB".
+  // Cần sửa parsePartOfSpeech: đổi khoảng trắng / gạch ngang thành "_" trước khi valueOf.
+  @ParameterizedTest(name = "\"{0}\" → {1}")
+  @CsvSource({
+      "IDIOM, IDIOM",
+      "idiom, IDIOM",
+      "' Idiom ', IDIOM",
+      "PHRASAL_VERB, PHRASAL_VERB",
+      "phrasal verb, PHRASAL_VERB",
+      "phrasal  verb, PHRASAL_VERB",   // 2 khoảng trắng
+      "Phrasal-Verb, PHRASAL_VERB",
+      "noun, NOUN"                      // loại từ cũ vẫn chạy như trước
+  })
+  @DisplayName("[THÊM] parsePartOfSpeech: nhận IDIOM / PHRASAL_VERB với nhiều cách viết")
+  void parsePartOfSpeech_idiomAndPhrasalVerb(String raw, PartOfSpeech expected) {
+    assertThat(WordImportService.parsePartOfSpeech(raw)).isEqualTo(expected);
+  }
+
+  @ParameterizedTest(name = "\"{0}\" → null")
+  @ValueSource(strings = { "idioms", "phrasal", "verb phrase", "", "_" })
+  @DisplayName("[THÊM] parsePartOfSpeech: viết sai → null (checkRow báo lỗi kèm danh sách loại từ hợp lệ)")
+  void parsePartOfSpeech_unknown_isNull(String raw) {
+    assertThat(WordImportService.parsePartOfSpeech(raw)).isNull();
+  }
+
+  @Test
+  @DisplayName("[THÊM] Nhập thành ngữ + cụm động từ: [ ] bao NHIỀU chữ hợp lệ, không lỗi")
+  void import_idiomsAndPhrasalVerbs() {
+    when(deckService.findEditable(DECK_ID, USER_ID)).thenReturn(myDeck);
+    when(userRepository.getReferenceById(USER_ID)).thenReturn(me);
+    when(wordRepository.findOwnTermsLower(eq(USER_ID), anyCollection())).thenReturn(List.of());
+
+    ImportResult result = importService.importWords(DECK_ID, csv(HEADER
+        + "break the ice,,IDIOM,phá vỡ sự ngại ngùng,He told a joke to [break the ice].,\n"
+        + "give up,,phrasal verb,từ bỏ,He [gave up] smoking.,Don’t [give up]!\n"), true, USER_ID);
+
+    assertThat(result.errors()).isEmpty();
+    assertThat(result.words()).isEqualTo(2);
+    assertThat(result.senses()).isEqualTo(2);
   }
 
   // ===================== helper =====================
