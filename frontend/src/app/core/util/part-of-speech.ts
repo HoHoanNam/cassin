@@ -11,6 +11,9 @@ export const PART_OF_SPEECH: Record<PartOfSpeech, { label: string; short: string
   CONJUNCTION: { label: 'liên từ', short: 'conj.' },
   INTERJECTION: { label: 'thán từ', short: 'interj.' },
   ARTICLE: { label: 'mạo từ', short: 'art.' },
+  // [THÊM] Thứ tự ở đây = thứ tự trong ô chọn loại từ
+  IDIOM: { label: 'thành ngữ', short: 'idiom' },
+  PHRASAL_VERB: { label: 'cụm động từ', short: 'phr. v.' },
   OTHER: { label: 'khác', short: '' },
 };
 

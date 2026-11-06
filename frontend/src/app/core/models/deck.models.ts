@@ -12,6 +12,9 @@ export type PartOfSpeech =
   | 'CONJUNCTION'
   | 'INTERJECTION'
   | 'ARTICLE'
+  // [THÊM] Thành ngữ và cụm động từ: cũng là một Word, chỉ khác loại (V11)
+  | 'IDIOM'
+  | 'PHRASAL_VERB'
   | 'OTHER';
 
 /**

@@ -4,7 +4,7 @@ import { CefrLevel } from '../models/grammar.models';
 import { DeckType, PartOfSpeech } from '../models/deck.models';
 import { Role } from '../models/user.models';
 import { addDays, todayIso } from '../util/dates';
-import { SEED_SYSTEM_DECK, SEED_TOPICS, SEED_USER_DECKS, SeedCard } from './mock-seed';
+import { SEED_IDIOM_DECK, SEED_SYSTEM_DECK, SEED_TOPICS, SEED_USER_DECKS, SeedCard } from './mock-seed';
 
 /*
  * "Database" giả trong trình duyệt cho chế độ mock.
@@ -121,8 +121,9 @@ const STORAGE_KEY = 'cassin.mockdb';
  * Tăng số này mỗi khi đổi cấu trúc dữ liệu mẫu: trình duyệt đang giữ bản cũ sẽ tự dựng lại từ đầu.
  * 2: thêm tài khoản admin + field bio cho user.
  * 3: [V10] thẻ → từ nhiều nghĩa (words, senses, deck_words), tiến độ theo nghĩa.
+ * 4: [THÊM] bộ hệ thống "Thành ngữ & cụm động từ" (V11).
  */
-const VERSION = 3;
+const VERSION = 4;
 
 /**
  * Lưu vào localStorage sau mỗi lần ghi: tải lại trang vẫn còn bộ từ / từ / tiến độ vừa tạo.
@@ -305,6 +306,9 @@ function buildSeed(): DbState {
 
   const system = addDeck(SEED_SYSTEM_DECK.deckName, SEED_SYSTEM_DECK.description, 'SYSTEM_DECK', null, 0);
   addProgress(addWords(system.id, null, SEED_SYSTEM_DECK.cards), 16);
+  // [THÊM] Bộ thành ngữ: chưa học nghĩa nào (để thử luồng "thẻ mới" với cụm nhiều chữ)
+  const idioms = addDeck(SEED_IDIOM_DECK.deckName, SEED_IDIOM_DECK.description, 'SYSTEM_DECK', null, 0);
+  addWords(idioms.id, null, SEED_IDIOM_DECK.cards);
 
   SEED_USER_DECKS.forEach((seed, index) => {
     const deck = addDeck(seed.deckName, seed.description, 'USER_DECK', nam.id, index === 0 ? 1 : 10);

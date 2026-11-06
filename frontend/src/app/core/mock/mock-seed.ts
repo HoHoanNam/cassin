@@ -39,6 +39,35 @@ export const SEED_SYSTEM_DECK = {
   ] as SeedCard[],
 };
 
+/**
+ * [THÊM] Bộ hệ thống thứ hai: thành ngữ (IDIOM) + cụm động từ (PHRASAL_VERB).
+ * Giống hệt nội dung migration V11__idioms.sql ở backend. Câu ví dụ đánh dấu CẢ CỤM, đúng dạng trong câu.
+ */
+export const SEED_IDIOM_DECK = {
+  deckName: 'Thành ngữ & cụm động từ',
+  description: 'Thành ngữ và cụm động từ hay gặp trong giao tiếp. Câu ví dụ đánh dấu cả cụm để luyện điền từ.',
+  cards: [
+    ['break the ice', 'IDIOM', null, 'phá vỡ sự ngại ngùng ban đầu', ['He told a funny story to [break the ice].']],
+    ['a piece of cake', 'IDIOM', null, 'dễ như ăn bánh, rất dễ', ['The final test was [a piece of cake].']],
+    ['hit the books', 'IDIOM', null, 'học bài chăm chỉ', ['I have to [hit the books] tonight.']],
+    ['under the weather', 'IDIOM', null, 'thấy trong người không khỏe', ['I’m feeling a bit [under the weather] today.']],
+    ['cost an arm and a leg', 'IDIOM', null, 'đắt cắt cổ', ['This new phone [cost an arm and a leg].']],
+    ['once in a blue moon', 'IDIOM', null, 'hiếm khi, năm thì mười họa', ['We only eat out [once in a blue moon].']],
+    ['call it a day', 'IDIOM', null, 'dừng việc, nghỉ (hôm nay) thôi', ['It’s getting late, so let’s [call it a day].']],
+    ['let the cat out of the bag', 'IDIOM', null, 'lỡ để lộ bí mật', ['She [let the cat out of the bag] about the surprise party.']],
+    ['hit the road', 'IDIOM', null, 'lên đường', ['We should [hit the road] before it gets dark.']],
+    ['the last straw', 'IDIOM', null, 'giọt nước tràn ly', ['Being late again was [the last straw] for his boss.']],
+    ['on the same page', 'IDIOM', null, 'cùng quan điểm, hiểu ý nhau', ['Let’s make sure we are all [on the same page].']],
+    ['better late than never', 'IDIOM', null, 'muộn còn hơn không', ['You finally replied to my email. [Better late than never]!']],
+    ['give up', 'PHRASAL_VERB', '/ɡɪv ʌp/', 'từ bỏ', ['He [gave up] smoking last year.', 'Don’t [give up] on your dreams.']],
+    ['look after', 'PHRASAL_VERB', '/lʊk ˈɑːftə(r)/', 'chăm sóc, trông nom', ['Can you [look after] my dog this weekend?']],
+    ['find out', 'PHRASAL_VERB', '/faɪnd aʊt/', 'tìm ra, phát hiện ra', ['I [found out] the truth yesterday.']],
+    ['run out of', 'PHRASAL_VERB', '/rʌn aʊt əv/', 'hết, cạn (cái gì)', ['We have [run out of] milk again.']],
+    ['put off', 'PHRASAL_VERB', '/pʊt ɒf/', 'trì hoãn', ['Stop [putting off] your homework until tomorrow.']],
+    ['get along with', 'PHRASAL_VERB', '/ɡet əˈlɒŋ wɪð/', 'hòa hợp với (ai)', ['I [get along with] all my new classmates.']],
+  ] as SeedCard[],
+};
+
 export const SEED_USER_DECKS = [
   {
     deckName: 'Từ vựng IELTS Writing',
