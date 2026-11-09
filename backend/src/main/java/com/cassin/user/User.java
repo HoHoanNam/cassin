@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Locale;
 
 import com.cassin.quiz.QuizAttempt;
+import com.cassin.report.ContentReport;
 import com.cassin.vocab.CardProgress;
 import com.cassin.vocab.Deck;
 
@@ -70,6 +71,9 @@ public class User {
   // (có phân trang).
   @OneToMany(mappedBy = "user")
   private List<QuizAttempt> quizAttempts = new ArrayList<>();
+
+  @OneToMany(mappedBy = "reporter")
+  private List<ContentReport> contentReports = new ArrayList<>();
 
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt = Instant.now();

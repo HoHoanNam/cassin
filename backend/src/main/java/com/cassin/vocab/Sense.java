@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.cassin.report.ContentReport;
+
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -37,6 +39,9 @@ public class Sense {
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "word_id", nullable = false)
   private Word word;
+
+  @OneToMany(mappedBy = "sense")
+  private List<ContentReport> contentReports = new ArrayList<>();
 
   @Enumerated(EnumType.STRING)
   @Column(name = "part_of_speech", nullable = false, length = 20)
