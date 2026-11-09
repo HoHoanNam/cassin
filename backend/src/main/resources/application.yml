@@ -29,13 +29,17 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
-    servlet:
+  servlet:
     multipart:
       max-file-size: 1MB # một file
       max-request-size: 1MB # cả request
 
 server:
   port: 8080
+  tomcat:
+    # [THÊM] File quá 1MB: Tomcat phải "nuốt" (đọc bỏ) phần còn lại của request rồi mới trả được 413.
+    # Mặc định chỉ nuốt tối đa 2MB, lớn hơn thì cắt kết nối → trình duyệt thấy lỗi mạng thay vì 413.
+    max-swallow-size: 5MB
 
 cassin:
   jwt:
