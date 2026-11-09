@@ -4,15 +4,19 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.cassin.common.dto.ErrorResponse;
@@ -173,5 +177,52 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ErrorResponse> handleMethod(HttpRequestMethodNotSupportedException ex) {
     return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
         .body(new ErrorResponse("METHOD_NOT_ALLOWED", "Phương thức không được hỗ trợ", Map.of()));
+  }
+
+  // ===================== [THÊM] Ghi đồng thời (optimistic locking) =====================
+
+  /**
+   * Hai request sửa CÙNG MỘT dòng có @Version (CardProgress, ContentReport):
+   *
+   *   A đọc version 0 ─┐                 ┌─ UPDATE ... SET version = 1 WHERE id = 5 AND version = 0 → 1 dòng ✅
+   *   B đọc version 0 ─┘  (cùng lúc)     └─ UPDATE ... SET version = 1 WHERE id = 5 AND version = 0 → 0 dòng
+   *                                          → Hibernate: OptimisticLockException
+   *                                          → Spring:    ObjectOptimisticLockingFailureException (con của class này)
+   *
+   * Lỗi nổ lúc COMMIT (cuối method @Transactional), vẫn bay ngược qua controller nên handler bắt được.
+   * 409: dữ liệu đã đổi so với lúc người dùng đọc. FE nên tải lại, KHÔNG tự gửi lại request.
+   */
+  @ExceptionHandler(OptimisticLockingFailureException.class)
+  public ResponseEntity<ErrorResponse> handleOptimisticLock(OptimisticLockingFailureException ex) {
+    return ResponseEntity.status(HttpStatus.CONFLICT)
+        .body(new ErrorResponse("CONCURRENT_UPDATE", "Dữ liệu vừa được cập nhật ở nơi khác, vui lòng tải lại", Map.of()));
+  }
+
+  // ===================== [THÊM] Upload file (nhập từ bằng CSV) =====================
+
+  /**
+   * File vượt spring.servlet.multipart.max-file-size (1MB). Tomcat phát hiện lúc ĐỌC request,
+   * trước khi vào controller. 413 Payload Too Large = mã chuẩn cho "body quá lớn".
+   * MaxUploadSizeExceededException là con của MultipartException: Spring luôn chọn handler khớp
+   * CỤ THỂ nhất, nên sau này có thêm handler cho MultipartException thì lỗi quá cỡ vẫn vào đây.
+   */
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public ResponseEntity<ErrorResponse> handleTooLarge(MaxUploadSizeExceededException ex) {
+    return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+        .body(new ErrorResponse("FILE_TOO_LARGE", "File tối đa 1MB", Map.of()));
+  }
+
+  /** Request multipart nhưng thiếu part "file" (FE quên append, hoặc đặt sai tên). */
+  @ExceptionHandler(MissingServletRequestPartException.class)
+  public ResponseEntity<ErrorResponse> handleMissingPart(MissingServletRequestPartException ex) {
+    return ResponseEntity.badRequest()
+        .body(new ErrorResponse("MISSING_FILE", "Chưa chọn file (thiếu '" + ex.getRequestPartName() + "')", Map.of()));
+  }
+
+  /** Sai Content-Type, ví dụ gửi JSON tới endpoint chỉ nhận multipart → 415. */
+  @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+  public ResponseEntity<ErrorResponse> handleMediaType(HttpMediaTypeNotSupportedException ex) {
+    return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+        .body(new ErrorResponse("UNSUPPORTED_MEDIA_TYPE", "Định dạng dữ liệu gửi lên không được hỗ trợ", Map.of()));
   }
 }
