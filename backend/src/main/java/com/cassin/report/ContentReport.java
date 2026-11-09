@@ -75,6 +75,13 @@ public class ContentReport {
   @Column(name = "resolved_at")
   private Instant resolvedAt;
 
+  // [THÊM] Optimistic locking (V13). Hibernate tự thêm "AND version = ?" vào mỗi UPDATE và tự tăng số này.
+  // Hai request cùng sửa một dòng → request ghi sau không khớp version → 409 CONCURRENT_UPDATE.
+  // Không setter, không tự gán: chỉ Hibernate được đổi field này.
+  @Version
+  @Column(nullable = false)
+  private long version;
+
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt = Instant.now();
 
