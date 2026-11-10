@@ -171,7 +171,7 @@ class ReportServiceTest {
     assertThat(pageable.getValue().getPageSize()).isEqualTo(expectedSize);
     assertThat(pageable.getValue().getSort().getOrderFor("createdAt"))
         .isNotNull()
-        .extracting(Sort.Order::getDirection).isEqualTo(Sort.Direction.DESC);
+        .extracting(o -> o.getDirection()).isEqualTo(Sort.Direction.DESC);
   }
 
   @Test

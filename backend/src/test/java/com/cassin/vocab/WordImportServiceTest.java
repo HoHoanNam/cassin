@@ -30,7 +30,6 @@ import com.cassin.common.BusinessException;
 import com.cassin.user.User;
 import com.cassin.user.UserRepository;
 import com.cassin.vocab.dto.ImportResult;
-import com.cassin.vocab.dto.ImportResult.ImportError;
 import com.cassin.vocab.dto.ImportRow;
 
 /**
@@ -65,7 +64,7 @@ class WordImportServiceTest {
         + "improve,,VERB,cải thiện,,\n"));
 
     // Test này hỏng nghĩa là getRecordNumber() đếm khác đi: sửa "+ 1" trong WordImportService.read()
-    assertThat(rows).extracting(ImportRow::line, ImportRow::term).containsExactly(tuple(2L, "light"), tuple(3L, "improve"));
+    assertThat(rows).extracting(r -> r.line(), r -> r.term()).containsExactly(tuple(2L, "light"), tuple(3L, "improve"));
   }
 
   @Test
@@ -85,7 +84,7 @@ class WordImportServiceTest {
   void read_skipsBom() {
     List<ImportRow> rows = importService.read(csv("﻿" + HEADER + "light,,NOUN,ánh sáng,,\n"));
 
-    assertThat(rows).extracting(ImportRow::term).containsExactly("light");
+    assertThat(rows).extracting(r -> r.term()).containsExactly("light");
   }
 
   @Test
@@ -136,7 +135,7 @@ class WordImportServiceTest {
     ), false, USER_ID);
 
     assertThat(result.imported()).isFalse();
-    assertThat(result.errors()).extracting(ImportError::line, ImportError::field)
+    assertThat(result.errors()).extracting(e -> e.line(), e -> e.field())
         .containsExactly(tuple(3L, "part_of_speech"), tuple(3L, "definition"), tuple(4L, "example_1"));
     verify(wordRepository, never()).saveAll(any());
   }

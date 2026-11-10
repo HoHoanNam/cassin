@@ -123,7 +123,7 @@ class PracticeStatsServiceTest {
     assertThat(stats.total()).isEqualTo(4);
     assertThat(stats.correct()).isEqualTo(3);
     assertThat(stats.accuracy()).isEqualTo(0.75);
-    assertThat(stats.byMode()).extracting(ModeStat::mode)
+    assertThat(stats.byMode()).extracting(s -> s.mode())
         .containsExactly(PracticeMode.FILL_BLANK, PracticeMode.SENTENCE_BUILD);
     assertThat(stats.daily()).containsExactly(
         new DayStat(LocalDate.of(2026, 11, 3), 0, 0),

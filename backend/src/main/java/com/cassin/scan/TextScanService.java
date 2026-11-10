@@ -65,7 +65,7 @@ public class TextScanService {
     occurrences.addAll(findSingleWords(tokens, used, userId));
 
     // ④ Gộp theo khóa, giữ thứ tự xuất hiện; bỏ tên riêng
-    occurrences.sort(Comparator.comparingInt(Occurrence::first));
+    occurrences.sort(Comparator.comparingInt(o -> o.first()));
     Map<String, List<Occurrence>> groups = new LinkedHashMap<>();
     for (Occurrence o : occurrences) {
       groups.computeIfAbsent(o.key(), k -> new ArrayList<>()).add(o);
@@ -91,7 +91,7 @@ public class TextScanService {
       items.add(toItem(entry.getKey(), group, word, tokenized));
     }
     // List.sort ỔN ĐỊNH: count bằng nhau thì giữ thứ tự xuất hiện trong đoạn văn
-    items.sort(Comparator.comparingInt(ScanItem::count).reversed());
+    items.sort(Comparator.comparingInt((ScanItem i) -> i.count()).reversed());
     boolean truncated = items.size() > MAX_ITEMS;
     return new ScanResult(wordCount, groups.size(), knownCount, truncated,
         truncated ? List.copyOf(items.subList(0, MAX_ITEMS)) : items);
@@ -179,7 +179,7 @@ public class TextScanService {
   private static List<Word> preferOwn(List<Word> words) {
     Set<String> seen = new HashSet<>();
     return words.stream()
-        .sorted(Comparator.comparing(Word::isSystem)) // false (của tôi) trước true (hệ thống)
+        .sorted(Comparator.comparing(w -> w.isSystem())) // false (của tôi) trước true (hệ thống)
         .filter(w -> seen.add(w.getTerm().toLowerCase(Locale.ROOT)))
         .toList();
   }

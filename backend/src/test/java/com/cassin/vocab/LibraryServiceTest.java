@@ -57,7 +57,7 @@ class LibraryServiceTest {
     PageResponse<LibraryWord> result = libraryService.search(USER_ID, null, false, 0, 20);
 
     assertThat(result.content())
-        .extracting(LibraryWord::term, LibraryWord::inMyDecks, LibraryWord::studying)
+        .extracting(w -> w.term(), w -> w.inMyDecks(), w -> w.studying())
         .containsExactly(
             tuple("light", false, true),     // đang học, chưa đặt vào bộ nào của tôi
             tuple("tackle", true, false));   // đã đặt vào bộ, chưa học

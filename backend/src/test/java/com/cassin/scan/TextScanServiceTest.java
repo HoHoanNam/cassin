@@ -97,7 +97,7 @@ class TextScanServiceTest {
   }
 
   private static List<String> terms(ScanResult result) {
-    return result.items().stream().map(ScanItem::term).toList();
+    return result.items().stream().map(i -> i.term()).toList();
   }
 
   // ===================== Từ đơn =====================
@@ -113,7 +113,7 @@ class TextScanServiceTest {
     assertThat(run.count()).isEqualTo(2);
     assertThat(run.forms()).containsExactly("running", "ran");
     assertThat(run.example()).isEqualTo("He was [running] late, so he ran to the station.");
-    assertThat(run.senses()).extracting(ScanItem.SensePreview::definition).containsExactly("nghĩa của run");
+    assertThat(run.senses()).extracting(s -> s.definition()).containsExactly("nghĩa của run");
   }
 
   @Test
@@ -243,7 +243,7 @@ class TextScanServiceTest {
   void items_sortedByCountThenAppearance() {
     ScanResult r = scanService.scan("Apple banana apple. Cherry banana apple.", USER_ID);
 
-    assertThat(r.items()).extracting(ScanItem::term, ScanItem::count)
+    assertThat(r.items()).extracting(i -> i.term(), i -> i.count())
         .containsExactly(
             org.assertj.core.groups.Tuple.tuple("apple", 3),
             org.assertj.core.groups.Tuple.tuple("banana", 2),

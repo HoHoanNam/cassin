@@ -97,7 +97,7 @@ class GlobalExceptionHandlerTest {
   void tooLarge_isPayloadTooLarge() {
     ResponseEntity<ErrorResponse> response = handler.handleTooLarge(new MaxUploadSizeExceededException(1_048_576));
 
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.PAYLOAD_TOO_LARGE);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONTENT_TOO_LARGE);
     assertThat(response.getBody().code()).isEqualTo("FILE_TOO_LARGE");
   }
 

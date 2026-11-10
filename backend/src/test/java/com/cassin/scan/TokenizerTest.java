@@ -41,7 +41,7 @@ class TokenizerTest {
   void normalizesWords() {
     Tokenizer.Result r = Tokenizer.tokenize("Anna's teacher said don’t. It's late.");
 
-    assertThat(r.tokens()).extracting(Token::lower)
+    assertThat(r.tokens()).extracting(t -> t.lower())
         .containsExactly("anna", "teacher", "said", "don't", "it's", "late");
   }
 
@@ -62,6 +62,6 @@ class TokenizerTest {
   void ignoresNumbersAndSplitsHyphen() {
     Tokenizer.Result r = Tokenizer.tokenize("In 2026, well-known apps cost $5.");
 
-    assertThat(r.tokens()).extracting(Token::lower).containsExactly("in", "well", "known", "apps", "cost");
+    assertThat(r.tokens()).extracting(t -> t.lower()).containsExactly("in", "well", "known", "apps", "cost");
   }
 }
