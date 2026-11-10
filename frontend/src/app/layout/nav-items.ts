@@ -16,6 +16,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Ôn thẻ', icon: 'cards', link: '/review', showDue: true },
   { label: 'Bộ từ', icon: 'decks', link: '/decks' },
   { label: 'Thư viện', icon: 'library', link: '/library', desktopOnly: true },
+  { label: 'Quét đoạn văn', icon: 'scan', link: '/scan', desktopOnly: true },
   { label: 'Ngữ pháp', icon: 'grammar', link: '/grammar' },
   { label: 'Lịch sử', icon: 'history', link: '/quiz-history' },
 ];

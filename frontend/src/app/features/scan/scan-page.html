@@ -1,0 +1,210 @@
+<div class="page-container page-pad">
+  <header>
+    <h1 class="page-title">Quét đoạn văn</h1>
+    <p class="mb-0 mt-1 max-w-[62ch] text-ink-soft">
+      Dán một đoạn tiếng Anh bạn đang đọc. Cassin tìm những từ chưa có trong sổ từ của bạn, kèm đúng câu chứa từ đó.
+    </p>
+  </header>
+
+  <!-- ===== Ô nhập ===== -->
+  <section class="card card-pad mt-6 flex flex-col gap-3" aria-label="Đoạn văn cần quét">
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <label for="scan-text" class="label m-0">Đoạn tiếng Anh</label>
+      <button type="button" class="link-btn text-[14px]" (click)="useSample()">Dùng đoạn mẫu</button>
+    </div>
+    <textarea id="scan-text" class="input scan-input" rows="7"
+      placeholder="Ví dụ: một đoạn báo, email, lời bài hát, phụ đề phim..."
+      [value]="text()" (input)="onInput($event)" (keydown)="onKeydown($event)"
+      [attr.aria-invalid]="tooLong()" aria-describedby="scan-count"></textarea>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <span id="scan-count" class="text-[13px] tabular-nums" [class.text-danger]="tooLong()" [class.text-ink-soft]="!tooLong()">
+        {{ text().length.toLocaleString('vi-VN') }} / {{ maxLength.toLocaleString('vi-VN') }} ký tự
+        @if (tooLong()) { · bớt {{ (text().length - maxLength).toLocaleString('vi-VN') }} ký tự để quét }
+      </span>
+      <div class="flex gap-2.5">
+        @if (result() || text()) {
+          <button type="button" class="btn btn-secondary" [disabled]="scanning()" (click)="clear()">Xóa</button>
+        }
+        <button type="button" class="btn btn-primary" [disabled]="!canScan()" (click)="scan()">
+          <app-icon name="search" [size]="18" [strokeWidth]="2" />
+          {{ scanning() ? 'Đang quét...' : 'Tìm từ mới' }}
+        </button>
+      </div>
+    </div>
+    @if (scanError(); as message) {
+      <p class="m-0 text-[14px] text-danger" role="alert">{{ message }}</p>
+    }
+  </section>
+
+  <!-- ===== Kết quả ===== -->
+  @if (result(); as r) {
+    <section class="mt-8" aria-label="Kết quả quét">
+      <!-- Tổng quan -->
+      <div class="card card-pad summary">
+        <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1">
+          <p class="m-0"><span class="stat">{{ r.uniqueCount }}</span> từ khác nhau</p>
+          <p class="m-0"><span class="stat text-success">{{ r.knownCount }}</span> đã có trong sổ</p>
+          <p class="m-0"><span class="stat text-brand">{{ r.items.length }}</span> chưa học</p>
+        </div>
+        @if (r.uniqueCount > 0) {
+          <div class="meter" role="meter" aria-label="Tỉ lệ từ đã biết" [attr.aria-valuenow]="knownPercent()" aria-valuemin="0" aria-valuemax="100">
+            <span [style.width.%]="knownPercent()"></span>
+          </div>
+          <p class="m-0 text-[13px] text-ink-soft">Bạn đã biết {{ knownPercent() }}% số từ trong đoạn này.</p>
+        }
+        @if (r.truncated) {
+          <p class="m-0 text-[13px] text-ink-soft">Chỉ hiện 200 từ xuất hiện nhiều nhất.</p>
+        }
+      </div>
+
+      @if (r.items.length === 0) {
+        <div class="card mt-4">
+          @if (r.uniqueCount === 0) {
+            <app-empty-state icon="search" title="Không tìm thấy từ tiếng Anh nào" description="Đoạn văn chỉ có số, ký hiệu hoặc từ chức năng (the, is, of...)." />
+          } @else {
+            <app-empty-state icon="check" title="Bạn đã có hết các từ trong đoạn này" description="Thử một đoạn khó hơn nhé." />
+          }
+        </div>
+      } @else {
+        <!-- Bộ đích + lọc -->
+        <div class="toolbar mt-4">
+          @if (decks.hasValue() && myDecks().length === 0) {
+            <p class="m-0 text-[14px]">
+              Bạn chưa có bộ từ riêng. <a routerLink="/decks" class="link">Tạo một bộ</a> rồi quay lại để thêm từ.
+            </p>
+          } @else {
+            <label class="flex flex-wrap items-center gap-2 text-[14px]" for="scan-deck">
+              <span class="font-semibold">Thêm vào bộ</span>
+              <select id="scan-deck" class="input deck-select" [value]="deckId()" (change)="onDeckChange($event)">
+                @for (deck of myDecks(); track deck.id) {
+                  <option [value]="deck.id" [selected]="deck.id === deckId()">{{ deck.deckName }}</option>
+                }
+              </select>
+            </label>
+          }
+          <div class="flex flex-wrap items-center gap-2.5">
+            <div class="segmented" role="group" aria-label="Lọc kết quả">
+              <button type="button" [attr.aria-pressed]="filter() === 'ALL'" (click)="filter.set('ALL')">Tất cả {{ r.items.length }}</button>
+              <button type="button" [attr.aria-pressed]="filter() === 'LIBRARY'" (click)="filter.set('LIBRARY')">Có sẵn nghĩa {{ counts().library }}</button>
+              <button type="button" [attr.aria-pressed]="filter() === 'NEW'" (click)="filter.set('NEW')">Tự nhập nghĩa {{ counts().fresh }}</button>
+            </div>
+            @if (counts().pendingLibrary > 1 && deckId() !== null) {
+              <button type="button" class="btn btn-secondary btn-sm" [disabled]="bulkAdding()" (click)="addAllLibrary()">
+                <app-icon name="plus" [size]="16" />
+                {{ bulkAdding() ? 'Đang thêm...' : 'Thêm cả ' + counts().pendingLibrary + ' từ có sẵn nghĩa' }}
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (counts().added > 0) {
+          <p class="mb-0 mt-3 text-[14px] text-success" role="status">Đã thêm {{ counts().added }} từ. Ôn chúng trong mục Ôn thẻ.</p>
+        }
+
+        <ul class="card list-card mt-3">
+          @for (row of visibleRows(); track row.item.term + row.item.source) {
+            <li class="scan-row" [class.is-done]="row.status === 'added'" [class.is-skipped]="row.status === 'skipped'">
+              <div class="row-main">
+                <!-- Từ -->
+                <div class="word-col">
+                  <span class="hand text-2xl leading-tight text-brand">{{ row.item.term }}</span>
+                  <span class="flex flex-wrap items-center gap-1.5 text-[12px] text-ink-soft">
+                    <span class="chip text-[12px]" [class.chip-brand]="row.item.source === 'LIBRARY'">
+                      {{ row.item.source === 'LIBRARY' ? 'Có sẵn nghĩa' : 'Từ mới' }}
+                    </span>
+                    @if (row.item.count > 1) {
+                      <span class="tabular-nums">gặp {{ row.item.count }} lần</span>
+                    }
+                  </span>
+                  @if (otherForms(row); as forms) {
+                    <span class="text-[12px] text-ink-soft">dạng trong bài: <i>{{ forms }}</i></span>
+                  }
+                </div>
+
+                <!-- Nghĩa + câu -->
+                <div class="detail-col">
+                  @if (row.item.senses.length > 0) {
+                    <ol class="senses">
+                      @for (sense of row.item.senses; track $index) {
+                        <li><i class="pos">{{ pos[sense.partOfSpeech].short || pos[sense.partOfSpeech].label }}</i><span class="font-semibold">{{ sense.definition }}</span></li>
+                      }
+                    </ol>
+                  }
+                  @if (row.example; as ex) {
+                    <p class="example">{{ ex.before }}<mark>{{ ex.target }}</mark>{{ ex.after }}</p>
+                  }
+                </div>
+
+                <!-- Hành động -->
+                <div class="actions">
+                  @switch (row.status) {
+                    @case ('added') {
+                      <span class="done-label"><app-icon name="check" [size]="16" [strokeWidth]="2.2" />
+                        {{ row.addedTo ? 'Đã thêm vào ' + row.addedTo : 'Đã có trong sổ' }}</span>
+                    }
+                    @case ('skipped') {
+                      <span class="text-[13px] text-ink-soft">Đã bỏ qua</span>
+                      <button type="button" class="link-btn text-[13px]" (click)="undoSkip(row)">Hoàn tác</button>
+                    }
+                    @default {
+                      @if (row.item.source === 'LIBRARY') {
+                        <button type="button" class="btn btn-primary btn-sm" [disabled]="row.status === 'saving' || deckId() === null"
+                          [attr.aria-label]="'Thêm ' + row.item.term + ' vào bộ ' + deckName()" (click)="addLibrary(row)">
+                          <app-icon name="plus" [size]="16" /> {{ row.status === 'saving' ? 'Đang thêm...' : 'Thêm' }}
+                        </button>
+                      } @else if (!row.editing) {
+                        <button type="button" class="btn btn-secondary btn-sm" [disabled]="deckId() === null" (click)="openForm(row)">
+                          <app-icon name="edit" [size]="16" /> Nhập nghĩa
+                        </button>
+                      }
+                      @if (!row.editing) {
+                        <button type="button" class="btn btn-ghost btn-sm" [disabled]="row.status === 'saving'" (click)="skip(row)">Bỏ qua</button>
+                      }
+                    }
+                  }
+                </div>
+              </div>
+
+              <!-- Form nhập nghĩa cho từ NEW -->
+              @if (row.editing && row.status !== 'added') {
+                @let id = 'scan-' + $index;
+                <form class="new-form" (submit)="$event.preventDefault(); saveNew(row)">
+                  <div class="field">
+                    <label class="label" [for]="id + '-term'">Từ</label>
+                    <input class="input" [id]="id + '-term'" [value]="row.term" [attr.maxlength]="limits.term" (input)="setTerm(row, $event)" />
+                  </div>
+                  <div class="field">
+                    <label class="label" [for]="id + '-pos'">Loại từ</label>
+                    <select class="input" [id]="id + '-pos'" (change)="setPartOfSpeech(row, $event)">
+                      @for (option of posOptions; track option.value) {
+                        <option [value]="option.value" [selected]="option.value === row.partOfSpeech">{{ option.label }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="field field-wide">
+                    <label class="label" [for]="id + '-def'">Nghĩa tiếng Việt</label>
+                    <input class="input" [id]="id + '-def'" [value]="row.definition" [attr.maxlength]="limits.definition"
+                      placeholder="vd: chạy" (input)="setDefinition(row, $event)" [attr.aria-invalid]="row.error !== null" />
+                  </div>
+                  <div class="form-actions">
+                    @if (row.error) {
+                      <span class="mr-auto text-[13px] text-danger" role="alert">{{ row.error }}</span>
+                    } @else {
+                      <span class="mr-auto text-[13px] text-ink-soft">Câu ví dụ ở trên được lưu kèm, dùng được cho bài Điền từ.</span>
+                    }
+                    <button type="button" class="btn btn-secondary btn-sm" [disabled]="row.status === 'saving'" (click)="closeForm(row)">Hủy</button>
+                    <button type="submit" class="btn btn-primary btn-sm" [disabled]="row.status === 'saving'">
+                      {{ row.status === 'saving' ? 'Đang thêm...' : 'Thêm vào bộ' }}
+                    </button>
+                  </div>
+                </form>
+              }
+            </li>
+          } @empty {
+            <li class="p-6 text-center text-ink-soft">Không có từ nào ở mục này.</li>
+          }
+        </ul>
+      }
+    </section>
+  }
+</div>

@@ -7,7 +7,7 @@ import { quizLeaveGuard } from './features/quiz/quiz-leave.guard';
  * Sơ đồ trang. Mọi trang đều lazy load: code của trang chỉ tải khi người dùng mở trang đó.
  *
  *   Khách (chưa đăng nhập)        : /  /login  /register
- *   Khu vực học (có sidebar)      : /today /decks /decks/:deckId /grammar /grammar/:topicId /quiz-history /quiz/:attemptId/result /account
+ *   Khu vực học (có sidebar)      : /today /decks /decks/:deckId /library /scan /grammar /grammar/:topicId /quiz-history /quiz/:attemptId/result /account
  *   Quản trị (chỉ ADMIN)          : /admin  /admin/decks(/:deckId)  /admin/grammar(/:topicId)
  *   Chế độ tập trung (không menu) : /review  /decks/:deckId/review  /grammar/:topicId/quiz
  */
@@ -79,6 +79,11 @@ export const routes: Routes = [
         path: 'library',
         title: 'Thư viện từ | Cassin',
         loadComponent: () => import('./features/library/library-page').then((m) => m.LibraryPage),
+      },
+      {
+        path: 'scan',
+        title: 'Quét đoạn văn | Cassin',
+        loadComponent: () => import('./features/scan/scan-page').then((m) => m.ScanPage),
       },
       {
         path: 'grammar',

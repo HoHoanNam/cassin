@@ -1,0 +1,237 @@
+/* .card dùng chung chỉ có viền + nền, không có padding: thẻ của trang này tự thêm */
+.card-pad {
+  padding: 20px 24px;
+}
+
+/* Ô nhập: chữ to, dòng cao như vở, kéo giãn theo chiều dọc */
+.scan-input {
+  min-height: 168px;
+  resize: vertical;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+/* Nút dạng chữ (Dùng đoạn mẫu, Hoàn tác) */
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+.link {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+/* ===== Tổng quan ===== */
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stat {
+  margin-right: 4px;
+  font-family: var(--font-hand);
+  font-size: 30px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Thanh tỉ lệ từ đã biết: xanh lá = đã biết */
+.meter {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--chip);
+
+  span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--success);
+    transition: width 0.4s ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meter span {
+    transition: none;
+  }
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.deck-select {
+  width: auto;
+  min-width: 180px;
+  max-width: 100%;
+  min-height: 40px;
+}
+
+/* ===== Một dòng kết quả ===== */
+.scan-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  /* Chỉ padding dọc: .list-card đã có padding ngang 20px */
+  padding: 16px 0;
+  border-bottom: 1px solid var(--divider);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  /* Đã bỏ qua: mờ đi nhưng vẫn đọc được để hoàn tác */
+  &.is-skipped .row-main > :not(.actions) {
+    opacity: 0.45;
+  }
+}
+
+.row-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px 20px;
+}
+
+.word-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 180px;
+  min-width: 0;
+}
+
+.detail-col {
+  display: flex;
+  flex: 1 1 260px;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.chip-brand {
+  background: var(--brand-wash);
+  color: var(--brand-dark);
+}
+
+/* Nghĩa đánh số như từ điển (giống trang Thư viện) */
+.senses {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding-left: 1.25em;
+
+  li::marker {
+    color: var(--ink-soft);
+    font-size: 13px;
+  }
+}
+
+.pos {
+  margin-right: 6px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+/* Câu trong đoạn văn: từ cần học được gạch dưới bằng bút dạ */
+.example {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.6;
+
+  mark {
+    padding: 0 2px;
+    border-radius: 3px;
+    background: linear-gradient(transparent 55%, color-mix(in srgb, var(--brand) 22%, transparent) 55%);
+    color: var(--ink);
+    font-weight: 600;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.done-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--success);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* ===== Form nhập nghĩa (từ NEW) ===== */
+.new-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr);
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--card-line);
+  border-radius: 10px;
+  background: var(--brand-wash);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .card-pad {
+    padding: 16px;
+  }
+
+  .scan-row {
+    padding: 14px 0;
+  }
+
+  .word-col {
+    width: 100%;
+  }
+
+  .actions {
+    width: 100%;
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+
+  .new-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

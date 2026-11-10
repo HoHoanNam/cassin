@@ -8,6 +8,7 @@ import { MockGrammarApi } from '../mock/mock-grammar.api';
 import { MockLibraryApi } from '../mock/mock-library.api';
 import { MockQuizApi } from '../mock/mock-quiz.api';
 import { MockReviewApi } from '../mock/mock-review.api';
+import { MockScanApi } from '../mock/mock-scan.api';
 import { MockWordApi } from '../mock/mock-word.api';
 import { AccountApi } from './account.api';
 import { AdminApi } from './admin.api';
@@ -23,9 +24,11 @@ import { HttpGrammarApi } from './http/http-grammar.api';
 import { HttpLibraryApi } from './http/http-library.api';
 import { HttpQuizApi } from './http/http-quiz.api';
 import { HttpReviewApi } from './http/http-review.api';
+import { HttpScanApi } from './http/http-scan.api';
 import { HttpWordApi } from './http/http-word.api';
 import { QuizApi } from './quiz.api';
 import { ReviewApi } from './review.api';
+import { ScanApi } from './scan.api';
 import { WordApi } from './word.api';
 
 /**
@@ -44,6 +47,7 @@ export function provideApi(useMock: boolean): EnvironmentProviders {
         { provide: QuizApi, useClass: MockQuizApi },
         { provide: AccountApi, useClass: MockAccountApi },
         { provide: AdminApi, useClass: MockAdminApi },
+        { provide: ScanApi, useClass: MockScanApi },
       ]
     : [
         { provide: AuthApi, useClass: HttpAuthApi },
@@ -55,6 +59,7 @@ export function provideApi(useMock: boolean): EnvironmentProviders {
         { provide: QuizApi, useClass: HttpQuizApi },
         { provide: AccountApi, useClass: HttpAccountApi },
         { provide: AdminApi, useClass: HttpAdminApi },
+        { provide: ScanApi, useClass: HttpScanApi },
       ];
   return makeEnvironmentProviders(providers);
 }
