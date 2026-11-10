@@ -131,4 +131,19 @@ public interface WordRepository extends JpaRepository<Word, Long> {
       where w.owner.id = :userId and lower(w.term) in :termsLower
       """)
   List<String> findOwnTermsLower(@Param("userId") Long userId, @Param("termsLower") Collection<String> termsLower);
+
+  /** Quét đoạn văn, bước ②: cụm nhiều chữ (có dấu cách) của hệ thống và của tôi. Chỉ vài chục dòng. */
+  @Query("""
+      select w from Word w
+      where w.term like '% %' and (w.owner is null or w.owner.id = :userId)
+      """)
+  List<Word> findMultiWordTerms(@Param("userId") Long userId);
+
+  /** Quét đoạn văn, bước ③: từ của tôi + từ hệ thống có term (viết thường) nằm trong termsLower. */
+  @Query("""
+      select w from Word w
+      where lower(w.term) in :termsLower and (w.owner is null or w.owner.id = :userId)
+      """)
+  List<Word> findOwnOrSystemByTermsLower(@Param("userId") Long userId,
+      @Param("termsLower") Collection<String> termsLower);
 }
