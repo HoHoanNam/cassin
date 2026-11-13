@@ -34,6 +34,9 @@
           <button type="button" class="btn btn-secondary" (click)="openAddWord()">
             <app-icon name="plus" [size]="18" [strokeWidth]="2" /> Thêm từ
           </button>
+          <button type="button" class="btn btn-secondary" (click)="importOpen.set(true)">
+            <app-icon name="upload" [size]="18" /> Nhập CSV
+          </button>
           <button type="button" class="btn btn-ghost btn-icon text-ink-soft" aria-label="Sửa bộ từ" title="Sửa bộ từ" (click)="editingDeck.set(true)">
             <app-icon name="edit" />
           </button>
@@ -92,7 +95,10 @@
       </div>
     </section>
 
-    <app-word-form-dialog [open]="wordDialogOpen()" [deckId]="d.id" [wordId]="editingWordId()"
+    <app-import-dialog [open]="importOpen()" [deckId]="deckId()" [deckName]="deck.value()?.deckName ?? ''"
+  (imported)="onImported($event)" (closed)="importOpen.set(false)" />
+
+<app-word-form-dialog [open]="wordDialogOpen()" [deckId]="d.id" [wordId]="editingWordId()"
       (closed)="wordDialogOpen.set(false)" (saved)="onWordSaved($event)" />
     <app-deck-form-dialog [open]="editingDeck()" [deck]="d" (closed)="editingDeck.set(false)" (saved)="onDeckSaved($event)" />
     <app-confirm-dialog [open]="confirmDeleteDeck()" [title]="'Xóa bộ “' + d.deckName + '”?'"

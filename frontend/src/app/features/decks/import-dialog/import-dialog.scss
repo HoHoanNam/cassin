@@ -1,0 +1,130 @@
+/* Ô kéo-thả file: cả khung là <label> nên bấm vào đâu cũng mở hộp chọn file */
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 28px 16px;
+  border: 2px dashed var(--field);
+  border-radius: 12px;
+  background: var(--bg);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover,
+  &.is-dragging {
+    border-color: var(--brand);
+    background: var(--brand-wash);
+  }
+
+  &:focus-within {
+    outline: 2px solid var(--brand-tint);
+    outline-offset: 2px;
+  }
+
+  &.is-busy {
+    cursor: progress;
+    opacity: 0.8;
+  }
+}
+
+.format summary {
+  color: var(--brand);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sample {
+  margin: 0;
+  overflow-x: auto;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--chip);
+  color: var(--ink);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--chip);
+  color: var(--ink);
+  font-size: 0.9em;
+}
+
+.file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 0;
+  max-width: 100%;
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--brand-wash);
+}
+
+.big {
+  font-family: var(--font-hand);
+  font-size: 28px;
+  line-height: 1;
+  color: var(--brand);
+}
+
+/* Bảng lỗi: cuộn trong khung khi file nhiều lỗi */
+.error-table {
+  max-height: 280px;
+  overflow: auto;
+  border: 1px solid var(--card-line);
+  border-radius: 10px;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  th,
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--divider);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    color: var(--ink-soft);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  td:first-child {
+    width: 56px;
+    font-weight: 600;
+  }
+
+  td:nth-child(2) {
+    width: 88px;
+    white-space: nowrap;
+  }
+
+  tr:last-child td {
+    border-bottom: 0;
+  }
+}

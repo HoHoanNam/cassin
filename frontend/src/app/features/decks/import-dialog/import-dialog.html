@@ -1,0 +1,107 @@
+<app-modal [open]="open()" [title]="'Nhập từ từ file CSV'" (closed)="close()">
+  @switch (step()) {
+    <!-- ===== ① Chọn file ===== -->
+    @case ('pick') {
+      <p class="mb-0 mt-2 text-[14px] text-ink-soft">
+        Mỗi dòng là một nghĩa; các dòng cùng từ được gộp thành một từ nhiều nghĩa. Từ đã có trong sổ từ sẽ được bỏ qua.
+      </p>
+
+      <label class="dropzone mt-4" [class.is-dragging]="dragging()" [class.is-busy]="busy()"
+        (dragover)="onDragOver($event)" (dragleave)="dragging.set(false)" (drop)="onDrop($event)">
+        <input type="file" accept=".csv,text/csv" class="sr-only" [disabled]="busy()" (change)="onFileInput($event)" />
+        <app-icon name="upload" [size]="28" class="text-brand" />
+        @if (busy()) {
+          <span class="font-semibold">Đang kiểm tra {{ file()?.name }}...</span>
+        } @else {
+          <span class="font-semibold">Kéo file .csv vào đây, hoặc <span class="text-brand underline underline-offset-2">chọn file</span></span>
+          <span class="text-[13px] text-ink-soft">Tối đa 1MB, {{ maxRows }} dòng</span>
+        }
+      </label>
+
+      @if (error(); as message) {
+        <p class="form-alert form-alert-error mt-3" role="alert"><app-icon name="info" class="mt-px" /><span>{{ message }}</span></p>
+      }
+
+      <details class="format mt-4">
+        <summary>Định dạng file</summary>
+        <div class="mt-2 flex flex-col gap-2 text-[14px] text-ink-soft">
+          <p class="m-0">Dòng đầu là tên cột. Bắt buộc: <code>term</code>, <code>part_of_speech</code>, <code>definition</code>.
+            Không bắt buộc: <code>phonetic</code>, <code>example_1</code> đến <code>example_5</code>.</p>
+          <pre class="sample">term,phonetic,part_of_speech,definition,example_1
+light,/laɪt/,NOUN,ánh sáng,"Turn on the [light], please."
+light,,ADJECTIVE,nhẹ,This bag is very [light].</pre>
+          <p class="m-0">Đánh dấu từ trong câu ví dụ bằng <code>[ ]</code> để luyện Điền từ. Ô có dấu phẩy thì bao bằng <code>"..."</code>.</p>
+          <a class="inline-flex items-center gap-1.5 font-semibold" [href]="templateUrl" download="cassin-mau-nhap-tu.csv">
+            <app-icon name="download" [size]="16" /> Tải file mẫu
+          </a>
+        </div>
+      </details>
+
+      <div class="mt-5 flex justify-end">
+        <button type="button" class="btn btn-secondary" [disabled]="busy()" (click)="close()">Hủy</button>
+      </div>
+    }
+
+    <!-- ===== ② Xem trước ===== -->
+    @case ('preview') {
+      @let p = preview()!;
+      <p class="file-chip mt-3"><app-icon name="file" [size]="16" /> {{ file()?.name }} <span class="text-ink-soft">· {{ sizeLabel(file()?.size ?? 0) }}</span></p>
+
+      @if (hasErrors()) {
+        <div class="form-alert form-alert-error mt-3" role="alert">
+          <app-icon name="info" class="mt-px" />
+          <span>File có <strong>{{ p.errors.length }} lỗi</strong>. Chưa nhập từ nào: sửa file rồi chọn lại.</span>
+        </div>
+        <div class="error-table mt-3">
+          <table>
+            <thead><tr><th scope="col">Dòng</th><th scope="col">Cột</th><th scope="col">Lỗi</th></tr></thead>
+            <tbody>
+              @for (e of p.errors; track $index) {
+                <tr><td class="tabular-nums">{{ e.line }}</td><td>{{ fieldLabel(e.field) }}</td><td>{{ e.message }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="summary mt-3">
+          @if (nothingNew()) {
+            <p class="m-0 font-semibold">Không có từ mới để nhập.</p>
+          } @else {
+            <p class="m-0">Sẽ thêm <span class="big">{{ p.words }}</span> từ mới
+              <span class="text-ink-soft">({{ p.senses }} nghĩa)</span> vào bộ <strong>{{ deckName() }}</strong>.</p>
+          }
+          @if (p.skipped.length > 0) {
+            <p class="m-0 text-[14px] text-ink-soft">Bỏ qua {{ p.skipped.length }} từ đã có trong sổ từ:
+              <i>{{ p.skipped.slice(0, 8).join(', ') }}{{ p.skipped.length > 8 ? '...' : '' }}</i></p>
+          }
+        </div>
+      }
+
+      @if (error(); as message) {
+        <p class="form-alert form-alert-error mt-3" role="alert"><app-icon name="info" class="mt-px" /><span>{{ message }}</span></p>
+      }
+
+      <div class="mt-5 flex flex-wrap justify-end gap-2.5">
+        <button type="button" class="btn btn-secondary" [disabled]="busy()" (click)="chooseAnother()">Chọn file khác</button>
+        @if (!hasErrors() && !nothingNew()) {
+          <button type="button" class="btn btn-primary" [disabled]="busy()" (click)="confirm()">
+            {{ busy() ? 'Đang nhập...' : 'Nhập ' + p.words + ' từ' }}
+          </button>
+        }
+      </div>
+    }
+
+    <!-- ===== ③ Xong ===== -->
+    @case ('done') {
+      <div class="summary mt-3">
+        <p class="m-0 flex items-center gap-2 font-semibold text-success">
+          <app-icon name="check" [size]="20" [strokeWidth]="2.2" /> Đã thêm {{ preview()?.words }} từ ({{ preview()?.senses }} nghĩa) vào bộ.
+        </p>
+        <p class="m-0 text-[14px] text-ink-soft">Các nghĩa mới là thẻ chưa học: bấm "Học thẻ mới" để bắt đầu.</p>
+      </div>
+      <div class="mt-5 flex justify-end">
+        <button type="button" class="btn btn-primary" (click)="close()">Xong</button>
+      </div>
+    }
+  }
+</app-modal>

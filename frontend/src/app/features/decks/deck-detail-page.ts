@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { DeckApi } from '../../core/api/deck.api';
 import { ApiError, errorMessage } from '../../core/models/common.models';
 import { Deck, Word, WordSummary } from '../../core/models/deck.models';
+import { ImportResult } from '../../core/models/import.models';
 import { ToastService } from '../../core/ui/toast.service';
 import { ConfirmDialog } from '../../shared/ui/confirm-dialog/confirm-dialog';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
@@ -13,6 +14,7 @@ import { Icon } from '../../shared/ui/icon/icon';
 import { Pager } from '../../shared/ui/pager/pager';
 import { Skeleton } from '../../shared/ui/skeleton/skeleton';
 import { DeckFormDialog } from './deck-form-dialog/deck-form-dialog';
+import { ImportDialog } from './import-dialog/import-dialog';
 import { WordFormDialog } from './word-form-dialog/word-form-dialog';
 import { WordList } from './word-list/word-list';
 
@@ -24,7 +26,7 @@ const PAGE_SIZE = 20;
  */
 @Component({
   selector: 'app-deck-detail-page',
-  imports: [RouterLink, ConfirmDialog, DeckFormDialog, EmptyState, ErrorState, Icon, Pager, Skeleton, WordFormDialog, WordList],
+  imports: [RouterLink, ConfirmDialog, DeckFormDialog, EmptyState, ImportDialog, ErrorState, Icon, Pager, Skeleton, WordFormDialog, WordList],
   templateUrl: './deck-detail-page.html',
   styleUrl: './deck-detail-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -63,6 +65,8 @@ export class DeckDetailPage {
   protected readonly wordToRemove = signal<WordSummary | null>(null);
   protected readonly confirmDeleteDeck = signal(false);
   protected readonly busy = signal(false);
+  /** Hộp thoại nhập CSV */
+  protected readonly importOpen = signal(false);
 
   protected openAddWord(): void {
     this.editingWordId.set(null);
@@ -79,6 +83,14 @@ export class DeckDetailPage {
     if (!event.keepOpen) {
       this.wordDialogOpen.set(false);
     }
+    this.words.reload();
+    this.deck.reload();
+  }
+
+  /** Nhập CSV xong: hộp thoại vẫn mở (bước "Xong"), tải lại danh sách + số liệu của bộ ngay. */
+  protected onImported(result: ImportResult): void {
+    this.toast.success(`Đã nhập ${result.words} từ (${result.senses} nghĩa)`);
+    this.page.set(0);
     this.words.reload();
     this.deck.reload();
   }

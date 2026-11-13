@@ -4,7 +4,7 @@ export type IconName =
   | 'today' | 'cards' | 'decks' | 'grammar' | 'history'
   | 'plus' | 'search' | 'close' | 'chevron-down' | 'chevron-left' | 'chevron-right'
   | 'check' | 'alert' | 'info' | 'edit' | 'trash' | 'logout' | 'refresh' | 'arrow-left' | 'flame' | 'reset'
-  | 'shield' | 'user' | 'eye' | 'users' | 'chart' | 'library' | 'scan';
+  | 'shield' | 'user' | 'eye' | 'users' | 'chart' | 'library' | 'scan' | 'upload' | 'download' | 'file';
 
 /**
  * Icon nét mảnh (stroke) vẽ bằng SVG, dùng chung cả app.

@@ -2,6 +2,7 @@ import { Observable } from 'rxjs';
 
 import { PageResponse } from '../models/common.models';
 import { Deck, DeckRequest, WordSummary } from '../models/deck.models';
+import { ImportResult } from '../models/import.models';
 
 /**
  * Bộ từ. Xem giải thích kiểu "hợp đồng" trong auth.api.ts.
@@ -26,4 +27,11 @@ export abstract class DeckApi {
   abstract addWord(deckId: number, wordId: number): Observable<void>;
   /** DELETE /api/decks/{deckId}/words/{wordId} → 204. Chỉ bỏ khỏi bộ, không xóa từ. */
   abstract removeWord(deckId: number, wordId: number): Observable<void>;
+
+  /**
+   * POST /api/decks/{deckId}/import?dryRun=   (multipart/form-data, part "file")
+   * dryRun = true: chỉ kiểm tra + đếm, không lưu. Lỗi từng dòng vẫn trả 200 trong errors[].
+   * Lỗi cả file (rỗng, thiếu cột, > 500 dòng) → 400; file > 1MB → 413.
+   */
+  abstract importWords(deckId: number, file: File, dryRun: boolean): Observable<ImportResult>;
 }
