@@ -46,8 +46,16 @@ cassin:
     # Khóa bí mật để ký token, dạng base64, tối thiểu 32 byte.
     # Giá trị mặc định chỉ dùng khi dev. Lúc deploy phải đặt biến môi trường JWT_SECRET.
     secret: ${JWT_SECRET:ZGV2LW9ubHktc2VjcmV0LWNoYW5nZS1tZS1pbi1wcm9kdWN0aW9uIQ==}
-    # Thời gian sống của access token
+    # Thời gian sống của access token.
+    # [LƯU Ý] Mục tiêu là 15m: hết hạn thì FE tự lấy token mới bằng refresh token (cookie).
+    # GIỮ 1h cho tới khi FE có luồng tự refresh, nếu không cứ 15 phút người dùng bị đá ra trang đăng nhập.
     access-token-ttl: 1h
+  # [THÊM] Refresh token (xem backend/docs/refresh-token.md)
+  refresh-token:
+    # Không mở app quá 14 ngày thì phải đăng nhập lại. Mỗi lần refresh được hạn mới.
+    ttl: 14d
+    # Cookie chỉ gửi qua HTTPS. Dev chạy http://localhost nên tắt; deploy đặt REFRESH_COOKIE_SECURE=true.
+    cookie-secure: ${REFRESH_COOKIE_SECURE:false}
   admin:
     # Đặt qua biến môi trường. Để trống thì không tạo admin.
     email: ${ADMIN_EMAIL:}

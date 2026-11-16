@@ -46,7 +46,7 @@ public class JwtService {
         .claim("email", user.getEmail())
         .claim("role", user.getRole().name())      // lưu dạng chữ "USER" / "ADMIN"
         .issuedAt(Date.from(now))                  // "iat": thời điểm cấp
-        .expiration(Date.from(now.plus(ttl)))      // "exp": hết hạn sau ttl (1 giờ)
+        .expiration(Date.from(now.plus(ttl)))      // "exp": hết hạn sau ttl (cassin.jwt.access-token-ttl)
         .signWith(key)                             // ký bằng khóa bí mật
         .compact();                                // ghép thành chuỗi "xxx.yyy.zzz"
   }

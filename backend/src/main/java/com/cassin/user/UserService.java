@@ -5,6 +5,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.cassin.auth.RefreshTokenService;
 import com.cassin.common.BusinessException;
 import com.cassin.common.PasswordRules;
 import com.cassin.user.dto.ChangePasswordRequest;
@@ -18,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 public class UserService {
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
+  // [THÊM] Đổi mật khẩu thì thu hồi mọi phiên đăng nhập
+  private final RefreshTokenService refreshTokenService;
 
   /**
    * [THÊM] GET /api/me: chuyển từ UserController sang đây.
@@ -39,8 +42,18 @@ public class UserService {
     return UserResponse.from(user);
   }
 
+  /**
+   * Đổi mật khẩu.
+   *
+   * [THÊM] Đổi xong thì ĐĂNG XUẤT MỌI THIẾT BỊ (thu hồi mọi refresh token), rồi mở phiên mới cho
+   * thiết bị đang đổi → trả về refresh token mới để controller đặt cookie, người đang dùng không bị văng ra.
+   * Lý do: người ta đổi mật khẩu thường vì nghi bị lộ; kẻ đang cầm phiên cũ phải bị đá ra.
+   *
+   * Cả ba việc (đổi mật khẩu, thu hồi, mở phiên mới) trong MỘT transaction: lỗi giữa chừng thì không việc nào xảy ra.
+   * Access token cũ ở thiết bị khác vẫn sống tới khi hết hạn (tối đa 15 phút) — đánh đổi của JWT stateless.
+   */
   @Transactional
-  public void changePassword(Long userId, ChangePasswordRequest r) {
+  public String changePassword(Long userId, ChangePasswordRequest r) {
     // 1. Kiểm tra tài khoản đã tồn tại chưa
     User user = findUser(userId);
 
@@ -61,6 +74,10 @@ public class UserService {
 
     // 3. Băm + Lưu mật khẩu mới
     user.changePassword(passwordEncoder.encode(r.newPassword()));
+
+    // 4. [THÊM] Đăng xuất mọi thiết bị, mở phiên mới cho thiết bị hiện tại
+    refreshTokenService.revokeAll(userId);
+    return refreshTokenService.startSession(user);
   }
 
   // HELPER

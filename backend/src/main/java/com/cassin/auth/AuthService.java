@@ -5,6 +5,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.cassin.auth.dto.AuthTokens;
 import com.cassin.auth.dto.LoginRequest;
 import com.cassin.auth.dto.LoginResponse;
 import com.cassin.auth.dto.RegisterRequest;
@@ -25,6 +26,8 @@ public class AuthService {
   // [THÊM] Hai dependency cho đăng nhập
   private final JwtService jwtService;
   private final JwtProperties jwtProperties;
+  // [THÊM] Refresh token: phiên dài hạn, thu hồi được
+  private final RefreshTokenService refreshTokenService;
 
   @Transactional
   public UserResponse register(RegisterRequest request) {
@@ -53,16 +56,17 @@ public class AuthService {
   }
 
   /**
-   * [THÊM] Đăng nhập: kiểm tra email + mật khẩu, đúng thì cấp token.
+   * Đăng nhập: kiểm tra email + mật khẩu, đúng thì cấp token.
    *
    *   1. Tìm user theo email (đã chuẩn hóa giống lúc đăng ký)
    *   2. So mật khẩu vừa nhập với password_hash trong DB
-   *   3. Đúng cả hai → JwtService tạo token → trả về cho client giữ
+   *   3. Đúng cả hai → access token (JWT, sống access-token-ttl, trả trong body)
+   *                   + refresh token (14 ngày, controller đặt vào cookie HttpOnly)
    *
-   * readOnly = true: method chỉ đọc DB, Hibernate bỏ qua bước theo dõi thay đổi → nhanh hơn.
+   * [SỬA] readOnly = true → bỏ: đăng nhập giờ GHI một dòng refresh_tokens (mở phiên mới).
    */
-  @Transactional(readOnly = true)
-  public LoginResponse login(LoginRequest request) {
+  @Transactional
+  public AuthTokens login(LoginRequest request) {
     String email = User.normalizeEmail(request.email());
 
     User user = userRepository.findByEmail(email)
@@ -74,11 +78,34 @@ public class AuthService {
         .orElseThrow(() -> new BusinessException(
             HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "Email hoặc mật khẩu không đúng"));
 
-    String token = jwtService.generate(user);
-    return new LoginResponse(
-        token,
+    return tokensFor(user, refreshTokenService.startSession(user));
+  }
+
+  /**
+   * [THÊM] Đổi refresh token (trong cookie) lấy cặp token mới. Token cũ bị thu hồi (xoay vòng).
+   *
+   * KHÔNG có @Transactional: rotate() tự mở transaction với noRollbackFor để lệnh "thu hồi cả họ"
+   * vẫn được lưu dù sau đó ném 401. Nếu ở đây cũng mở transaction, rotate() chạy chung transaction này,
+   * exception đi ngang qua sẽ đánh dấu rollback → lệnh thu hồi bị hủy. (Xem RefreshTokenService.rotate.)
+   *
+   * Role đọc lại từ DB (rotate join fetch user): bị hạ quyền thì access token mới phản ánh ngay.
+   */
+  public AuthTokens refresh(String refreshToken) {
+    RefreshTokenService.Rotation rotation = refreshTokenService.rotate(refreshToken);
+    return tokensFor(rotation.user(), rotation.refreshToken());
+  }
+
+  /** [THÊM] Đăng xuất: thu hồi cả họ của refresh token đang cầm. Access token còn sống tối đa 15 phút. */
+  public void logout(String refreshToken) {
+    refreshTokenService.endSession(refreshToken);
+  }
+
+  private AuthTokens tokensFor(User user, String refreshToken) {
+    LoginResponse body = new LoginResponse(
+        jwtService.generate(user),
         "Bearer",
         jwtProperties.accessTokenTtl().toSeconds(),
         UserResponse.from(user));
+    return new AuthTokens(body, refreshToken);
   }
 }

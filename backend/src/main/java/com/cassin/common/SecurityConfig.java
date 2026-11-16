@@ -12,6 +12,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import com.cassin.auth.JwtAuthenticationFilter;
 import com.cassin.auth.JwtProperties;
+import com.cassin.auth.dto.RefreshTokenProperties;
 import com.cassin.auth.JwtService;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -27,7 +28,8 @@ import lombok.RequiredArgsConstructor;
 @Configuration
 // Bật việc đọc cassin.jwt.* trong application.yml vào record JwtProperties.
 // Thiếu dòng này thì Spring không tạo được JwtProperties → JwtService không khởi tạo được.
-@EnableConfigurationProperties(JwtProperties.class)
+// [SỬA] Thêm RefreshTokenProperties (cassin.refresh-token.*).
+@EnableConfigurationProperties({ JwtProperties.class, RefreshTokenProperties.class })
 @RequiredArgsConstructor
 public class SecurityConfig {
   private final JwtService jwtService;
@@ -35,8 +37,11 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     return http
-        // CSRF chống tấn công dựa vào COOKIE đăng nhập. Cassin gửi token trong HEADER, không dùng cookie
-        // → tắt được. (Nếu sau này chuyển token sang cookie thì phải bật lại.)
+        // CSRF chống tấn công dựa vào COOKIE đăng nhập. Các API dữ liệu dùng access token trong HEADER
+        // (trình duyệt không tự gửi) → không bị CSRF.
+        // [SỬA] Cookie DUY NHẤT là refresh token, chỉ đi tới /api/auth (refresh, logout) và có SameSite=Strict:
+        // trang lạ gửi request tới Cassin thì trình duyệt KHÔNG gửi kèm cookie này. Hơn nữa refresh chỉ
+        // trả token trong body, trang lạ không đọc được response (same-origin policy). Nên vẫn tắt CSRF được.
         .csrf(csrf -> csrf.disable())
 
         // Không tạo session trên server: mỗi request tự chứng minh danh tính bằng token.

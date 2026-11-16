@@ -1,15 +1,16 @@
 package com.cassin.user;
 
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cassin.auth.AuthUser;
+import com.cassin.auth.RefreshCookie;
 import com.cassin.user.dto.ChangePasswordRequest;
 import com.cassin.user.dto.UpdateProfileRequest;
 import com.cassin.user.dto.UserResponse;
@@ -27,6 +28,8 @@ import lombok.RequiredArgsConstructor;
 public class UserController {
   // [SỬA] Bỏ UserRepository: controller chỉ nói chuyện với service (xem UserService.getMe).
   private final UserService userService;
+  // [THÊM] Đặt cookie refresh token mới sau khi đổi mật khẩu
+  private final RefreshCookie refreshCookie;
 
   /**
    * GET /api/me: thông tin của chính mình.
@@ -52,15 +55,18 @@ public class UserController {
     return userService.updateProfile(user.id(), request);
   }
 
-  // [LƯU Ý]: JWT là stateless, nên sau khi đổi mật khẩu, token cũ ở thiết bị khác
-  // vẫn dùng được đến khi hết hạn (tối đa 1 giờ). Như vậy là chấp nhận được ở
-  // giai đoạn này. Nếu sau này cần thu hồi token ngay, có thể thêm cột
-  // password_changed_at và từ chối token phát hành trước mốc đó.
+  /**
+   * [SỬA] Đổi mật khẩu xong thì mọi phiên đăng nhập khác bị thu hồi (xem UserService.changePassword).
+   * Thiết bị đang đổi nhận refresh token MỚI qua cookie nên không bị đăng xuất.
+   * Cookie có Path=/api/auth: response của /api/me/password vẫn đặt được cookie cho path đó.
+   */
   @PutMapping("/me/password")
-  @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void changePassword(
+  public ResponseEntity<Void> changePassword(
       @AuthenticationPrincipal AuthUser user,
       @Valid @RequestBody ChangePasswordRequest request) {
-    userService.changePassword(user.id(), request);
+    String refreshToken = userService.changePassword(user.id(), request);
+    return ResponseEntity.noContent()
+        .header(HttpHeaders.SET_COOKIE, refreshCookie.set(refreshToken))
+        .build();
   }
 }

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import com.cassin.auth.RefreshToken;
 import com.cassin.quiz.QuizAttempt;
 import com.cassin.report.ContentReport;
 import com.cassin.vocab.CardProgress;
@@ -74,6 +75,9 @@ public class User {
 
   @OneToMany(mappedBy = "reporter")
   private List<ContentReport> contentReports = new ArrayList<>();
+
+  @OneToMany(mappedBy = "user")
+  private List<RefreshToken> refreshTokens = new ArrayList<>();
 
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt = Instant.now();
