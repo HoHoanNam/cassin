@@ -13,7 +13,8 @@ export class MockSession {
 
   userId(): number {
     const user = this.store.user();
-    if (!user || !this.store.hasValidSession()) {
+    // [SỬA] Mock không mô phỏng access token hết hạn: không có HTTP thì interceptor không tự refresh được.
+    if (!user || !this.store.isLoggedIn()) {
       throw new ApiError(401, 'UNAUTHORIZED', 'Bạn cần đăng nhập');
     }
     return user.id;

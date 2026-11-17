@@ -14,6 +14,7 @@ import { Icon } from '../../shared/ui/icon/icon';
 import { Modal } from '../../shared/ui/modal/modal';
 import { Pager } from '../../shared/ui/pager/pager';
 import { Skeleton } from '../../shared/ui/skeleton/skeleton';
+import { ReportDialog } from '../reports/report-dialog/report-dialog';
 
 const PAGE_SIZE = 20;
 
@@ -24,7 +25,7 @@ const PAGE_SIZE = 20;
  */
 @Component({
   selector: 'app-library-page',
-  imports: [RouterLink, EmptyState, ErrorState, Icon, Modal, Pager, Skeleton],
+  imports: [RouterLink, EmptyState, ErrorState, Icon, Modal, Pager, ReportDialog, Skeleton],
   templateUrl: './library-page.html',
   styleUrl: './library-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -52,6 +53,14 @@ export class LibraryPage {
   protected readonly adding = signal<LibraryWord | null>(null);
   protected readonly selectedDeckId = signal<number | null>(null);
   protected readonly saving = signal(false);
+
+  // ---- [THÊM] Báo lỗi nội dung ----
+  protected readonly reportingWord = signal<LibraryWord | null>(null);
+
+  protected onReported(): void {
+    this.reportingWord.set(null);
+    this.toast.success('Đã gửi báo lỗi. Theo dõi kết quả ở mục Báo lỗi của tôi');
+  }
 
   protected onSearch(event: Event): void {
     this.query.set((event.target as HTMLInputElement).value.trim());

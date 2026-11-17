@@ -30,8 +30,14 @@ export class AuthService {
       .pipe(switchMap(() => this.login({ email: request.email, password: request.password })));
   }
 
+  /**
+   * [SỬA] Đăng xuất: xóa phiên ở trình duyệt NGAY (giao diện không phải chờ mạng),
+   * đồng thời báo server thu hồi refresh token + xóa cookie. Gọi server lỗi (mất mạng) cũng không sao:
+   * phiên ở trình duyệt đã xóa; refresh token còn lại sẽ tự hết hạn.
+   */
   logout(): void {
     this.store.clear();
     void this.router.navigateByUrl('/');
+    this.api.logout().subscribe({ error: () => undefined });
   }
 }

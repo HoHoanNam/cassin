@@ -1,0 +1,66 @@
+<app-modal [open]="open()" title="Xử lý báo lỗi" (closed)="close()">
+  @if (report(); as r) {
+    <div class="mt-3 rounded-[10px] border border-line bg-surface p-3.5">
+      <div class="flex flex-wrap items-baseline gap-x-3">
+        <span class="hand text-2xl text-brand">{{ r.term }}</span>
+        <span>{{ r.definition }}</span>
+      </div>
+      <p class="m-0 mt-1 text-[13px] text-ink-soft">
+        <span class="chip">{{ reasonLabel[r.reason] }}</span> · {{ r.reporterName }} báo
+      </p>
+      @if (r.message) {
+        <p class="m-0 mt-2">"{{ r.message }}"</p>
+      }
+    </div>
+
+    <form class="mt-5 flex flex-col gap-5" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      @if (serverError(); as message) {
+        <div class="form-alert form-alert-error" role="alert">{{ message }}</div>
+      }
+
+      <div class="field">
+        <span class="label" id="decision-label">Kết quả</span>
+        <div class="segmented self-start" role="radiogroup" aria-labelledby="decision-label">
+          <button type="button" role="radio" [attr.aria-pressed]="!rejecting()" [attr.aria-checked]="!rejecting()"
+            (click)="form.controls.status.setValue('RESOLVED')">Đã sửa</button>
+          <button type="button" role="radio" [attr.aria-pressed]="rejecting()" [attr.aria-checked]="rejecting()"
+            (click)="form.controls.status.setValue('REJECTED')">Không sửa</button>
+        </div>
+        <p class="field-hint">
+          @if (rejecting()) {
+            Nội dung đã đúng, hoặc báo lỗi chưa rõ. Người báo sẽ thấy lý do bạn ghi bên dưới.
+          } @else {
+            Nhớ sửa từ trong mục "Bộ từ hệ thống" trước khi đánh dấu đã sửa.
+          }
+        </p>
+      </div>
+
+      @let note = form.controls.adminNote;
+      <div class="field">
+        <label class="label" for="admin-note">
+          {{ rejecting() ? 'Lý do không sửa' : 'Ghi chú cho người báo' }}
+          @if (!rejecting()) {
+            <span class="font-normal text-ink-soft">(không bắt buộc)</span>
+          }
+        </label>
+        <textarea id="admin-note" class="input" rows="3" formControlName="adminNote"
+          [placeholder]="rejecting() ? 'Ví dụ: nghĩa này đúng theo từ điển Oxford' : 'Ví dụ: đã sửa lại câu ví dụ, cảm ơn bạn!'"
+          [attr.aria-invalid]="note.touched && note.invalid" aria-describedby="admin-note-hint"></textarea>
+        @if (note.touched && note.hasError('required')) {
+          <p id="admin-note-hint" class="field-error">Ghi lý do để người báo hiểu vì sao không sửa</p>
+        } @else if (note.hasError('server')) {
+          <p id="admin-note-hint" class="field-error">{{ note.getError('server') }}</p>
+        } @else {
+          <p id="admin-note-hint" class="field-hint" [class.field-error]="note.hasError('maxlength')">{{ note.value.length }} / {{ maxText }} ký tự</p>
+        }
+      </div>
+
+      <div class="flex flex-wrap justify-end gap-2.5">
+        <button type="button" class="btn btn-secondary" [disabled]="saving()" (click)="close()">Hủy</button>
+        <button type="submit" class="btn" [class.btn-primary]="!rejecting()" [class.btn-danger]="rejecting()" [disabled]="saving()">
+          {{ saving() ? 'Đang lưu...' : rejecting() ? 'Không sửa' : 'Đánh dấu đã sửa' }}
+        </button>
+      </div>
+    </form>
+  }
+</app-modal>

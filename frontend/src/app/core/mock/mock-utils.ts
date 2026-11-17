@@ -1,7 +1,7 @@
 import { Observable, map, timer } from 'rxjs';
 
 import { APP_ENV } from '../config/app-env';
-import { ApiError } from '../models/common.models';
+import { ApiError, PageResponse } from '../models/common.models';
 
 /**
  * Giả lập một lần gọi mạng: chờ một khoảng ngẫu nhiên rồi mới chạy handler.
@@ -35,6 +35,19 @@ export function validate(rules: [field: string, failed: boolean, message: string
 
 export const isBlank = (value: string | null | undefined) => !value || value.trim().length === 0;
 export const tooLong = (value: string | null | undefined, max: number) => (value ?? '').trim().length > max;
+
+/** [THÊM] Cắt trang giống PageRequest.of(max(page,0), clamp(size,1,maxSize)) + PageResponse ở backend. */
+export function slicePage<T>(items: T[], page: number, size: number, maxSize = 50): PageResponse<T> {
+  const safePage = Math.max(page, 0);
+  const safeSize = Math.min(Math.max(size, 1), maxSize);
+  return {
+    content: items.slice(safePage * safeSize, (safePage + 1) * safeSize),
+    page: safePage,
+    size: safeSize,
+    totalElements: items.length,
+    totalPages: Math.ceil(items.length / safeSize),
+  };
+}
 
 /** Xáo trộn mảng (Fisher-Yates), dùng khi lấy câu hỏi ngẫu nhiên. */
 export function shuffle<T>(items: T[]): T[] {

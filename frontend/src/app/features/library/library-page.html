@@ -59,9 +59,14 @@
                   </li>
                 }
               </ol>
-              <button type="button" class="btn btn-secondary btn-sm ml-auto" [attr.aria-label]="'Thêm ' + word.term + ' vào bộ'" (click)="openAdd(word)">
-                <app-icon name="plus" [size]="16" /> Thêm vào bộ
-              </button>
+              <div class="ml-auto flex items-center gap-1">
+                <button type="button" class="btn btn-ghost btn-icon text-ink-soft" [attr.aria-label]="'Báo lỗi từ ' + word.term" title="Báo lỗi nội dung" (click)="reportingWord.set(word)">
+                  <app-icon name="flag" [size]="18" />
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" [attr.aria-label]="'Thêm ' + word.term + ' vào bộ'" (click)="openAdd(word)">
+                  <app-icon name="plus" [size]="16" /> Thêm vào bộ
+                </button>
+              </div>
             </li>
           }
         </ul>
@@ -104,3 +109,5 @@
     }
   </div>
 </app-modal>
+
+<app-report-dialog [open]="reportingWord() !== null" [word]="reportingWord()" (closed)="reportingWord.set(null)" (reported)="onReported()" />

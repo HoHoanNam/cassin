@@ -84,7 +84,8 @@
             </div>
           } @else {
             <app-word-list [words]="pageData.content" [busy]="words.isLoading()" [removable]="d.editable" [markSystem]="d.editable"
-              (editWord)="openEditWord($event)" (removeWord)="wordToRemove.set($event)" />
+              [reportable]="true"
+              (editWord)="openEditWord($event)" (removeWord)="wordToRemove.set($event)" (reportWord)="reportingWord.set($event)" />
             <app-pager [page]="pageData.page" [totalPages]="pageData.totalPages" [disabled]="words.isLoading()" (pageChange)="goToPage($event)" />
           }
         } @else if (words.error()) {
@@ -95,6 +96,7 @@
       </div>
     </section>
 
+    <app-report-dialog [open]="reportingWord() !== null" [word]="reportingWord()" (closed)="reportingWord.set(null)" (reported)="onReported()" />
     <app-import-dialog [open]="importOpen()" [deckId]="deckId()" [deckName]="deck.value()?.deckName ?? ''"
   (imported)="onImported($event)" (closed)="importOpen.set(false)" />
 

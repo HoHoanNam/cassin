@@ -17,8 +17,16 @@ import { LoginRequest, LoginResponse, RegisterRequest, User } from '../models/us
 export abstract class AuthApi {
   /** POST /api/auth/register → 201 */
   abstract register(request: RegisterRequest): Observable<User>;
-  /** POST /api/auth/login → 200 */
+  /** POST /api/auth/login → 200. Refresh token đi kèm trong cookie HttpOnly (JavaScript không thấy). */
   abstract login(request: LoginRequest): Observable<LoginResponse>;
+  /**
+   * [THÊM] POST /api/auth/refresh → 200: đổi refresh token (cookie, trình duyệt tự gửi) lấy access token mới.
+   * Lỗi: 401 REFRESH_INVALID / REFRESH_EXPIRED / REFRESH_REUSED (phải đăng nhập lại),
+   *      409 REFRESH_RACE (tab khác vừa refresh, thử lại là được).
+   */
+  abstract refresh(): Observable<LoginResponse>;
+  /** [THÊM] POST /api/auth/logout → 204: thu hồi phiên phía server + xóa cookie. */
+  abstract logout(): Observable<void>;
   /** GET /api/me */
   abstract me(): Observable<User>;
 }

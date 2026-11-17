@@ -48,7 +48,23 @@
   font-weight: 600;
 }
 
-/* Điện thoại: bỏ icon, chia đều 3 tab cho vừa một hàng */
+/* [THÊM] Số báo lỗi đang chờ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Điện thoại: bỏ icon, chia đều các tab cho vừa một hàng */
 @media (max-width: 639px) {
   .tabs {
     padding: 0 4px;
@@ -57,8 +73,9 @@
   .tab {
     flex: 1;
     justify-content: center;
-    padding: 0 6px;
-    font-size: 14px;
+    gap: 4px;
+    padding: 0 4px;
+    font-size: 13px;
   }
 
   .tab-icon {

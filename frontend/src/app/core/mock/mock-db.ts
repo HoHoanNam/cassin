@@ -2,8 +2,11 @@ import { Injectable } from '@angular/core';
 
 import { CefrLevel } from '../models/grammar.models';
 import { DeckType, PartOfSpeech } from '../models/deck.models';
+import { PracticeMode } from '../models/practice.models';
+import { ReportReason, ReportStatus } from '../models/report.models';
 import { Role } from '../models/user.models';
 import { addDays, todayIso } from '../util/dates';
+import { candidates } from './mock-scan-text';
 import { SEED_IDIOM_DECK, SEED_SYSTEM_DECK, SEED_TOPICS, SEED_USER_DECKS, SeedCard } from './mock-seed';
 
 /*
@@ -100,6 +103,31 @@ export interface DbAttempt {
   submittedAt: string | null;
 }
 
+/** [THÊM] [V12] Bảng content_reports: học viên báo lỗi một nghĩa của từ hệ thống. */
+export interface DbReport {
+  id: number;
+  reporterId: number;
+  senseId: number;
+  reason: ReportReason;
+  message: string | null;
+  status: ReportStatus;
+  adminNote: string | null;
+  resolvedById: number | null;
+  createdAt: string;
+  resolvedAt: string | null;
+}
+
+/** [THÊM] [V10] Bảng review_events: MỖI lần trả lời (lật thẻ, điền từ, xếp câu) một dòng. Nguồn của Sổ lỗi sai. */
+export interface DbReviewEvent {
+  id: number;
+  userId: number;
+  senseId: number;
+  mode: PracticeMode;
+  correct: boolean;
+  durationMs: number;
+  reviewedAt: string;
+}
+
 interface DbState {
   version: number;
   seq: number;
@@ -112,6 +140,8 @@ interface DbState {
   topics: DbTopic[];
   questions: DbQuestion[];
   attempts: DbAttempt[];
+  reports: DbReport[];
+  reviewEvents: DbReviewEvent[];
   /** Những ngày user có ôn thẻ (để tính chuỗi ngày học liên tiếp). */
   studyDays: Record<number, string[]>;
 }
@@ -122,8 +152,9 @@ const STORAGE_KEY = 'cassin.mockdb';
  * 2: thêm tài khoản admin + field bio cho user.
  * 3: [V10] thẻ → từ nhiều nghĩa (words, senses, deck_words), tiến độ theo nghĩa.
  * 4: [THÊM] bộ hệ thống "Thành ngữ & cụm động từ" (V11).
+ * 5: [THÊM] báo lỗi nội dung (content_reports) + nhật ký trả lời (review_events) cho Luyện tập / Sổ lỗi sai.
  */
-const VERSION = 4;
+const VERSION = 5;
 
 /**
  * Lưu vào localStorage sau mỗi lần ghi: tải lại trang vẫn còn bộ từ / từ / tiến độ vừa tạo.
@@ -160,6 +191,12 @@ export class MockDb {
   get attempts() {
     return this.state.attempts;
   }
+  get reports() {
+    return this.state.reports;
+  }
+  get reviewEvents() {
+    return this.state.reviewEvents;
+  }
 
   /** Cấp id mới, giống BIGSERIAL (dùng chung một dãy số cho mọi bảng cho đơn giản). */
   nextId(): number {
@@ -168,12 +205,21 @@ export class MockDb {
   }
 
   /** Xóa các dòng thỏa điều kiện khỏi một bảng (giống DELETE ... WHERE). */
-  removeWhere<K extends 'decks' | 'words' | 'senses' | 'deckWords' | 'progresses' | 'attempts' | 'topics' | 'questions'>(
+  removeWhere<
+    K extends 'decks' | 'words' | 'senses' | 'deckWords' | 'progresses' | 'attempts' | 'topics' | 'questions' | 'reports' | 'reviewEvents',
+  >(
     table: K,
     predicate: (row: DbState[K][number]) => boolean,
   ): void {
     const rows = this.state[table] as DbState[K][number][];
     Object.assign(this.state, { [table]: rows.filter((row) => !predicate(row)) });
+  }
+
+  /** [THÊM] Xóa nghĩa kéo theo mọi dòng trỏ tới nó (ON DELETE CASCADE): tiến độ, báo lỗi, nhật ký trả lời. */
+  removeSenseRows(senseIds: Set<number>): void {
+    this.removeWhere('progresses', (p) => senseIds.has(p.senseId));
+    this.removeWhere('reports', (r) => senseIds.has(r.senseId));
+    this.removeWhere('reviewEvents', (e) => senseIds.has(e.senseId));
   }
 
   studyDays(userId: number): string[] {
@@ -227,6 +273,8 @@ function buildSeed(): DbState {
     topics: [],
     questions: [],
     attempts: [],
+    reports: [],
+    reviewEvents: [],
     studyDays: {},
   };
   const id = () => ++state.seq;
@@ -278,7 +326,9 @@ function buildSeed(): DbState {
         state.deckWords.push({ deckId, wordId: word.id });
       }
       const position = state.senses.filter((s) => s.wordId === word.id).length;
-      const sense: DbSense = { id: id(), wordId: word.id, position, partOfSpeech, definition, examples };
+      // [THÊM] Đánh dấu sẵn [từ đích] để bài Điền từ có câu luyện (xem markTarget)
+      const marked = examples.map((example) => markTarget(term, example));
+      const sense: DbSense = { id: id(), wordId: word.id, position, partOfSpeech, definition, examples: marked };
       state.senses.push(sense);
       added.push(sense);
     });
@@ -355,5 +405,57 @@ function buildSeed(): DbState {
   }
 
   state.studyDays[nam.id] = [1, 2, 3, 4, 5].map((d) => addDays(today, -d));
+  // [THÊM] Báo lỗi mẫu của Nam trên từ hệ thống: một cái đang chờ, một cái admin đã xử lý.
+  const systemSenses = state.senses.filter((s) => state.words.find((w) => w.id === s.wordId)?.ownerId === null);
+  const daysAgo = (days: number, hours = 0) => new Date(Date.now() - days * 86_400_000 - hours * 3_600_000).toISOString();
+  if (systemSenses.length >= 2) {
+    state.reports.push(
+      {
+        id: id(), reporterId: nam.id, senseId: systemSenses[1].id, reason: 'WRONG_EXAMPLE',
+        message: 'Câu ví dụ thứ hai dùng từ chưa tự nhiên lắm.', status: 'OPEN', adminNote: null,
+        resolvedById: null, createdAt: daysAgo(1), resolvedAt: null,
+      },
+      {
+        id: id(), reporterId: nam.id, senseId: systemSenses[0].id, reason: 'TYPO',
+        message: 'Nghĩa bị gõ thiếu dấu.', status: 'RESOLVED', adminNote: 'Đã sửa lại nghĩa, cảm ơn bạn!',
+        resolvedById: admin.id, createdAt: daysAgo(4), resolvedAt: daysAgo(3),
+      },
+    );
+  }
+
+  // [THÊM] Nhật ký trả lời mẫu (5 ngày gần đây) để Sổ lỗi sai và thống kê luyện tập có dữ liệu.
+  const learned = state.progresses.map((p) => p.senseId);
+  const modes: PracticeMode[] = ['FLASHCARD', 'FILL_BLANK', 'SENTENCE_BUILD'];
+  learned.slice(0, 12).forEach((senseId, i) => {
+    const wrongTimes = i < 3 ? 3 - i : i % 4 === 0 ? 1 : 0; // vài nghĩa hay sai, còn lại toàn đúng
+    for (let k = 0; k < 3; k++) {
+      state.reviewEvents.push({
+        id: id(), userId: nam.id, senseId, mode: modes[(i + k) % modes.length], correct: k >= wrongTimes,
+        durationMs: 4000 + ((i * 7 + k * 3) % 9) * 1000, reviewedAt: daysAgo((i + k) % 5, i % 6),
+      });
+    }
+  });
+
   return state;
+}
+
+/**
+ * [THÊM] Câu ví dụ mẫu viết chưa có dấu [ ], nên bài "Điền từ" không có câu nào để luyện.
+ * Tự đánh dấu chữ đầu tiên trong câu có dạng gốc là `term` (dùng bộ đưa về dạng gốc của tính năng quét):
+ *   ("improve", "Her English has improved a lot.") → "Her English has [improved] a lot."
+ * Câu đã có dấu, từ nhiều chữ (thành ngữ), hoặc không tìm thấy thì giữ nguyên.
+ * Lưu ý: chỉ là dữ liệu mẫu của MOCK. Dữ liệu mẫu ở backend (V9) cũng chưa đánh dấu.
+ */
+function markTarget(term: string, example: string): string {
+  const wanted = term.toLowerCase();
+  if (example.includes('[') || wanted.includes(' ')) {
+    return example;
+  }
+  for (const match of example.matchAll(/[A-Za-z]+/g)) {
+    if (candidates(match[0].toLowerCase()).includes(wanted)) {
+      const start = match.index ?? 0;
+      return `${example.slice(0, start)}[${match[0]}]${example.slice(start + match[0].length)}`;
+    }
+  }
+  return example;
 }

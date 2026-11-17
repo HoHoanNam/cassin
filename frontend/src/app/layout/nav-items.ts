@@ -17,8 +17,10 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Bộ từ', icon: 'decks', link: '/decks' },
   { label: 'Thư viện', icon: 'library', link: '/library', desktopOnly: true },
   { label: 'Quét đoạn văn', icon: 'scan', link: '/scan', desktopOnly: true },
+  // [THÊM] Luyện tập thay chỗ Lịch sử trên thanh dưới đáy (Lịch sử vẫn vào từ trang Hôm nay / Ngữ pháp)
+  { label: 'Luyện tập', icon: 'target', link: '/practice' },
   { label: 'Ngữ pháp', icon: 'grammar', link: '/grammar' },
-  { label: 'Lịch sử', icon: 'history', link: '/quiz-history' },
+  { label: 'Lịch sử', icon: 'history', link: '/quiz-history', desktopOnly: true },
 ];
 
 /** Chỉ hiện với tài khoản ADMIN (sidebar). Trên điện thoại vào qua menu tài khoản. */

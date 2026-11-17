@@ -1,0 +1,66 @@
+<div class="page-container page-pad">
+  <h1 class="page-title">Báo lỗi của tôi</h1>
+  <p class="mt-1 max-w-[60ch] text-ink-soft">
+    Thấy nghĩa hoặc câu ví dụ có sẵn bị sai? Bấm nút báo lỗi cạnh từ trong bộ từ của Cassin. Quản trị viên xử lý xong, kết quả hiện ở đây.
+  </p>
+
+  <div class="mt-7">
+    @if (reports.hasValue()) {
+      @let data = reports.value();
+      @if (data.totalElements === 0) {
+        <div class="card">
+          <app-empty-state icon="flag" title="Bạn chưa báo lỗi nào"
+            description="Nút báo lỗi nằm cạnh mỗi từ có sẵn trong các bộ từ của Cassin.">
+            <a routerLink="/decks" class="btn btn-primary">Mở bộ từ</a>
+          </app-empty-state>
+        </div>
+      } @else {
+        <ul class="card list-card" [class.opacity-60]="reports.isLoading()">
+          @for (report of data.content; track report.id) {
+            <li class="list-row items-start">
+              <div class="flex min-w-0 flex-1 flex-col gap-1">
+                <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span class="hand text-2xl leading-tight text-brand">{{ report.term }}</span>
+                  <span class="text-ink-soft">{{ report.definition }}</span>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 text-[13px] text-ink-soft">
+                  <span class="chip">{{ reasonLabel[report.reason] }}</span>
+                  <span>Gửi {{ relativeDay(report.createdAt) }}</span>
+                </div>
+                @if (report.message) {
+                  <p class="m-0 text-[15px]">"{{ report.message }}"</p>
+                }
+                @if (report.status !== 'OPEN') {
+                  <div class="reply" [class.reply-rejected]="report.status === 'REJECTED'">
+                    <span class="font-semibold">Phản hồi của quản trị viên</span>
+                    @if (report.resolvedAt) {
+                      <span class="text-ink-soft"> · {{ relativeDay(report.resolvedAt) }}</span>
+                    }
+                    @if (report.adminNote) {
+                      <p class="m-0 mt-1">{{ report.adminNote }}</p>
+                    }
+                  </div>
+                }
+              </div>
+              <div class="flex flex-col items-end gap-2">
+                <span class="status" [attr.data-status]="report.status">{{ statusLabel[report.status] }}</span>
+                @if (report.status === 'OPEN') {
+                  <button type="button" class="btn btn-ghost btn-sm text-ink-soft" (click)="toWithdraw.set(report)">Rút lại</button>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+        <app-pager [page]="data.page" [totalPages]="data.totalPages" [disabled]="reports.isLoading()" (pageChange)="page.set($event)" />
+      }
+    } @else if (reports.error()) {
+      <div class="card"><app-error-state title="Không tải được danh sách báo lỗi" (retry)="reports.reload()" /></div>
+    } @else {
+      <app-skeleton [rows]="3" />
+    }
+  </div>
+</div>
+
+<app-confirm-dialog [open]="toWithdraw() !== null" [title]="'Rút báo lỗi “' + (toWithdraw()?.term ?? '') + '”?'"
+  message="Báo lỗi sẽ bị xóa, quản trị viên không thấy nữa." confirmLabel="Rút lại" [busy]="busy()"
+  (cancelled)="toWithdraw.set(null)" (confirmed)="withdraw()" />

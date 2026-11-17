@@ -1,0 +1,138 @@
+<div class="notebook flex min-h-dvh flex-col">
+  <header class="topbar">
+    <div class="mx-auto flex w-full max-w-[760px] items-center gap-5 px-4 py-3.5 sm:px-6">
+      <a routerLink="/practice" class="btn btn-ghost -ml-2 gap-1.5 px-2 text-ink">
+        <app-icon name="close" [strokeWidth]="2" /> Thoát
+      </a>
+      @if (list().length > 0 && !finished()) {
+        <div class="flex flex-1 flex-col gap-1.5">
+          <div class="flex justify-between gap-3 text-[13px] text-ink-soft">
+            <span class="truncate">{{ modeTitle() }} · {{ scopeTitle() }}</span>
+            <span class="whitespace-nowrap font-semibold text-ink" aria-live="polite">Câu {{ index() + 1 }} / {{ list().length }}</span>
+          </div>
+          <div class="progress" role="progressbar" aria-label="Tiến độ lượt luyện" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="progress()">
+            <div class="progress-bar" [style.width.%]="progress()"></div>
+          </div>
+        </div>
+      }
+    </div>
+  </header>
+
+  <main class="flex flex-1 flex-col items-center pb-14 pl-14 pr-4 pt-10 sm:px-6 sm:pt-12">
+    <div class="flex w-full max-w-[640px] flex-col gap-6">
+      @if (questions.hasValue()) {
+        @if (list().length === 0) {
+          <div class="card">
+            <app-empty-state icon="target" title="Chưa có câu nào để luyện"
+              [description]="mode() === 'sentence-build'
+                ? 'Xếp câu cần câu ví dụ dài 5–15 từ. Thêm câu ví dụ cho các từ trong sổ từ rồi quay lại nhé.'
+                : 'Điền từ cần câu ví dụ có đánh dấu từ, ví dụ: Her English has [improved] a lot.'">
+              <a routerLink="/practice" class="btn btn-primary">Chọn chế độ khác</a>
+              <a routerLink="/decks" class="btn btn-secondary">Mở bộ từ</a>
+            </app-empty-state>
+          </div>
+        } @else if (finished()) {
+          <!-- Tổng kết -->
+          <section class="card card-raised summary" aria-live="polite">
+            <p class="hand m-0 text-2xl text-ink-soft">Xong lượt luyện!</p>
+            <h1 class="m-0 text-[28px] font-bold leading-tight">Đúng {{ correctCount() }} / {{ list().length }} câu</h1>
+            @if (wrong().length > 0) {
+              <div class="w-full text-left">
+                <p class="m-0 mb-2 text-sm font-semibold text-ink-soft">Câu làm sai (đã đưa vào hàng ôn ngày mai)</p>
+                <ul class="card list-card">
+                  @for (a of wrong(); track $index) {
+                    <li class="list-row flex-col items-start gap-1">
+                      <span class="font-semibold">{{ a.result.expected }}</span>
+                      <span class="text-[13px] text-ink-soft">Bạn trả lời: <s>{{ a.given }}</s></span>
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+            <div class="flex flex-wrap justify-center gap-3">
+              <button type="button" class="btn btn-primary" (click)="again()">Luyện tiếp</button>
+              <a routerLink="/mistakes" class="btn btn-secondary">Xem sổ lỗi sai</a>
+            </div>
+          </section>
+        } @else if (current(); as item) {
+          <section class="card-lines question">
+            @if (item.kind === 'fill') {
+              <p class="meta">
+                <span>{{ pos[item.q.partOfSpeech].label }}</span>
+                <span>Điền từ</span>
+              </p>
+              <p class="hand m-0 text-2xl text-brand">{{ item.q.definition }}</p>
+              <p class="sentence">{{ item.q.sentence }}</p>
+              <div class="field w-full max-w-[360px]">
+                <label class="label" for="fill-answer">Từ còn thiếu</label>
+                <input id="fill-answer" class="input answer-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
+                  [value]="typed()" (input)="onTyped($event)" [readOnly]="result() !== null" [placeholder]="blankHint()"
+                  [attr.aria-describedby]="'fill-hint'" />
+                <p id="fill-hint" class="field-hint">Bắt đầu bằng "{{ item.q.firstLetter }}", {{ item.q.answerLength }} chữ cái</p>
+              </div>
+            } @else {
+              <p class="meta">
+                <span>{{ item.q.term }}</span>
+                <span>Xếp câu</span>
+              </p>
+              <p class="hand m-0 text-2xl text-brand">{{ item.q.definition }}</p>
+              <div class="answer-line" aria-label="Câu đang xếp" aria-live="polite">
+                @for (piece of picked(); track piece.id) {
+                  <button type="button" class="piece piece-picked" [disabled]="result() !== null" (click)="unpick(piece)">{{ piece.text }}</button>
+                } @empty {
+                  <span class="text-ink-faint">Bấm các mảnh bên dưới theo đúng thứ tự</span>
+                }
+              </div>
+              <div class="pool" aria-label="Các mảnh còn lại">
+                @for (piece of pool(); track piece.id) {
+                  <button type="button" class="piece" (click)="pick(piece)">{{ piece.text }}</button>
+                }
+              </div>
+              @if (picked().length > 0 && !result()) {
+                <button type="button" class="btn btn-ghost btn-sm self-start text-ink-soft" (click)="clearPicked()">
+                  <app-icon name="reset" [size]="16" /> Xếp lại
+                </button>
+              }
+            }
+          </section>
+
+          @if (error(); as message) {
+            <p class="form-alert form-alert-error m-0" role="alert">{{ message }}</p>
+          }
+
+          @if (result(); as r) {
+            <div class="verdict" [class.verdict-ok]="r.correct" role="status">
+              <app-icon [name]="r.correct ? 'check' : 'close'" [size]="22" [strokeWidth]="2.4" />
+              <div class="flex min-w-0 flex-col gap-1">
+                <span class="font-semibold">{{ r.correct ? 'Chính xác!' : 'Chưa đúng' }}</span>
+                @if (!r.correct) {
+                  <span>Đáp án: <b>{{ r.expected }}</b></span>
+                  @if (r.hint) {
+                    <span class="text-sm">{{ r.hint }}</span>
+                  }
+                }
+              </div>
+            </div>
+            <div class="flex flex-col items-center gap-2.5">
+              <button type="button" class="btn btn-primary btn-lg min-w-[220px]" (click)="next()">
+                {{ index() + 1 < list().length ? 'Câu tiếp' : 'Xem kết quả' }}
+              </button>
+              <span class="hidden text-[13px] text-ink-soft sm:inline">hoặc nhấn <kbd>Enter</kbd></span>
+            </div>
+          } @else {
+            <div class="flex flex-col items-center gap-2.5">
+              <button type="button" class="btn btn-primary btn-lg min-w-[220px]" [disabled]="!canCheck()" (click)="check()">
+                {{ checking() ? 'Đang chấm...' : 'Kiểm tra' }}
+              </button>
+              <span class="hidden text-[13px] text-ink-soft sm:inline">hoặc nhấn <kbd>Enter</kbd></span>
+            </div>
+          }
+        }
+      } @else if (questions.error()) {
+        <div class="card"><app-error-state title="Không tải được câu luyện tập" (retry)="questions.reload()" /></div>
+      } @else {
+        <div class="card-lines question-skeleton" aria-busy="true" aria-label="Đang tải câu hỏi"></div>
+      }
+    </div>
+  </main>
+</div>

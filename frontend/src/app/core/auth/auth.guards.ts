@@ -9,7 +9,7 @@ import { AuthStore } from './auth.store';
  */
 export const authGuard: CanActivateFn = (_route, state) => {
   const store = inject(AuthStore);
-  if (store.hasValidSession()) {
+  if (store.isLoggedIn()) {
     return true;
   }
   return inject(Router).createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
@@ -27,5 +27,5 @@ export const adminGuard: CanActivateFn = () => {
 /** Trang dành cho khách (landing, đăng nhập, đăng ký). Đã đăng nhập → vào thẳng trang Hôm nay. */
 export const guestGuard: CanActivateFn = () => {
   const store = inject(AuthStore);
-  return store.hasValidSession() ? inject(Router).createUrlTree(['/today']) : true;
+  return store.isLoggedIn() ? inject(Router).createUrlTree(['/today']) : true;
 };

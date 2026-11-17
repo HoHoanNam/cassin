@@ -1,0 +1,37 @@
+fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.reasons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+/* Một lựa chọn dạng thẻ: cả khung bấm được, viền đậm khi đang chọn */
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  cursor: pointer;
+
+  input {
+    margin-top: 4px;
+    accent-color: var(--brand);
+  }
+}
+
+.option:hover {
+  border-color: var(--brand-tint);
+}
+
+.option-active {
+  border-color: var(--brand);
+  background: var(--brand-wash);
+}

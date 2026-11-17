@@ -64,6 +64,30 @@ export class MockAuthApi extends AuthApi {
     });
   }
 
+  /**
+   * [THÊM] Mock không có cookie: "refresh token" là chính phiên đang lưu ở AuthStore.
+   * Còn phiên → cấp access token mới; không còn → 401 như backend.
+   */
+  refresh(): Observable<LoginResponse> {
+    return simulate(() => {
+      const user = this.db.users.find((u) => u.id === this.session.userId());
+      if (!user) {
+        throw new ApiError(401, 'REFRESH_INVALID', 'Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại');
+      }
+      return {
+        accessToken: `mock.${user.id}.${Date.now()}`,
+        tokenType: 'Bearer',
+        expiresIn: TOKEN_TTL_SECONDS,
+        user: toUser(user),
+      };
+    });
+  }
+
+  /** [THÊM] Mock không có phiên phía server để thu hồi. */
+  logout(): Observable<void> {
+    return simulate(() => undefined);
+  }
+
   me(): Observable<User> {
     return simulate(() => {
       const user = this.db.users.find((u) => u.id === this.session.userId());

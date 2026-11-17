@@ -10,6 +10,9 @@
         <app-icon class="tab-icon" [name]="tab.icon" [size]="18" />
         <span class="hidden sm:inline">{{ tab.label }}</span>
         <span class="sm:hidden">{{ tab.short }}</span>
+        @if (tab.showOpenReports && openReports.value() > 0) {
+          <span class="badge" [attr.aria-label]="openReports.value() + ' báo lỗi đang chờ'">{{ openReports.value() }}</span>
+        }
       </a>
     }
   </nav>

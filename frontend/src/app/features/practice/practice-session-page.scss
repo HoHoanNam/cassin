@@ -1,0 +1,138 @@
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(252, 252, 247, 0.94);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(4px);
+}
+
+.progress {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #e6e1f0;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--brand);
+  transition: width 0.3s ease;
+}
+
+/* Khung câu hỏi: giấy kẻ dòng như thẻ ôn */
+.question {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 18px 28px 32px;
+  border: 1px solid var(--card-line);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(35, 38, 74, 0.06);
+}
+
+@media (max-width: 520px) {
+  .question {
+    padding: 16px 18px 26px;
+  }
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.sentence {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.6;
+}
+
+.answer-input {
+  font-size: 18px;
+  letter-spacing: 0.02em;
+}
+
+.answer-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 12px;
+  border: 1.5px dashed var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.piece {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: 500 17px/1 var(--font-body);
+  cursor: pointer;
+  box-shadow: 0 1px 0 rgba(35, 38, 74, 0.08);
+}
+
+.piece:hover:not(:disabled) {
+  border-color: var(--brand);
+}
+
+.piece-picked {
+  border-color: var(--brand-tint);
+  background: var(--brand-wash);
+}
+
+.piece:disabled {
+  cursor: default;
+}
+
+/* Kết quả: màu + icon + chữ, không chỉ dựa vào màu */
+.verdict {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--danger);
+  border-radius: 10px;
+  background: var(--danger-wash);
+  color: var(--danger-dark);
+}
+
+.verdict-ok {
+  border-color: var(--success);
+  background: #eaf6ef;
+  color: #1d6b40;
+}
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.question-skeleton {
+  height: 300px;
+  border: 1px solid var(--card-line);
+  border-radius: 12px;
+  opacity: 0.6;
+}

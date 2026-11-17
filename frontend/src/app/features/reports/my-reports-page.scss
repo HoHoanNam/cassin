@@ -1,0 +1,42 @@
+/* Nhãn trạng thái: màu theo trạng thái, không chỉ dựa vào chữ */
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--chip);
+  color: var(--ink-soft);
+}
+
+.status[data-status='OPEN'] {
+  background: var(--brand-wash);
+  color: var(--brand-dark);
+}
+
+.status[data-status='RESOLVED'] {
+  background: #e3f4ea;
+  color: #1d6b40;
+}
+
+.status[data-status='REJECTED'] {
+  background: var(--danger-wash);
+  color: var(--danger-dark);
+}
+
+/* Phản hồi của quản trị viên */
+.reply {
+  margin-top: 4px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--success);
+  border-radius: 0 8px 8px 0;
+  background: #f3faf6;
+  font-size: 14px;
+}
+
+.reply-rejected {
+  border-left-color: var(--danger);
+  background: var(--danger-wash);
+}

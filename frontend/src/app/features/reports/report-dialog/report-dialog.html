@@ -1,0 +1,72 @@
+<app-modal [open]="open()" title="Báo lỗi nội dung" (closed)="close()">
+  @if (word(); as w) {
+    <p class="mt-1 text-ink-soft">
+      Từ <span class="hand text-xl text-brand">{{ w.term }}</span> do Cassin soạn sẵn. Quản trị viên sẽ xem và sửa giúp mọi người.
+    </p>
+
+    <form class="mt-5 flex flex-col gap-5" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      @if (alreadyReported()) {
+        <div class="form-alert form-alert-info" role="status">
+          Bạn đã báo lỗi nghĩa này và đang chờ xử lý.
+          <a routerLink="/reports" (click)="closed.emit()">Xem báo lỗi của tôi</a>
+        </div>
+      } @else if (serverError(); as message) {
+        <div class="form-alert form-alert-error" role="alert">{{ message }}</div>
+      }
+
+      @let senseCtrl = form.controls.senseId;
+      <fieldset class="field">
+        <legend class="label">Nghĩa bị sai</legend>
+        <div class="flex flex-col gap-2">
+          @for (sense of senses(); track sense.id) {
+            <label class="option" [class.option-active]="senseCtrl.value === sense.id">
+              <input type="radio" name="senseId" [value]="sense.id" formControlName="senseId" />
+              <span>
+                <i class="text-ink-soft">{{ pos[sense.partOfSpeech].short || pos[sense.partOfSpeech].label }}</i>
+                <span class="font-semibold"> {{ sense.definition }}</span>
+              </span>
+            </label>
+          }
+        </div>
+        @if (senseCtrl.touched && senseCtrl.invalid) {
+          <p class="field-error">{{ senseCtrl.getError('server') ?? 'Chọn nghĩa bị sai' }}</p>
+        }
+      </fieldset>
+
+      @let reasonCtrl = form.controls.reason;
+      <fieldset class="field">
+        <legend class="label">Lỗi gì?</legend>
+        <div class="reasons">
+          @for (reason of reasons; track reason.value) {
+            <label class="option" [class.option-active]="reasonCtrl.value === reason.value">
+              <input type="radio" name="reason" [value]="reason.value" formControlName="reason" />
+              <span class="flex flex-col">
+                <span class="font-semibold">{{ reason.label }}</span>
+                <span class="text-[13px] text-ink-soft">{{ reason.hint }}</span>
+              </span>
+            </label>
+          }
+        </div>
+        @if (reasonCtrl.touched && reasonCtrl.invalid) {
+          <p class="field-error">{{ reasonCtrl.getError('server') ?? 'Chọn loại lỗi' }}</p>
+        }
+      </fieldset>
+
+      @let messageCtrl = form.controls.message;
+      <div class="field">
+        <label class="label" for="report-message">Mô tả thêm <span class="font-normal text-ink-soft">(không bắt buộc)</span></label>
+        <textarea id="report-message" class="input" rows="3" formControlName="message"
+          placeholder="Ví dụ: nghĩa đúng phải là 'hạn chót', không phải 'thời hạn'"
+          [attr.aria-invalid]="messageCtrl.invalid" aria-describedby="report-message-hint"></textarea>
+        <p id="report-message-hint" class="field-hint" [class.field-error]="messageCtrl.invalid">
+          {{ messageCtrl.getError('server') ?? messageCtrl.value.length + ' / ' + maxText + ' ký tự' }}
+        </p>
+      </div>
+
+      <div class="flex flex-wrap justify-end gap-2.5">
+        <button type="button" class="btn btn-secondary" [disabled]="saving()" (click)="close()">Hủy</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">{{ saving() ? 'Đang gửi...' : 'Gửi báo lỗi' }}</button>
+      </div>
+    </form>
+  }
+</app-modal>

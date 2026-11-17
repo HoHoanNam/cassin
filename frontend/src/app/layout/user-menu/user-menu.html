@@ -22,6 +22,10 @@
       <a role="menuitem" class="item" routerLink="/account" (click)="open.set(false)">
         <app-icon name="user" [size]="18" /> Tài khoản
       </a>
+      <!-- [THÊM] -->
+      <a role="menuitem" class="item" routerLink="/reports" (click)="open.set(false)">
+        <app-icon name="flag" [size]="18" /> Báo lỗi của tôi
+      </a>
       @if (isAdmin()) {
         <!-- Điện thoại không có sidebar: vào khu vực quản trị từ đây -->
         <a role="menuitem" class="item" routerLink="/admin" (click)="open.set(false)">

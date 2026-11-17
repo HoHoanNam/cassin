@@ -6,7 +6,9 @@ import { MockAuthApi } from '../mock/mock-auth.api';
 import { MockDeckApi } from '../mock/mock-deck.api';
 import { MockGrammarApi } from '../mock/mock-grammar.api';
 import { MockLibraryApi } from '../mock/mock-library.api';
+import { MockPracticeApi } from '../mock/mock-practice.api';
 import { MockQuizApi } from '../mock/mock-quiz.api';
+import { MockReportApi } from '../mock/mock-report.api';
 import { MockReviewApi } from '../mock/mock-review.api';
 import { MockScanApi } from '../mock/mock-scan.api';
 import { MockWordApi } from '../mock/mock-word.api';
@@ -22,11 +24,15 @@ import { HttpAuthApi } from './http/http-auth.api';
 import { HttpDeckApi } from './http/http-deck.api';
 import { HttpGrammarApi } from './http/http-grammar.api';
 import { HttpLibraryApi } from './http/http-library.api';
+import { HttpPracticeApi } from './http/http-practice.api';
 import { HttpQuizApi } from './http/http-quiz.api';
+import { HttpReportApi } from './http/http-report.api';
 import { HttpReviewApi } from './http/http-review.api';
 import { HttpScanApi } from './http/http-scan.api';
 import { HttpWordApi } from './http/http-word.api';
+import { PracticeApi } from './practice.api';
 import { QuizApi } from './quiz.api';
+import { ReportApi } from './report.api';
 import { ReviewApi } from './review.api';
 import { ScanApi } from './scan.api';
 import { WordApi } from './word.api';
@@ -48,6 +54,8 @@ export function provideApi(useMock: boolean): EnvironmentProviders {
         { provide: AccountApi, useClass: MockAccountApi },
         { provide: AdminApi, useClass: MockAdminApi },
         { provide: ScanApi, useClass: MockScanApi },
+        { provide: ReportApi, useClass: MockReportApi }, // [THÊM]
+        { provide: PracticeApi, useClass: MockPracticeApi }, // [THÊM]
       ]
     : [
         { provide: AuthApi, useClass: HttpAuthApi },
@@ -60,6 +68,8 @@ export function provideApi(useMock: boolean): EnvironmentProviders {
         { provide: AccountApi, useClass: HttpAccountApi },
         { provide: AdminApi, useClass: HttpAdminApi },
         { provide: ScanApi, useClass: HttpScanApi },
+        { provide: ReportApi, useClass: HttpReportApi }, // [THÊM]
+        { provide: PracticeApi, useClass: HttpPracticeApi }, // [THÊM]
       ];
   return makeEnvironmentProviders(providers);
 }

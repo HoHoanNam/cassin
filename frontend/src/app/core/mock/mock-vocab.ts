@@ -294,7 +294,7 @@ export class MockVocab {
         .filter((s) => !keepIds.has(s.id))
         .map((s) => s.id),
     );
-    this.db.removeWhere('progresses', (p) => removed.has(p.senseId));
+    this.db.removeSenseRows(removed); // [SỬA] kéo theo cả báo lỗi + nhật ký trả lời của nghĩa bị bỏ
     this.db.removeWhere('senses', (s) => removed.has(s.id));
 
     request.senses.forEach((input, position) => {
@@ -340,7 +340,7 @@ export class MockVocab {
   /** Xóa từ: cascade nghĩa, tiến độ, deck_words (giống ON DELETE CASCADE). */
   deleteWord(word: DbWord): void {
     const senseIds = new Set(this.sensesOf(word.id).map((s) => s.id));
-    this.db.removeWhere('progresses', (p) => senseIds.has(p.senseId));
+    this.db.removeSenseRows(senseIds); // [SỬA] kéo theo cả báo lỗi + nhật ký trả lời
     this.db.removeWhere('senses', (s) => s.wordId === word.id);
     this.db.removeWhere('deckWords', (dw) => dw.wordId === word.id);
     this.db.removeWhere('words', (w) => w.id === word.id);

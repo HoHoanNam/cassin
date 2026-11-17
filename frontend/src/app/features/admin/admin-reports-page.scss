@@ -1,0 +1,22 @@
+.status {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--chip);
+}
+
+.status[data-status='OPEN'] {
+  background: var(--brand-wash);
+  color: var(--brand-dark);
+}
+
+.status[data-status='RESOLVED'] {
+  background: #e3f4ea;
+  color: #1d6b40;
+}
+
+.status[data-status='REJECTED'] {
+  background: var(--danger-wash);
+  color: var(--danger-dark);
+}

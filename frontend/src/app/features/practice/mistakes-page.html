@@ -1,0 +1,58 @@
+<div class="page-container page-pad">
+  <a routerLink="/practice" class="mb-3 inline-flex text-sm font-semibold">← Luyện tập</a>
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <h1 class="page-title">Sổ lỗi sai</h1>
+      <p class="mt-1 max-w-[60ch] text-ink-soft">
+        Những nghĩa bạn trả lời sai gần đây và chưa làm đúng lại. Ôn hoặc luyện đúng một lần là nghĩa đó rời khỏi sổ.
+      </p>
+    </div>
+    <div class="segmented" role="group" aria-label="Khoảng thời gian">
+      @for (r of ranges; track r.days) {
+        <button type="button" [attr.aria-pressed]="days() === r.days" (click)="days.set(r.days)">{{ r.label }}</button>
+      }
+    </div>
+  </div>
+
+  <div class="mt-7">
+    @if (mistakes.hasValue()) {
+      @let items = mistakes.value();
+      @if (items.length === 0) {
+        <div class="card">
+          <app-empty-state icon="check" title="Sổ lỗi sai đang trống"
+            [description]="'Không có nghĩa nào đang sai trong ' + days() + ' ngày qua.'">
+            <a routerLink="/practice" class="btn btn-primary">Luyện tập</a>
+          </app-empty-state>
+        </div>
+      } @else {
+        <p class="mb-2 mt-0 text-[13px] text-ink-soft">{{ items.length }} nghĩa</p>
+        <ul class="card list-card" [class.opacity-60]="mistakes.isLoading()">
+          @for (m of items; track m.senseId) {
+            <li class="list-row flex-nowrap items-start">
+              <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+                <div class="flex flex-wrap items-baseline gap-x-3">
+                  <span class="hand text-2xl leading-tight text-brand">{{ m.term }}</span>
+                  <i class="text-ink-soft">{{ pos[m.partOfSpeech].short || pos[m.partOfSpeech].label }}</i>
+                </div>
+                <span class="font-semibold">{{ m.definition }}</span>
+                <span class="text-[13px] text-ink-soft">Sai gần nhất {{ relativeDay(m.lastWrongAt) }}</span>
+              </div>
+              <span class="count" [attr.aria-label]="'Sai ' + m.wrongCount + ' lần'">
+                <span class="hand text-[28px] leading-none">{{ m.wrongCount }}</span>
+                <span class="text-[12px]">lần sai</span>
+              </span>
+            </li>
+          }
+        </ul>
+        <div class="mt-5 flex flex-wrap gap-3">
+          <a routerLink="/review" class="btn btn-primary">Ôn thẻ đến hạn</a>
+          <a routerLink="/practice" class="btn btn-secondary">Luyện tập</a>
+        </div>
+      }
+    } @else if (mistakes.error()) {
+      <div class="card"><app-error-state title="Không tải được sổ lỗi sai" (retry)="mistakes.reload()" /></div>
+    } @else {
+      <app-skeleton [rows]="4" />
+    }
+  </div>
+</div>

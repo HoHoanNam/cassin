@@ -1,0 +1,114 @@
+.setup {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 28px;
+}
+
+@media (max-width: 520px) {
+  .setup {
+    padding: 20px 16px;
+  }
+}
+
+.modes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+/* Thẻ chọn chế độ: cả khung là nút, viền đậm khi đang chọn */
+.mode {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mode:hover {
+  border-color: var(--brand-tint);
+}
+
+.mode-active {
+  border-color: var(--brand);
+  background: var(--brand-wash);
+}
+
+.mode:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.example {
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--chip);
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-style: italic;
+}
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 22px;
+}
+
+/* Biểu đồ cột 7 ngày: chiều cao cột = số câu, phần xanh bên trong = số câu đúng */
+.bars {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  height: 96px;
+}
+
+.bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  min-width: 0;
+}
+
+.bar {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  width: 100%;
+  max-width: 22px;
+  min-height: 3px;
+  overflow: hidden;
+  border-radius: 4px 4px 2px 2px;
+  background: var(--danger-wash);
+}
+
+.bar-ok {
+  width: 100%;
+  background: var(--brand);
+}
+
+.bar-label {
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.mistakes-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  text-decoration: none;
+}
+
+.mistakes-link:hover {
+  border-color: var(--brand-tint);
+}

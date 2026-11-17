@@ -20,6 +20,17 @@ export class HttpAuthApi extends AuthApi {
     return this.http.post<LoginResponse>(`${this.base}/auth/login`, request);
   }
 
+  // [THÊM] Cùng origin (proxy.conf.json khi dev) nên trình duyệt tự gửi cookie, không cần withCredentials.
+  // Deploy FE và API khác domain thì phải thêm { withCredentials: true } + CORS allowCredentials ở backend.
+  refresh(): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.base}/auth/refresh`, null);
+  }
+
+  // [THÊM]
+  logout(): Observable<void> {
+    return this.http.post<void>(`${this.base}/auth/logout`, null);
+  }
+
   me(): Observable<User> {
     return this.http.get<User>(`${this.base}/me`);
   }

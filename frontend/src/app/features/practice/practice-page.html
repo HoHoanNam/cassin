@@ -1,0 +1,98 @@
+<div class="page-container page-pad">
+  <h1 class="page-title">Luyện tập</h1>
+  <p class="mt-1 max-w-[60ch] text-ink-soft">
+    Luyện bằng chính câu ví dụ trong sổ từ của bạn. Làm sai thì nghĩa đó được đưa vào hàng ôn ngày mai.
+  </p>
+
+  <div class="mt-7 flex flex-wrap items-start gap-8">
+    <!-- Thiết lập buổi luyện -->
+    <section class="card card-raised setup min-w-0 flex-[1_1_420px]" aria-labelledby="setup-heading">
+      <h2 id="setup-heading" class="section-title m-0">Bắt đầu một lượt</h2>
+
+      <div class="modes" role="radiogroup" aria-label="Chế độ luyện">
+        @for (m of modes; track m.param) {
+          <button type="button" class="mode" role="radio" [attr.aria-checked]="mode() === m.param"
+            [class.mode-active]="mode() === m.param" (click)="mode.set(m.param)">
+            <span class="flex items-center gap-2 text-[17px] font-semibold">
+              <app-icon [name]="m.icon" [size]="20" /> {{ m.title }}
+            </span>
+            <span class="text-sm text-ink-soft">{{ m.description }}</span>
+            <span class="example">{{ m.example }}</span>
+          </button>
+        }
+      </div>
+
+      <div class="flex flex-wrap items-end gap-5">
+        <div class="field min-w-[220px] flex-1">
+          <label class="label" for="practice-deck">Luyện từ</label>
+          <select id="practice-deck" class="input" (change)="onDeckChange($event)" [disabled]="!decks.hasValue()">
+            <option value="" [selected]="deckId() === null">Cả sổ từ của tôi</option>
+            @if (decks.hasValue()) {
+              @for (d of decks.value(); track d.id) {
+                <option [value]="d.id" [selected]="deckId() === d.id">{{ d.deckName }}</option>
+              }
+            }
+          </select>
+        </div>
+        <div class="field">
+          <span class="label" id="count-label">Số câu</span>
+          <div class="segmented" role="group" aria-labelledby="count-label">
+            @for (c of counts; track c) {
+              <button type="button" [attr.aria-pressed]="count() === c" (click)="count.set(c)">{{ c }} câu</button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-primary btn-lg self-start" (click)="start()">Bắt đầu luyện</button>
+    </section>
+
+    <!-- Thống kê 7 ngày + Sổ lỗi sai -->
+    <aside class="flex min-w-0 flex-[1_1_300px] flex-col gap-5">
+      <section class="card stats" aria-labelledby="stats-heading">
+        <h2 id="stats-heading" class="m-0 text-[15px] font-semibold text-ink-soft">7 ngày qua</h2>
+        @if (stats.hasValue()) {
+          @let s = stats.value();
+          <div class="flex items-baseline gap-3">
+            <span class="hand text-[44px] leading-none text-brand">{{ s.total === 0 ? '–' : accuracyPercent() + '%' }}</span>
+            <span class="text-sm text-ink-soft">{{ s.total === 0 ? 'chưa có câu nào' : 'trả lời đúng · ' + s.total + ' câu' }}</span>
+          </div>
+          <div class="bars" role="img" [attr.aria-label]="'Số câu mỗi ngày trong 7 ngày qua: ' + s.total + ' câu'">
+            @for (d of s.daily; track d.date) {
+              <div class="bar-col">
+                <div class="bar" [style.height.%]="(d.total / maxDaily()) * 100" [title]="d.correct + '/' + d.total + ' đúng'">
+                  <div class="bar-ok" [style.height.%]="d.total ? (d.correct / d.total) * 100 : 0"></div>
+                </div>
+                <span class="bar-label">{{ weekday(d.date) }}</span>
+              </div>
+            }
+          </div>
+          <ul class="m-0 flex list-none flex-col gap-1 p-0 text-sm">
+            <li class="flex justify-between"><span>Lật thẻ</span><span class="text-ink-soft">{{ modeStat('FLASHCARD') }}</span></li>
+            <li class="flex justify-between"><span>Điền từ</span><span class="text-ink-soft">{{ modeStat('FILL_BLANK') }}</span></li>
+            <li class="flex justify-between"><span>Xếp câu</span><span class="text-ink-soft">{{ modeStat('SENTENCE_BUILD') }}</span></li>
+          </ul>
+        } @else if (stats.error()) {
+          <app-error-state title="Không tải được thống kê" (retry)="stats.reload()" />
+        } @else {
+          <app-skeleton variant="text" [rows]="4" />
+        }
+      </section>
+
+      <a routerLink="/mistakes" class="card mistakes-link">
+        <app-icon class="text-danger" name="alert" [size]="22" />
+        <span class="flex min-w-0 flex-1 flex-col">
+          <span class="font-semibold text-ink">Sổ lỗi sai</span>
+          <span class="text-sm text-ink-soft">
+            @if (mistakes.hasValue()) {
+              {{ mistakes.value().length === 0 ? 'Không có nghĩa nào đang sai' : mistakes.value().length + ' nghĩa đang sai trong 7 ngày' }}
+            } @else {
+              Những nghĩa bạn hay làm sai gần đây
+            }
+          </span>
+        </span>
+        <app-icon class="text-ink-soft" name="chevron-right" [size]="18" />
+      </a>
+    </aside>
+  </div>
+</div>

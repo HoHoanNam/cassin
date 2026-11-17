@@ -12,6 +12,7 @@ import { Icon } from '../../../shared/ui/icon/icon';
  *   removable  : hiện nút "Bỏ khỏi bộ" (chỉ xóa liên kết, từ vẫn còn)
  *   deletable  : hiện nút "Xóa từ" (xóa hẳn, kèm tiến độ ôn)
  *   markSystem : gắn nhãn "Có sẵn" cho từ hệ thống (tắt đi khi cả bộ đều là từ hệ thống)
+ *   reportable : [THÊM] hiện nút "Báo lỗi" cạnh từ HỆ THỐNG (phía học viên; admin tự sửa được nên không cần)
  */
 @Component({
   selector: 'app-word-list',
@@ -27,9 +28,11 @@ export class WordList {
   readonly removable = input(false);
   readonly deletable = input(false);
   readonly markSystem = input(true);
+  readonly reportable = input(false);
   readonly editWord = output<WordSummary>();
   readonly removeWord = output<WordSummary>();
   readonly deleteWord = output<WordSummary>();
+  readonly reportWord = output<WordSummary>();
 
   protected readonly pos = PART_OF_SPEECH;
 

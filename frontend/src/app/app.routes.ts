@@ -7,9 +7,10 @@ import { quizLeaveGuard } from './features/quiz/quiz-leave.guard';
  * Sơ đồ trang. Mọi trang đều lazy load: code của trang chỉ tải khi người dùng mở trang đó.
  *
  *   Khách (chưa đăng nhập)        : /  /login  /register
- *   Khu vực học (có sidebar)      : /today /decks /decks/:deckId /library /scan /grammar /grammar/:topicId /quiz-history /quiz/:attemptId/result /account
- *   Quản trị (chỉ ADMIN)          : /admin  /admin/decks(/:deckId)  /admin/grammar(/:topicId)
- *   Chế độ tập trung (không menu) : /review  /decks/:deckId/review  /grammar/:topicId/quiz
+ *   Khu vực học (có sidebar)      : /today /decks /decks/:deckId /library /scan /practice /mistakes /grammar /grammar/:topicId
+ *                                   /quiz-history /quiz/:attemptId/result /account /reports
+ *   Quản trị (chỉ ADMIN)          : /admin  /admin/decks(/:deckId)  /admin/grammar(/:topicId)  /admin/reports
+ *   Chế độ tập trung (không menu) : /review  /decks/:deckId/review  /grammar/:topicId/quiz  /practice/session
  */
 export const routes: Routes = [
   {
@@ -44,6 +45,13 @@ export const routes: Routes = [
     title: 'Ôn bộ từ | Cassin',
     canActivate: [authGuard],
     loadComponent: () => import('./features/review/review-page').then((m) => m.ReviewPage),
+  },
+  {
+    // [THÊM] ?mode=fill-blank|sentence-build&deckId=&count=
+    path: 'practice/session',
+    title: 'Luyện tập | Cassin',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/practice/practice-session-page').then((m) => m.PracticeSessionPage),
   },
   {
     path: 'grammar/:topicId/quiz',
@@ -85,6 +93,17 @@ export const routes: Routes = [
         title: 'Quét đoạn văn | Cassin',
         loadComponent: () => import('./features/scan/scan-page').then((m) => m.ScanPage),
       },
+      // [THÊM]
+      {
+        path: 'practice',
+        title: 'Luyện tập | Cassin',
+        loadComponent: () => import('./features/practice/practice-page').then((m) => m.PracticePage),
+      },
+      {
+        path: 'mistakes',
+        title: 'Sổ lỗi sai | Cassin',
+        loadComponent: () => import('./features/practice/mistakes-page').then((m) => m.MistakesPage),
+      },
       {
         path: 'grammar',
         title: 'Ngữ pháp | Cassin',
@@ -109,6 +128,12 @@ export const routes: Routes = [
         path: 'account',
         title: 'Tài khoản | Cassin',
         loadComponent: () => import('./features/account/account-page').then((m) => m.AccountPage),
+      },
+      // [THÊM]
+      {
+        path: 'reports',
+        title: 'Báo lỗi của tôi | Cassin',
+        loadComponent: () => import('./features/reports/my-reports-page').then((m) => m.MyReportsPage),
       },
 
       // ---------- Khu vực quản trị: chỉ ADMIN (backend vẫn chặn thật bằng 403) ----------
@@ -141,6 +166,12 @@ export const routes: Routes = [
             path: 'grammar/:topicId',
             title: 'Chủ đề ngữ pháp | Quản trị Cassin',
             loadComponent: () => import('./features/admin/admin-topic-page').then((m) => m.AdminTopicPage),
+          },
+          // [THÊM]
+          {
+            path: 'reports',
+            title: 'Báo lỗi nội dung | Quản trị Cassin',
+            loadComponent: () => import('./features/admin/admin-reports-page').then((m) => m.AdminReportsPage),
           },
         ],
       },

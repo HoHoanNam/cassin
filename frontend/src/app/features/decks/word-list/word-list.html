@@ -21,6 +21,17 @@
       </ol>
 
       <div class="ml-auto flex gap-1">
+        @if (reportable() && word.system) {
+          <button
+            type="button"
+            class="btn btn-ghost btn-icon text-ink-soft"
+            [attr.aria-label]="'Báo lỗi từ ' + word.term"
+            title="Báo lỗi nội dung"
+            (click)="reportWord.emit(word)"
+          >
+            <app-icon name="flag" [size]="18" />
+          </button>
+        }
         @if (canEdit(word)) {
           <button
             type="button"

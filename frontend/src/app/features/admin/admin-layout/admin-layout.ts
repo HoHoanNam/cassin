@@ -1,16 +1,19 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
+import { OpenReportsStore } from '../../../core/state/open-reports.store';
 import { Icon, IconName } from '../../../shared/ui/icon/icon';
 
 interface AdminTab {
   label: string;
   icon: IconName;
   link: string;
-  /** Nhãn ngắn cho điện thoại: 3 tab phải vừa một hàng ở màn 360px, không phải cuộn ngang mới thấy */
+  /** Nhãn ngắn cho điện thoại: 4 tab phải vừa một hàng ở màn 360px, không phải cuộn ngang mới thấy */
   short: string;
   /** Tab "Tổng quan" (/admin) chỉ sáng khi đúng /admin, không sáng khi đang ở /admin/decks */
   exact: boolean;
+  /** [THÊM] Hiện số báo lỗi đang chờ cạnh tab */
+  showOpenReports?: boolean;
 }
 
 /**
@@ -29,5 +32,9 @@ export class AdminLayout {
     { label: 'Tổng quan', short: 'Tổng quan', icon: 'chart', link: '/admin', exact: true },
     { label: 'Bộ từ hệ thống', short: 'Bộ từ', icon: 'decks', link: '/admin/decks', exact: false },
     { label: 'Ngữ pháp', short: 'Ngữ pháp', icon: 'grammar', link: '/admin/grammar', exact: false },
+    // [THÊM]
+    { label: 'Báo lỗi', short: 'Báo lỗi', icon: 'flag', link: '/admin/reports', exact: false, showOpenReports: true },
   ];
+
+  protected readonly openReports = inject(OpenReportsStore);
 }

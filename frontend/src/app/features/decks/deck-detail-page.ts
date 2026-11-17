@@ -16,6 +16,7 @@ import { Skeleton } from '../../shared/ui/skeleton/skeleton';
 import { DeckFormDialog } from './deck-form-dialog/deck-form-dialog';
 import { ImportDialog } from './import-dialog/import-dialog';
 import { WordFormDialog } from './word-form-dialog/word-form-dialog';
+import { ReportDialog } from '../reports/report-dialog/report-dialog';
 import { WordList } from './word-list/word-list';
 
 const PAGE_SIZE = 20;
@@ -26,7 +27,7 @@ const PAGE_SIZE = 20;
  */
 @Component({
   selector: 'app-deck-detail-page',
-  imports: [RouterLink, ConfirmDialog, DeckFormDialog, EmptyState, ImportDialog, ErrorState, Icon, Pager, Skeleton, WordFormDialog, WordList],
+  imports: [RouterLink, ConfirmDialog, DeckFormDialog, EmptyState, ImportDialog, ErrorState, Icon, Pager, ReportDialog, Skeleton, WordFormDialog, WordList],
   templateUrl: './deck-detail-page.html',
   styleUrl: './deck-detail-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -67,6 +68,14 @@ export class DeckDetailPage {
   protected readonly busy = signal(false);
   /** Hộp thoại nhập CSV */
   protected readonly importOpen = signal(false);
+  /** [THÊM] Từ hệ thống đang báo lỗi */
+  protected readonly reportingWord = signal<WordSummary | null>(null);
+
+  /** [THÊM] */
+  protected onReported(): void {
+    this.reportingWord.set(null);
+    this.toast.success('Đã gửi báo lỗi. Theo dõi kết quả ở mục Báo lỗi của tôi');
+  }
 
   protected openAddWord(): void {
     this.editingWordId.set(null);

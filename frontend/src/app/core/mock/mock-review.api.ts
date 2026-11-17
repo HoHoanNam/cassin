@@ -45,7 +45,7 @@ export class MockReviewApi extends ReviewApi {
   }
 
   // durationMs chỉ để khớp hợp đồng: mock chưa có bảng review_events.
-  review(senseId: number, remembered: boolean, _durationMs: number): Observable<ReviewResult> {
+  review(senseId: number, remembered: boolean, durationMs: number): Observable<ReviewResult> {
     return simulate(() => {
       const userId = this.session.userId();
       const sense = this.db.senses.find((s) => s.id === senseId);
@@ -89,6 +89,16 @@ export class MockReviewApi extends ReviewApi {
         this.db.progresses.push(progress);
       }
       this.db.markStudied(userId, today);
+      // [THÊM] Nhật ký trả lời (review_events), nguồn của Sổ lỗi sai + thống kê luyện tập
+      this.db.reviewEvents.push({
+        id: this.db.nextId(),
+        userId,
+        senseId,
+        mode: 'FLASHCARD',
+        correct: remembered,
+        durationMs: Math.min(Math.max(durationMs, 0), 600_000),
+        reviewedAt: new Date().toISOString(),
+      });
       this.db.save();
       return {
         senseId,
