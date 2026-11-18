@@ -1,0 +1,18 @@
+# Chỉ nạp khi test có @ActiveProfiles("it"). Ghi đè lên application.yml chính.
+#
+# KHÔNG khai báo spring.datasource ở đây: @ServiceConnection tự trỏ DataSource vào container.
+# Flyway vẫn chạy đủ V1 → V14 trên DB trống, Hibernate "validate" entity → lỗi migration lộ ra ngay.
+
+cassin:
+  jwt:
+    access-token-ttl: 15m # giá trị mục tiêu, test theo đúng cấu hình sẽ deploy
+  refresh-token:
+    cookie-secure: false
+  admin: # AdminBootstrap tạo sẵn admin → section 3 (báo lỗi) dùng
+    email: admin@it.local
+    password: admin-it-12345
+
+logging:
+  level:
+    org.testcontainers: INFO
+    tc: INFO # log pull image / khởi động container

@@ -108,6 +108,27 @@
             <artifactId>commons-csv</artifactId>
             <version>1.14.1</version>
         </dependency>
+
+        <!-- ===== Integration test (đặt cạnh spring-boot-starter-test) ===== -->
+        <!-- Boot 4 tách MockMvc ra module riêng: thiếu cái này thì không có @AutoConfigureMockMvc -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- @ServiceConnection: Spring tự lấy url/user/password của container gắn vào DataSource -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Testcontainers 2.x: module đổi tên từ "postgresql" thành "testcontainers-postgresql".
+            Version do spring-boot-starter-parent quản lý, không ghi <version>. -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -155,6 +176,21 @@
                 <configuration>
                     <argLine>-javaagent:${org.mockito:mockito-core:jar} -Xshare:off</argLine>
                 </configuration>
+            </plugin>
+
+            <!-- Failsafe chạy *IT.java ở pha integration-test (mvn verify).
+                Surefire vẫn chạy *Test.java ở pha test (mvn test) → unit test giữ nguyên tốc độ, không cần Docker. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
