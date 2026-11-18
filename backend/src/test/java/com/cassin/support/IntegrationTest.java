@@ -24,6 +24,7 @@ import org.springframework.test.context.ActiveProfiles;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("it")
-@Import({ PostgresContainerConfig.class, TestClockConfig.class })
+// [SỬA] Thêm LocalPostgresConfig. Hai config DB loại trừ nhau theo cassin.it.database, chỉ một cái có hiệu lực.
+@Import({ PostgresContainerConfig.class, LocalPostgresConfig.class, TestClockConfig.class })
 public @interface IntegrationTest {
 }
