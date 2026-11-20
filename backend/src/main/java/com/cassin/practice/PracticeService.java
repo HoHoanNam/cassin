@@ -121,7 +121,7 @@ public class PracticeService {
     };
 
     eventRepository.save(ReviewEvent.of(userRepository.getReferenceById(userId), sense, a.mode(),
-        result.correct(), a.durationMs()));
+        result.correct(), a.durationMs(), clock.instant())); // [SỬA] giờ theo Clock
     if (!result.correct()) {
       // Chỉ áp dụng cho nghĩa user ĐÃ học (có tiến độ). Nghĩa chưa học thì để hàng đợi "thẻ mới" lo.
       progressRepository.findByUserIdAndSenseId(userId, sense.getId())

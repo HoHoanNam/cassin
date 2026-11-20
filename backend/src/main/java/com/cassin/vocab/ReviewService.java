@@ -121,7 +121,7 @@ public class ReviewService {
     //  Muốn tách hẳn thì phát Spring event ở đây, practice tự nghe và ghi.)
     eventRepository.save(ReviewEvent.of(
         userRepository.getReferenceById(userId), sense, PracticeMode.FLASHCARD,
-        remembered, durationMs == null ? 0 : durationMs));
+        remembered, durationMs == null ? 0 : durationMs, clock.instant())); // [SỬA] giờ theo Clock
     return ReviewResultResponse.from(saved);
   }
 

@@ -214,6 +214,8 @@ class ReviewServiceTest {
     verify(eventRepository).save(event.capture());
     assertThat(event.getValue().isCorrect()).isTrue();
     assertThat(event.getValue().getDurationMs()).isEqualTo(3_500);
+    // [THÊM] B1: giờ ghi nhật ký lấy từ Clock (đồng hồ cố định của test), không phải giờ máy
+    assertThat(event.getValue().getReviewedAt()).isEqualTo(TODAY.atStartOfDay(TimeConfig.APP_ZONE).toInstant());
   }
 
   // ===================== getStats / streak =====================

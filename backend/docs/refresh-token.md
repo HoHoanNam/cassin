@@ -47,7 +47,7 @@ Cách giải: **tách làm hai token**. Một token sống ngắn, không lưu, 
 
 Hình dung: access token là **thẻ ra vào** dùng liên tục nhưng 15 phút là hết hạn. Refresh token là **vé gửi xe**: đưa vé ra quầy thì được thẻ ra vào mới, và quầy **thu vé cũ, đưa vé mới**. Mỗi vé chỉ dùng được **một lần**.
 
-> **Trạng thái hiện tại:** `access-token-ttl` vẫn để `1h`. Frontend chưa có luồng tự refresh, nếu đổi sang 15 phút thì cứ 15 phút người dùng bị đá về trang đăng nhập. Đổi sang `15m` khi FE xong.
+> **Trạng thái hiện tại:** `access-token-ttl` = `15m`. Frontend đã tự refresh (interceptor gặp 401 → gọi `/api/auth/refresh` → gửi lại request), nên người dùng không bị đá ra khi access token hết hạn.
 
 ---
 
@@ -303,8 +303,8 @@ Set-Cookie: cassin_refresh=<43 ký tự>; Path=/api/auth; Max-Age=1209600; HttpO
 | Chưa liệt kê / thu hồi từng thiết bị | — | Lưu `user_agent`, IP, `last_used_at`; API `GET /api/me/sessions`, `DELETE /api/me/sessions/{familyId}` |
 | Chưa giới hạn số lần gọi `/refresh`, `/login` | — | Rate limit (Bucket4j) theo IP |
 | Job dọn dẹp chạy ở mọi instance | Vô hại nhưng thừa | ShedLock khi có nhiều instance |
-| Hành vi SQL mới được thử tay | Unit test dùng repository giả | Test tích hợp với PostgreSQL thật (Testcontainers): compare-and-set, cascade, partial index |
-| FE chưa tự refresh | `access-token-ttl` tạm để 1h | Interceptor: gặp 401 → refresh một lần → gửi lại; 409 → thử lại; 401 từ refresh → về trang đăng nhập |
+| ~~Hành vi SQL mới được thử tay~~ | Đã có `AuthFlowIT` (PostgreSQL thật) | Chạy: `mvn verify`, xem `backend/src/test/.../auth/AuthFlowIT.java` |
+| ~~FE chưa tự refresh~~ | Đã xong, `access-token-ttl` = 15m | Interceptor: gặp 401 → refresh một lần → gửi lại; 409 → thử lại; 401 từ refresh → về trang đăng nhập |
 
 ---
 

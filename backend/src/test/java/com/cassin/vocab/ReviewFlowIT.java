@@ -187,7 +187,7 @@ class ReviewFlowIT {
   @Test
   @DisplayName("Ôn thẻ ghi nhật ký FLASHCARD → thống kê luyện tập thấy được")
   void review_isLoggedForPracticeStats() throws Exception {
-    // Không tua đồng hồ: review_events.reviewed_at đang lấy giờ thật (Instant.now), không theo bean Clock.
+    // (Kiểm tra lượt luyện ghi giờ theo Clock khi tua đồng hồ: xem PracticeFlowIT.reviewEvents_followAppClock)
     ApiSession nam = api.newLearner();
     long deck = vocab.createDeck(nam, "IELTS");
     CreatedWord word = vocab.createWord(nam, deck, "improve");

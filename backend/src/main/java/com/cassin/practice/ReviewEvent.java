@@ -44,10 +44,13 @@ public class ReviewEvent {
   @Column(name = "duration_ms", nullable = false)
   private int durationMs;
 
+  // [SỬA] Bỏ "= Instant.now()": thời điểm do bên gọi truyền vào từ bean Clock, để cả app dùng CHUNG một nguồn
+  // thời gian (TimeConfig). Trước đây ghi giờ máy, trong khi Thống kê / Sổ lỗi sai tính cửa sổ theo Clock.
   @Column(name = "reviewed_at", nullable = false, updatable = false)
-  private Instant reviewedAt = Instant.now();
+  private Instant reviewedAt;
 
-  public static ReviewEvent of(User user, Sense sense, PracticeMode mode, boolean correct, int durationMs) {
+  public static ReviewEvent of(User user, Sense sense, PracticeMode mode, boolean correct, int durationMs,
+      Instant reviewedAt) { // [SỬA] thêm reviewedAt
     ReviewEvent event = new ReviewEvent();
     event.user = Objects.requireNonNull(user, "User không được null");
     event.sense = Objects.requireNonNull(sense, "Nghĩa không được null");
@@ -55,6 +58,7 @@ public class ReviewEvent {
     event.correct = correct;
     // Thời gian âm là dữ liệu hỏng từ client → ghi 0 thay vì để DB từ chối cả lượt luyện.
     event.durationMs = Math.max(durationMs, 0);
+    event.reviewedAt = Objects.requireNonNull(reviewedAt, "Thời điểm không được null"); // [THÊM]
     return event;
   }
 }
