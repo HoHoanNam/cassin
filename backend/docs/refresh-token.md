@@ -300,7 +300,7 @@ Set-Cookie: cassin_refresh=<43 ký tự>; Path=/api/auth; Max-Age=1209600; HttpO
 |---|---|---|
 | Access token sống tiếp tới hết hạn sau khi thu hồi | Bản chất của JWT stateless | Giữ TTL ngắn; cần tức thì thì thêm danh sách đen theo `jti` (tra Redis mỗi request) |
 | **Không có hạn tuyệt đối** cho cả họ | Kẻ trộm refresh liên tục thì giữ phiên tới khi người thật refresh lại | Lưu thời điểm đăng nhập vào mỗi dòng, từ chối khi quá N ngày (vd 30) |
-| Chưa liệt kê / thu hồi từng thiết bị | — | Lưu `user_agent`, IP, `last_used_at`; API `GET /api/me/sessions`, `DELETE /api/me/sessions/{familyId}` |
+| ~~Chưa liệt kê / thu hồi từng thiết bị~~ | Đã có (V16) | Xem [sessions.md](sessions.md): `GET/DELETE /api/auth/sessions` |
 | Chưa giới hạn số lần gọi `/refresh`, `/login` | — | Rate limit (Bucket4j) theo IP |
 | Job dọn dẹp chạy ở mọi instance | Vô hại nhưng thừa | ShedLock khi có nhiều instance |
 | ~~Hành vi SQL mới được thử tay~~ | Đã có `AuthFlowIT` (PostgreSQL thật) | Chạy: `mvn verify`, xem `backend/src/test/.../auth/AuthFlowIT.java` |

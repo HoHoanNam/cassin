@@ -46,6 +46,23 @@ export function relativeDay(value: string): string {
   return date.getFullYear() === new Date().getFullYear() ? `${dd}/${mm}` : `${dd}/${mm}/${date.getFullYear()}`;
 }
 
+/** [THÊM] "Vừa xong" / "5 phút trước" / "2 giờ trước" / "3 ngày trước" / "24/10" (quá 30 ngày) */
+export function timeAgo(value: string, now = Date.now()): string {
+  const minutes = Math.floor((now - new Date(value).getTime()) / 60_000);
+  if (minutes < 1) {
+    return 'Vừa xong';
+  }
+  if (minutes < 60) {
+    return `${minutes} phút trước`;
+  }
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return `${hours} giờ trước`;
+  }
+  const days = Math.floor(hours / 24);
+  return days <= 30 ? `${days} ngày trước` : relativeDay(value);
+}
+
 /** Câu mô tả hạn ôn tiếp theo: "Ôn lại vào ngày mai" / "Ôn lại sau 4 ngày" */
 export function nextReviewLabel(dueDate: string): string {
   const days = daysBetween(new Date(), parseLocalDate(dueDate));

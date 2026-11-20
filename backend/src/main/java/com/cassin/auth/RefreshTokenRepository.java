@@ -1,6 +1,7 @@
 package com.cassin.auth;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -51,4 +52,26 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
   @Modifying
   @Query("delete from RefreshToken t where t.expiresAt < :now")
   int deleteExpired(@Param("now") Instant now);
+
+  // ===== [THÊM] Quản lý phiên (V16) =====
+
+  /**
+   * Token ĐANG SỐNG của một user, mới hoạt động nhất lên đầu. Xoay vòng giữ đúng một token sống mỗi họ,
+   * nên mỗi dòng = một thiết bị. (Dùng idx_refresh_tokens_user_active của V14.)
+   */
+  @Query("select t from RefreshToken t where t.user.id = :userId and t.revokedAt is null and t.expiresAt > :now "
+      + "order by t.createdAt desc")
+  List<RefreshToken> findActiveSessions(@Param("userId") Long userId, @Param("now") Instant now);
+
+  /** Đăng xuất MỘT thiết bị. Điều kiện user.id chốt quyền: họ của người khác → 0 dòng → 404. */
+  @Modifying(flushAutomatically = true)
+  @Query("update RefreshToken t set t.revokedAt = :now "
+      + "where t.familyId = :familyId and t.user.id = :userId and t.revokedAt is null")
+  int revokeFamilyOfUser(@Param("familyId") UUID familyId, @Param("userId") Long userId, @Param("now") Instant now);
+
+  /** Đăng xuất mọi thiết bị TRỪ họ keep (thiết bị đang dùng). */
+  @Modifying(flushAutomatically = true)
+  @Query("update RefreshToken t set t.revokedAt = :now "
+      + "where t.user.id = :userId and t.revokedAt is null and t.familyId <> :keep")
+  int revokeOthers(@Param("userId") Long userId, @Param("keep") UUID keep, @Param("now") Instant now);
 }

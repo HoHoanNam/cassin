@@ -1,14 +1,17 @@
 package com.cassin.auth;
 
+import static com.cassin.auth.AuthFixtures.CHROME_WINDOWS;
 import static com.cassin.auth.AuthFixtures.FAMILY;
 import static com.cassin.auth.AuthFixtures.NOW;
 import static com.cassin.auth.AuthFixtures.RAW;
+import static com.cassin.auth.AuthFixtures.SIGNED_IN_AT;
 import static com.cassin.auth.AuthFixtures.TTL;
 import static com.cassin.auth.AuthFixtures.USER_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -20,6 +23,7 @@ import java.time.Duration;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,9 +32,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.cassin.auth.dto.RefreshTokenProperties;
+import com.cassin.auth.dto.SessionResponse;
 import com.cassin.common.BusinessException;
 import com.cassin.user.User;
 
@@ -57,7 +63,7 @@ class RefreshTokenServiceTest {
 
   @Test
   void startSession_storesOnlyHash_andReturnsRawToken() {
-    String raw = service.startSession(user);
+    String raw = service.startSession(user, CHROME_WINDOWS);
 
     RefreshToken saved = savedToken();
     assertThat(raw).hasSize(43);                                     // 32 byte, Base64 URL không dấu "="
@@ -67,12 +73,14 @@ class RefreshTokenServiceTest {
     assertThat(saved.getUser()).isSameAs(user);
     assertThat(saved.getFamilyId()).isNotNull();
     assertThat(saved.getExpiresAt()).isEqualTo(NOW.plus(TTL));
+    assertThat(saved.getUserAgent()).isEqualTo(CHROME_WINDOWS);   // [THÊM] V16: ghi thiết bị
+    assertThat(saved.getSignedInAt()).isEqualTo(NOW);             //           + lúc đăng nhập
   }
 
   @Test
   void startSession_eachLoginOpensNewFamilyWithDifferentToken() {
-    String first = service.startSession(user);
-    String second = service.startSession(user);
+    String first = service.startSession(user, null);
+    String second = service.startSession(user, null);
 
     ArgumentCaptor<RefreshToken> captor = ArgumentCaptor.forClass(RefreshToken.class);
     verify(repository, times(2)).save(captor.capture());
@@ -104,6 +112,9 @@ class RefreshTokenServiceTest {
     assertThat(next.getFamilyId()).isEqualTo(FAMILY);               // cùng họ
     assertThat(next.getTokenHash()).isEqualTo(RefreshTokenService.hash(rotation.refreshToken()));
     assertThat(next.getExpiresAt()).isEqualTo(NOW.plus(TTL));       // hạn mới tính từ lúc refresh
+    assertThat(next.getCreatedAt()).isEqualTo(NOW);                 // [THÊM] = "hoạt động gần nhất"
+    assertThat(next.getUserAgent()).isEqualTo(CHROME_WINDOWS);      // [THÊM] thiết bị chép từ token cũ
+    assertThat(next.getSignedInAt()).isEqualTo(SIGNED_IN_AT);       // [THÊM] lúc đăng nhập KHÔNG đổi
     verify(repository).revokeIfActive(10L, NOW);
   }
 
@@ -225,6 +236,68 @@ class RefreshTokenServiceTest {
   }
 
   // ===== helper =====
+
+  // ===== [THÊM] Quản lý phiên =====
+
+  @Test
+  void listSessions_marksTheFamilyOfTheCookieAsCurrent() {
+    RefreshToken mine = AuthFixtures.activeToken(user);
+    RefreshToken phone = RefreshToken.issue(user, "b".repeat(64), OTHER_FAMILY, NOW.minusSeconds(60), TTL,
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile Safari/604.1",
+        NOW.minus(Duration.ofDays(10)));
+    when(repository.findByTokenHashWithUser(RefreshTokenService.hash(RAW))).thenReturn(Optional.of(mine));
+    when(repository.findActiveSessions(USER_ID, NOW)).thenReturn(List.of(phone, mine));
+
+    List<SessionResponse> sessions = service.listSessions(USER_ID, RAW);
+
+    assertThat(sessions).extracting(SessionResponse::id).containsExactly(OTHER_FAMILY, FAMILY);
+    assertThat(sessions).extracting(SessionResponse::current).containsExactly(false, true);
+    assertThat(sessions.get(0).browser()).isEqualTo("Safari");
+    assertThat(sessions.get(0).os()).isEqualTo("iOS");
+    assertThat(sessions.get(1).signedInAt()).isEqualTo(SIGNED_IN_AT);
+    assertThat(sessions.get(1).lastActiveAt()).isEqualTo(mine.getCreatedAt());
+  }
+
+  @Test
+  void listSessions_cookieOfAnotherUser_isNeverCurrent() {
+    User someoneElse = new User("lan@gmail.com", "$2a$10$hash", "Lan");
+    ReflectionTestUtils.setField(someoneElse, "id", 2L);
+    when(repository.findByTokenHashWithUser(RefreshTokenService.hash(RAW)))
+        .thenReturn(Optional.of(AuthFixtures.activeToken(someoneElse)));
+    when(repository.findActiveSessions(USER_ID, NOW)).thenReturn(List.of(AuthFixtures.activeToken(user)));
+
+    assertThat(service.listSessions(USER_ID, RAW)).extracting(SessionResponse::current).containsExactly(false);
+  }
+
+  @Test
+  void revokeSession_notMine_orAlreadyRevoked_is404() {
+    when(repository.revokeFamilyOfUser(OTHER_FAMILY, USER_ID, NOW)).thenReturn(0);
+
+    assertError(() -> service.revokeSession(USER_ID, OTHER_FAMILY, RAW), HttpStatus.NOT_FOUND, "SESSION_NOT_FOUND");
+  }
+
+  @Test
+  void revokeSession_reportsWhetherItWasTheCurrentDevice() {
+    when(repository.revokeFamilyOfUser(any(), eq(USER_ID), eq(NOW))).thenReturn(1);
+    when(repository.findByTokenHashWithUser(RefreshTokenService.hash(RAW)))
+        .thenReturn(Optional.of(AuthFixtures.activeToken(user)));
+
+    assertThat(service.revokeSession(USER_ID, OTHER_FAMILY, RAW)).isFalse();   // thiết bị khác
+    assertThat(service.revokeSession(USER_ID, FAMILY, RAW)).isTrue();          // chính mình → xóa cookie
+  }
+
+  @Test
+  void revokeOtherSessions_keepsCurrentFamily_orRevokesAllWithoutCookie() {
+    when(repository.findByTokenHashWithUser(RefreshTokenService.hash(RAW)))
+        .thenReturn(Optional.of(AuthFixtures.activeToken(user)));
+    when(repository.revokeOthers(USER_ID, FAMILY, NOW)).thenReturn(2);
+    when(repository.revokeAllForUser(USER_ID, NOW)).thenReturn(3);
+
+    assertThat(service.revokeOtherSessions(USER_ID, RAW)).isEqualTo(2);
+    assertThat(service.revokeOtherSessions(USER_ID, null)).isEqualTo(3);   // không biết thiết bị nào để giữ
+  }
+
+  private static final UUID OTHER_FAMILY = UUID.fromString("7d4c2a10-0000-4000-8000-000000000002");
 
   private RefreshToken savedToken() {
     ArgumentCaptor<RefreshToken> captor = ArgumentCaptor.forClass(RefreshToken.class);

@@ -1,6 +1,6 @@
 <div class="page-container page-pad">
   <h1 class="page-title">Tài khoản</h1>
-  <p class="mt-1 text-ink-soft">Thông tin hiển thị và mật khẩu đăng nhập của bạn.</p>
+  <p class="mt-1 text-ink-soft">Thông tin hiển thị, mật khẩu và các thiết bị đang đăng nhập của bạn.</p>
 
   @if (me.hasValue()) {
     @let user = me.value();
@@ -112,6 +112,11 @@
             </button>
           </div>
         </form>
+      </section>
+
+      <!-- [THÊM] Thiết bị đang đăng nhập -->
+      <section class="card section" aria-labelledby="sessions-heading">
+        <app-session-list />
       </section>
     </div>
   } @else if (me.error()) {

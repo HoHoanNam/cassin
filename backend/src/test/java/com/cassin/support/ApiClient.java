@@ -5,9 +5,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.UUID;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 /**
  * [THÊM] Các bước lặp lại ở mọi IT: tạo tài khoản, đăng nhập.
@@ -48,7 +50,16 @@ public final class ApiClient {
   }
 
   public ApiSession login(String email, String password) throws Exception {
-    MvcResult result = mvc.perform(post("/api/auth/login")
+    return login(email, password, null);
+  }
+
+  /** [THÊM] Đăng nhập "từ một thiết bị": gửi kèm header User-Agent (null = không gửi). */
+  public ApiSession login(String email, String password, String userAgent) throws Exception {
+    MockHttpServletRequestBuilder request = post("/api/auth/login");
+    if (userAgent != null) {
+      request.header(HttpHeaders.USER_AGENT, userAgent);
+    }
+    MvcResult result = mvc.perform(request
         .contentType(MediaType.APPLICATION_JSON)
         .content("""
             {"email": "%s", "password": "%s"}

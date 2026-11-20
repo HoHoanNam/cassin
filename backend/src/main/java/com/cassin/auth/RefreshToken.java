@@ -28,6 +28,9 @@ import lombok.NoArgsConstructor;
 // Cùng cách với Deck, Word, ContentReport.
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class RefreshToken {
+
+  /** [THÊM] Độ dài cột user_agent (V16). */
+  static final int USER_AGENT_MAX = 255;
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
@@ -51,14 +54,39 @@ public class RefreshToken {
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
 
-  static RefreshToken issue(User user, String tokenHash, UUID familyId, Instant now, Duration ttl) {
+  /** [THÊM] V16. Header User-Agent lúc đăng nhập (đã cắt còn 255 ký tự), chép sang token mới khi xoay. */
+  @Column(name = "user_agent", length = USER_AGENT_MAX, updatable = false)
+  private String userAgent;
+
+  /** [THÊM] V16. Thời điểm đăng nhập của CẢ HỌ, chép sang token mới khi xoay. */
+  @Column(name = "signed_in_at", nullable = false, updatable = false)
+  private Instant signedInAt;
+
+  /**
+   * [SỬA] Thêm userAgent + signedInAt (V16).
+   *   Đăng nhập: signedInAt = now, userAgent = header của request.
+   *   Refresh  : chép cả hai từ token cũ → cả họ giữ nguyên "thiết bị" và "đăng nhập lúc".
+   */
+  static RefreshToken issue(User user, String tokenHash, UUID familyId, Instant now, Duration ttl,
+      String userAgent, Instant signedInAt) {
     RefreshToken token = new RefreshToken();
     token.user = user;
     token.tokenHash = tokenHash;
     token.familyId = familyId;
     token.createdAt = now;
     token.expiresAt = now.plus(ttl);
+    token.userAgent = truncate(userAgent);
+    token.signedInAt = signedInAt;
     return token;
+  }
+
+  // [THÊM] Header User-Agent không giới hạn độ dài; cột chỉ 255 ký tự. Rỗng → null.
+  private static String truncate(String userAgent) {
+    if (userAgent == null || userAgent.isBlank()) {
+      return null;
+    }
+    String stripped = userAgent.strip();
+    return stripped.length() <= USER_AGENT_MAX ? stripped : stripped.substring(0, USER_AGENT_MAX);
   }
 
   public boolean isRevoked() {

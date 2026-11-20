@@ -1,0 +1,53 @@
+<div class="flex flex-wrap items-start justify-between gap-3">
+  <div>
+    <h2 id="sessions-heading" class="section-title">Thiết bị đang đăng nhập</h2>
+    <p class="m-0 mt-1 text-sm text-ink-soft">Thấy thiết bị lạ? Đăng xuất thiết bị đó rồi đổi mật khẩu.</p>
+  </div>
+  @if (others().length > 0) {
+    <button type="button" class="btn btn-secondary btn-sm" (click)="pending.set({ kind: 'others' })">
+      Đăng xuất mọi thiết bị khác
+    </button>
+  }
+</div>
+
+<div class="mt-5">
+  @if (sessions.hasValue()) {
+    <ul class="devices" [class.opacity-60]="sessions.isLoading()">
+      @for (session of sessions.value(); track session.id) {
+        <li class="device" [class.device-current]="session.current">
+          <span class="device-icon">
+            <app-icon [name]="isMobile(session) ? 'phone' : 'monitor'" [size]="20" />
+          </span>
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span class="font-semibold">{{ label(session) }}</span>
+              @if (session.current) {
+                <span class="chip chip-current">Thiết bị này</span>
+              }
+            </div>
+            <p class="m-0 mt-0.5 text-sm text-ink-soft">
+              {{ signedIn(session) }} · <span [class.text-success]="session.current">{{ lastActive(session) }}</span>
+            </p>
+          </div>
+          @if (!session.current) {
+            <button type="button" class="btn btn-ghost btn-sm" (click)="pending.set({ kind: 'one', session })"
+              [attr.aria-label]="'Đăng xuất ' + label(session)">
+              Đăng xuất
+            </button>
+          }
+        </li>
+      }
+    </ul>
+    @if (others().length === 0) {
+      <p class="m-0 mt-3 text-sm text-ink-soft">Bạn chỉ đang đăng nhập trên thiết bị này.</p>
+    }
+  } @else if (sessions.error()) {
+    <app-error-state title="Không tải được danh sách thiết bị" (retry)="sessions.reload()" />
+  } @else {
+    <app-skeleton [rows]="2" />
+  }
+</div>
+
+<app-confirm-dialog [open]="pending() !== null" [title]="confirmTitle()"
+  message="Thiết bị đó phải đăng nhập lại. Có thể mất tới 15 phút để thiết bị bị đăng xuất hẳn."
+  confirmLabel="Đăng xuất" [busy]="busy()" (cancelled)="pending.set(null)" (confirmed)="confirm()" />

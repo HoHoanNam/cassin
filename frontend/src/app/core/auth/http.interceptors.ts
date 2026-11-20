@@ -12,7 +12,11 @@ import { TokenRefresher } from './token-refresher';
 const RETRIED_AFTER_REFRESH = new HttpContextToken<boolean>(() => false);
 
 /** /api/auth/** (login, register, refresh, logout): không gắn token, không tự refresh. */
-const isAuthCall = (req: HttpRequest<unknown>) => req.url.startsWith(`${APP_ENV.apiBaseUrl}/auth/`);
+// [SỬA] Chỉ các API xác thực CÔNG KHAI mới bỏ qua Bearer + không tự refresh khi 401.
+// Trước đây bắt mọi URL /auth/*, nên /auth/sessions (cần đăng nhập) bị gửi đi không có token → luôn 401.
+const PUBLIC_AUTH_PATHS = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout'];
+const isAuthCall = (req: HttpRequest<unknown>) =>
+  PUBLIC_AUTH_PATHS.some((path) => req.url.startsWith(`${APP_ENV.apiBaseUrl}${path}`));
 const isApiCall = (req: HttpRequest<unknown>) => req.url.startsWith(APP_ENV.apiBaseUrl);
 const withToken = (req: HttpRequest<unknown>, token: string) =>
   req.clone({ setHeaders: { Authorization: `Bearer ${token}` } });

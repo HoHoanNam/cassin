@@ -1,0 +1,51 @@
+/* [THÊM] Danh sách thiết bị nằm trong thẻ "section" của trang Tài khoản: không thêm viền thẻ lồng nhau */
+.devices {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.device {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--divider);
+}
+
+.device:first-child {
+  padding-top: 0;
+}
+
+.device:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.device-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 10px;
+  background: var(--chip);
+  color: var(--ink-soft);
+}
+
+.device-current .device-icon {
+  background: var(--ink);
+  color: #fff;
+}
+
+.chip-current {
+  background: var(--ink);
+  color: #fff;
+}
+
+/* Màn hình hẹp: bỏ icon thiết bị để tên + thời gian không bị gãy dòng nhiều */
+@media (max-width: 480px) {
+  .device-icon {
+    display: none;
+  }
+}

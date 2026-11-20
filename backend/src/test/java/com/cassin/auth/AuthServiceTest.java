@@ -44,9 +44,9 @@ class AuthServiceTest {
     when(passwordEncoder.matches("12345678", user.getPasswordHash())).thenReturn(true);
     when(jwtService.generate(user)).thenReturn("access-jwt");
     when(jwtProperties.accessTokenTtl()).thenReturn(Duration.ofMinutes(15));
-    when(refreshTokenService.startSession(user)).thenReturn("refresh-raw");
+    when(refreshTokenService.startSession(user, "Chrome-UA")).thenReturn("refresh-raw");
 
-    AuthTokens tokens = authService.login(new LoginRequest(" Nam@Gmail.com ", "12345678"));
+    AuthTokens tokens = authService.login(new LoginRequest(" Nam@Gmail.com ", "12345678"), "Chrome-UA");
 
     assertThat(tokens.body().accessToken()).isEqualTo("access-jwt");
     assertThat(tokens.body().tokenType()).isEqualTo("Bearer");
@@ -60,18 +60,18 @@ class AuthServiceTest {
     when(userRepository.findByEmail("nam@gmail.com")).thenReturn(Optional.of(user));
     when(passwordEncoder.matches("sai-mat-khau", user.getPasswordHash())).thenReturn(false);
 
-    assertError(() -> authService.login(new LoginRequest("nam@gmail.com", "sai-mat-khau")),
+    assertError(() -> authService.login(new LoginRequest("nam@gmail.com", "sai-mat-khau"), "Chrome-UA"),
         HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS");
-    verify(refreshTokenService, never()).startSession(any());
+    verify(refreshTokenService, never()).startSession(any(), any());
   }
 
   @Test
   void login_unknownEmail_sameErrorAsWrongPassword() {
     when(userRepository.findByEmail("ai@gmail.com")).thenReturn(Optional.empty());
 
-    assertError(() -> authService.login(new LoginRequest("ai@gmail.com", "12345678")),
+    assertError(() -> authService.login(new LoginRequest("ai@gmail.com", "12345678"), "Chrome-UA"),
         HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS");
-    verify(refreshTokenService, never()).startSession(any());
+    verify(refreshTokenService, never()).startSession(any(), any());
   }
 
   @Test

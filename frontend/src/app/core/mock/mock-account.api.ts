@@ -6,6 +6,7 @@ import { ApiError } from '../models/common.models';
 import { ChangePasswordRequest, PROFILE_LIMITS, UpdateProfileRequest, User } from '../models/user.models';
 import { toUser } from './mock-auth.api';
 import { DbUser, MockDb } from './mock-db';
+import { MockDevices } from './mock-devices';
 import { MockSession } from './mock-session';
 import { businessError, isBlank, simulate, tooLong, validate } from './mock-utils';
 
@@ -14,6 +15,7 @@ import { businessError, isBlank, simulate, tooLong, validate } from './mock-util
 export class MockAccountApi extends AccountApi {
   private readonly db = inject(MockDb);
   private readonly session = inject(MockSession);
+  private readonly devices = inject(MockDevices); // [THÊM]
 
   updateProfile(request: UpdateProfileRequest): Observable<User> {
     return simulate(() => {
@@ -54,6 +56,8 @@ export class MockAccountApi extends AccountApi {
       }
       user.password = request.newPassword;
       this.db.save();
+      // [THÊM] Giống backend: đổi mật khẩu → đăng xuất mọi thiết bị khác
+      this.devices.keep(user.id, (s) => s.current);
     });
   }
 

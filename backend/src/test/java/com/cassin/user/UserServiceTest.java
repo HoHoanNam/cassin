@@ -45,16 +45,17 @@ class UserServiceTest {
     when(passwordEncoder.matches("matkhaucu", "old-hash")).thenReturn(true);
     when(passwordEncoder.matches("matkhaumoi", "old-hash")).thenReturn(false);
     when(passwordEncoder.encode("matkhaumoi")).thenReturn("new-hash");
-    when(refreshTokenService.startSession(user)).thenReturn("refresh-raw");
+    when(refreshTokenService.startSession(user, "Chrome-UA")).thenReturn("refresh-raw");
 
-    String refreshToken = userService.changePassword(USER_ID, new ChangePasswordRequest("matkhaucu", "matkhaumoi"));
+    String refreshToken = userService.changePassword(USER_ID, new ChangePasswordRequest("matkhaucu", "matkhaumoi"),
+        "Chrome-UA");
 
     assertThat(user.getPasswordHash()).isEqualTo("new-hash");
     assertThat(refreshToken).isEqualTo("refresh-raw");
     // Thứ tự quan trọng: mở phiên mới TRƯỚC rồi thu hồi tất cả thì phiên mới cũng bị thu hồi luôn.
     InOrder order = inOrder(refreshTokenService);
     order.verify(refreshTokenService).revokeAll(USER_ID);
-    order.verify(refreshTokenService).startSession(user);
+    order.verify(refreshTokenService).startSession(user, "Chrome-UA");
   }
 
   @Test
@@ -64,7 +65,7 @@ class UserServiceTest {
     when(passwordEncoder.matches("sai", "old-hash")).thenReturn(false);
 
     Throwable thrown = catchThrowable(() ->
-        userService.changePassword(USER_ID, new ChangePasswordRequest("sai", "matkhaumoi")));
+        userService.changePassword(USER_ID, new ChangePasswordRequest("sai", "matkhaumoi"), "Chrome-UA"));
 
     assertThat(thrown).isInstanceOf(BusinessException.class);
     assertThat(((BusinessException) thrown).getCode()).isEqualTo("WRONG_PASSWORD");

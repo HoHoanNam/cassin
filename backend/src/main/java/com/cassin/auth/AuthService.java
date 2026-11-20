@@ -66,7 +66,7 @@ public class AuthService {
    * [SỬA] readOnly = true → bỏ: đăng nhập giờ GHI một dòng refresh_tokens (mở phiên mới).
    */
   @Transactional
-  public AuthTokens login(LoginRequest request) {
+  public AuthTokens login(LoginRequest request, String userAgent) { // [SỬA] thêm userAgent (thiết bị)
     String email = User.normalizeEmail(request.email());
 
     User user = userRepository.findByEmail(email)
@@ -78,7 +78,7 @@ public class AuthService {
         .orElseThrow(() -> new BusinessException(
             HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "Email hoặc mật khẩu không đúng"));
 
-    return tokensFor(user, refreshTokenService.startSession(user));
+    return tokensFor(user, refreshTokenService.startSession(user, userAgent));
   }
 
   /**

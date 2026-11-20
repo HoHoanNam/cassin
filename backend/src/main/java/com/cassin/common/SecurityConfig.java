@@ -52,6 +52,9 @@ public class SecurityConfig {
             // Ai cũng gọi được: đăng ký, đăng nhập.
             // "/error": khi có lỗi 500, Spring chuyển nội bộ sang /error. Khóa nó thì
             // bạn nhận 401 thay cho lỗi thật, rất khó tìm nguyên nhân.
+            // [THÊM] Quản lý phiên nằm dưới /api/auth (để trình duyệt gửi kèm cookie refresh, Path=/api/auth)
+            // nhưng PHẢI đăng nhập. Đặt TRƯỚC dòng permitAll bên dưới: luật khớp đầu tiên thắng.
+            .requestMatchers("/api/auth/sessions", "/api/auth/sessions/**").authenticated()
             .requestMatchers("/api/auth/**", "/error").permitAll()
             // Chỉ ADMIN (authority "ROLE_ADMIN" do JwtAuthenticationFilter gắn vào).
             .requestMatchers("/api/admin/**").hasRole("ADMIN")

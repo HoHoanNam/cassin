@@ -11,6 +11,7 @@ import { MockQuizApi } from '../mock/mock-quiz.api';
 import { MockReportApi } from '../mock/mock-report.api';
 import { MockReviewApi } from '../mock/mock-review.api';
 import { MockScanApi } from '../mock/mock-scan.api';
+import { MockSessionApi } from '../mock/mock-session.api';
 import { MockWordApi } from '../mock/mock-word.api';
 import { AccountApi } from './account.api';
 import { AdminApi } from './admin.api';
@@ -29,12 +30,14 @@ import { HttpQuizApi } from './http/http-quiz.api';
 import { HttpReportApi } from './http/http-report.api';
 import { HttpReviewApi } from './http/http-review.api';
 import { HttpScanApi } from './http/http-scan.api';
+import { HttpSessionApi } from './http/http-session.api';
 import { HttpWordApi } from './http/http-word.api';
 import { PracticeApi } from './practice.api';
 import { QuizApi } from './quiz.api';
 import { ReportApi } from './report.api';
 import { ReviewApi } from './review.api';
 import { ScanApi } from './scan.api';
+import { SessionApi } from './session.api';
 import { WordApi } from './word.api';
 
 /**
@@ -56,6 +59,7 @@ export function provideApi(useMock: boolean): EnvironmentProviders {
         { provide: ScanApi, useClass: MockScanApi },
         { provide: ReportApi, useClass: MockReportApi }, // [THÊM]
         { provide: PracticeApi, useClass: MockPracticeApi }, // [THÊM]
+        { provide: SessionApi, useClass: MockSessionApi }, // [THÊM]
       ]
     : [
         { provide: AuthApi, useClass: HttpAuthApi },
@@ -70,6 +74,7 @@ export function provideApi(useMock: boolean): EnvironmentProviders {
         { provide: ScanApi, useClass: HttpScanApi },
         { provide: ReportApi, useClass: HttpReportApi }, // [THÊM]
         { provide: PracticeApi, useClass: HttpPracticeApi }, // [THÊM]
+        { provide: SessionApi, useClass: HttpSessionApi }, // [THÊM]
       ];
   return makeEnvironmentProviders(providers);
 }

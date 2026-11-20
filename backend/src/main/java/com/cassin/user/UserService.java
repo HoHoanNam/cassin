@@ -53,7 +53,7 @@ public class UserService {
    * Access token cũ ở thiết bị khác vẫn sống tới khi hết hạn (tối đa 15 phút) — đánh đổi của JWT stateless.
    */
   @Transactional
-  public String changePassword(Long userId, ChangePasswordRequest r) {
+  public String changePassword(Long userId, ChangePasswordRequest r, String userAgent) { // [SỬA] + userAgent
     // 1. Kiểm tra tài khoản đã tồn tại chưa
     User user = findUser(userId);
 
@@ -77,7 +77,7 @@ public class UserService {
 
     // 4. [THÊM] Đăng xuất mọi thiết bị, mở phiên mới cho thiết bị hiện tại
     refreshTokenService.revokeAll(userId);
-    return refreshTokenService.startSession(user);
+    return refreshTokenService.startSession(user, userAgent);
   }
 
   // HELPER

@@ -5,7 +5,8 @@ export type IconName =
   | 'plus' | 'search' | 'close' | 'chevron-down' | 'chevron-left' | 'chevron-right'
   | 'check' | 'alert' | 'info' | 'edit' | 'trash' | 'logout' | 'refresh' | 'arrow-left' | 'flame' | 'reset'
   | 'shield' | 'user' | 'eye' | 'users' | 'chart' | 'library' | 'scan' | 'upload' | 'download' | 'file'
-  | 'flag' | 'target' | 'shuffle' | 'type';
+  | 'flag' | 'target' | 'shuffle' | 'type'
+  | 'monitor' | 'phone'; // [THÊM] thiết bị đang đăng nhập
 
 /**
  * Icon nét mảnh (stroke) vẽ bằng SVG, dùng chung cả app.

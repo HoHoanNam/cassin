@@ -1,5 +1,6 @@
 package com.cassin.auth;
 
+import static com.cassin.auth.AuthFixtures.CHROME_WINDOWS;
 import static com.cassin.auth.AuthFixtures.FAMILY;
 import static com.cassin.auth.AuthFixtures.NOW;
 import static com.cassin.auth.AuthFixtures.TTL;
@@ -18,7 +19,7 @@ class RefreshTokenTest {
 
   @Test
   void issue_setsOwnerFamilyAndExpiry_notRevoked() {
-    RefreshToken token = RefreshToken.issue(user, "a".repeat(64), FAMILY, NOW, TTL);
+    RefreshToken token = RefreshToken.issue(user, "a".repeat(64), FAMILY, NOW, TTL, CHROME_WINDOWS, NOW);
 
     assertThat(token.getUser()).isSameAs(user);
     assertThat(token.getTokenHash()).isEqualTo("a".repeat(64));
@@ -27,11 +28,25 @@ class RefreshTokenTest {
     assertThat(token.getExpiresAt()).isEqualTo(NOW.plus(TTL));
     assertThat(token.getRevokedAt()).isNull();
     assertThat(token.isRevoked()).isFalse();
+    assertThat(token.getUserAgent()).isEqualTo(CHROME_WINDOWS);   // [THÊM] V16
+    assertThat(token.getSignedInAt()).isEqualTo(NOW);
+  }
+
+  // [THÊM] V16: header User-Agent không giới hạn độ dài, cột chỉ 255 ký tự
+  @Test
+  void issue_userAgent_isTrimmedAndCutTo255_blankBecomesNull() {
+    RefreshToken longUa = RefreshToken.issue(user, "a".repeat(64), FAMILY, NOW, TTL, "  " + "x".repeat(300) + " ", NOW);
+    RefreshToken blankUa = RefreshToken.issue(user, "a".repeat(64), FAMILY, NOW, TTL, "   ", NOW);
+    RefreshToken noUa = RefreshToken.issue(user, "a".repeat(64), FAMILY, NOW, TTL, null, NOW);
+
+    assertThat(longUa.getUserAgent()).hasSize(255).isEqualTo("x".repeat(255));
+    assertThat(blankUa.getUserAgent()).isNull();
+    assertThat(noUa.getUserAgent()).isNull();
   }
 
   @Test
   void isExpired_exactlyAtExpiry_isExpired() {
-    RefreshToken token = RefreshToken.issue(user, "a".repeat(64), FAMILY, NOW, TTL);
+    RefreshToken token = RefreshToken.issue(user, "a".repeat(64), FAMILY, NOW, TTL, null, NOW);
     var expiresAt = NOW.plus(TTL);
 
     assertThat(token.isExpired(expiresAt.minusSeconds(1))).isFalse();
@@ -41,7 +56,8 @@ class RefreshTokenTest {
 
   @Test
   void revokedWithin_distinguishesJustRotatedFromLongAgo() {
-    RefreshToken token = RefreshToken.issue(user, "a".repeat(64), FAMILY, NOW.minus(Duration.ofDays(1)), TTL);
+    RefreshToken token = RefreshToken.issue(user, "a".repeat(64), FAMILY, NOW.minus(Duration.ofDays(1)), TTL, null,
+        NOW.minus(Duration.ofDays(1)));
     Duration window = Duration.ofSeconds(10);
 
     assertThat(token.revokedWithin(window, NOW)).isFalse();   // chưa thu hồi

@@ -9,6 +9,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.cassin.auth.dto.RefreshTokenProperties;
+import com.cassin.auth.dto.SessionResponse;
 import com.cassin.common.BusinessException;
 import com.cassin.user.User;
 
@@ -30,6 +32,7 @@ import lombok.RequiredArgsConstructor;
  *   rotate         POST /api/auth/refresh → thu hồi token cũ, cấp token mới cùng họ
  *   endSession     POST /api/auth/logout  → thu hồi cả họ của token đang cầm
  *   revokeAll      đổi mật khẩu           → thu hồi mọi phiên của người dùng
+ *   [THÊM] listSessions / revokeSession / revokeOtherSessions: màn hình "Thiết bị đang đăng nhập"
  *
  * Kết quả của rotate:
  *
@@ -59,10 +62,14 @@ public class RefreshTokenService {
   public record Rotation(User user, String refreshToken) {
   }
 
-  /** Mở phiên mới (họ token mới). Trả về token GỐC để đặt vào cookie; DB chỉ giữ bản băm. */
+  /**
+   * Mở phiên mới (họ token mới). Trả về token GỐC để đặt vào cookie; DB chỉ giữ bản băm.
+   * [SỬA] Nhận thêm userAgent (header của request đăng nhập) để hiển thị thiết bị; null nếu không có.
+   */
   @Transactional
-  public String startSession(User user) {
-    return issue(user, UUID.randomUUID(), clock.instant());
+  public String startSession(User user, String userAgent) {
+    Instant now = clock.instant();
+    return issue(user, UUID.randomUUID(), now, userAgent, now);
   }
 
   /** SHA-256 → 64 ký tự hex. Package-private để test kiểm tra DB chỉ nhận bản băm. */
@@ -75,12 +82,13 @@ public class RefreshTokenService {
     }
   }
 
-  private String issue(User user, UUID familyId, Instant now) {
+  // [SỬA] thêm userAgent + signedInAt: đăng nhập thì lấy mới, refresh thì chép từ token cũ
+  private String issue(User user, UUID familyId, Instant now, String userAgent, Instant signedInAt) {
     byte[] bytes = new byte[TOKEN_BYTES];
     random.nextBytes(bytes);
     // Base64 URL-safe, bỏ dấu "=": 43 ký tự, đặt vào cookie không cần mã hóa thêm.
     String raw = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-    repository.save(RefreshToken.issue(user, hash(raw), familyId, now, properties.ttl()));
+    repository.save(RefreshToken.issue(user, hash(raw), familyId, now, properties.ttl(), userAgent, signedInAt));
     return raw;
   }
 
@@ -126,7 +134,9 @@ public class RefreshTokenService {
     if (repository.revokeIfActive(current.getId(), now) == 0) {
       throw race();
     }
-    String next = issue(current.getUser(), current.getFamilyId(), now);
+    // [SỬA] Token mới thừa hưởng thiết bị + thời điểm đăng nhập: cả họ vẫn là MỘT dòng "thiết bị"
+    String next = issue(current.getUser(), current.getFamilyId(), now,
+        current.getUserAgent(), current.getSignedInAt());
     return new Rotation(current.getUser(), next);
   }
 
@@ -142,6 +152,56 @@ public class RefreshTokenService {
   @Transactional
   public void revokeAll(Long userId) {
     repository.revokeAllForUser(userId, clock.instant());
+  }
+
+  // ===== [THÊM] Quản lý phiên: GET / DELETE /api/auth/sessions =====
+
+  /**
+   * Thiết bị đang đăng nhập của userId. current = thiết bị đang gửi request (cookie thuộc họ đó).
+   * Không có cookie (hoặc cookie không thuộc user này) → không dòng nào là current.
+   */
+  @Transactional(readOnly = true)
+  public List<SessionResponse> listSessions(Long userId, String rawToken) {
+    UUID current = currentFamily(userId, rawToken);
+    return repository.findActiveSessions(userId, clock.instant()).stream()
+        .map(token -> SessionResponse.of(token, token.getFamilyId().equals(current)))
+        .toList();
+  }
+
+  /**
+   * Đăng xuất một thiết bị. Họ không tồn tại / đã thu hồi / của người khác → CÙNG một lỗi 404.
+   *
+   * @return true nếu vừa đăng xuất CHÍNH thiết bị đang dùng → controller xóa luôn cookie
+   */
+  @Transactional
+  public boolean revokeSession(Long userId, UUID familyId, String rawToken) {
+    if (repository.revokeFamilyOfUser(familyId, userId, clock.instant()) == 0) {
+      throw new BusinessException(HttpStatus.NOT_FOUND, "SESSION_NOT_FOUND", "Không tìm thấy phiên đăng nhập");
+    }
+    return familyId.equals(currentFamily(userId, rawToken));
+  }
+
+  /**
+   * Đăng xuất mọi thiết bị KHÁC, giữ thiết bị đang dùng.
+   * Không nhận ra thiết bị đang dùng (thiếu cookie) → đăng xuất tất cả: không còn phiên nào để giữ.
+   *
+   * @return số thiết bị vừa bị đăng xuất
+   */
+  @Transactional
+  public int revokeOtherSessions(Long userId, String rawToken) {
+    UUID keep = currentFamily(userId, rawToken);
+    Instant now = clock.instant();
+    return keep == null
+        ? repository.revokeAllForUser(userId, now)
+        : repository.revokeOthers(userId, keep, now);
+  }
+
+  /** Họ của cookie đang gửi lên, chỉ khi cookie thuộc đúng user đang đăng nhập. */
+  private UUID currentFamily(Long userId, String rawToken) {
+    return find(rawToken)
+        .filter(token -> token.getUser().getId().equals(userId))
+        .map(RefreshToken::getFamilyId)
+        .orElse(null);
   }
 
   // [THÊM]

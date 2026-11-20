@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -17,6 +17,7 @@ import { ToastService } from '../../core/ui/toast.service';
 import { blankToNull, initial } from '../../core/util/text';
 import { ErrorState } from '../../shared/ui/error-state/error-state';
 import { Skeleton } from '../../shared/ui/skeleton/skeleton';
+import { SessionList } from './session-list/session-list';
 
 /** Ô "Nhập lại mật khẩu mới" phải trùng ô "Mật khẩu mới". Gắn lên cả group vì cần đọc 2 ô. */
 function passwordsMatch(group: AbstractControl): ValidationErrors | null {
@@ -26,12 +27,12 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
 }
 
 /**
- * Trang tài khoản: sửa hồ sơ (tên hiển thị, giới thiệu) và đổi mật khẩu.
+ * Trang tài khoản: sửa hồ sơ (tên hiển thị, giới thiệu), đổi mật khẩu, [THÊM] thiết bị đang đăng nhập.
  * Hai form độc lập, mỗi form tự có nút lưu, trạng thái đang lưu và lỗi riêng.
  */
 @Component({
   selector: 'app-account-page',
-  imports: [ReactiveFormsModule, ErrorState, Skeleton],
+  imports: [ReactiveFormsModule, ErrorState, Skeleton, SessionList], // [SỬA] + SessionList
   templateUrl: './account-page.html',
   styleUrl: './account-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -75,6 +76,9 @@ export class AccountPage {
   );
   protected readonly savingPassword = signal(false);
   protected readonly passwordError = signal<string | null>(null);
+
+  // [THÊM] Đổi mật khẩu xong thì tải lại danh sách thiết bị (backend đã đăng xuất mọi thiết bị khác)
+  private readonly sessionList = viewChild(SessionList);
 
   constructor() {
     // Có dữ liệu từ /api/me → đổ vào form hồ sơ.
@@ -127,7 +131,9 @@ export class AccountPage {
       next: () => {
         this.savingPassword.set(false);
         this.passwordForm.reset();
-        this.toast.success('Đã đổi mật khẩu. Lần đăng nhập sau hãy dùng mật khẩu mới.');
+        // [SỬA] nói rõ thiết bị khác đã bị đăng xuất, rồi tải lại danh sách thiết bị
+        this.toast.success('Đã đổi mật khẩu. Các thiết bị khác đã bị đăng xuất.');
+        this.sessionList()?.reload();
       },
       error: (error: unknown) => {
         this.savingPassword.set(false);

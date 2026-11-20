@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -63,8 +64,10 @@ public class UserController {
   @PutMapping("/me/password")
   public ResponseEntity<Void> changePassword(
       @AuthenticationPrincipal AuthUser user,
-      @Valid @RequestBody ChangePasswordRequest request) {
-    String refreshToken = userService.changePassword(user.id(), request);
+      @Valid @RequestBody ChangePasswordRequest request,
+      // [THÊM] phiên mới mở cho thiết bị đang đổi mật khẩu cũng ghi lại thiết bị
+      @RequestHeader(value = HttpHeaders.USER_AGENT, required = false) String userAgent) {
+    String refreshToken = userService.changePassword(user.id(), request, userAgent);
     return ResponseEntity.noContent()
         .header(HttpHeaders.SET_COOKIE, refreshCookie.set(refreshToken))
         .build();

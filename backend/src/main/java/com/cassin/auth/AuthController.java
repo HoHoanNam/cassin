@@ -41,9 +41,12 @@ public class AuthController {
    *
    * [SỬA] Trả ResponseEntity để gắn thêm header Set-Cookie (refresh token). Body giữ nguyên LoginResponse.
    */
+  // [SỬA] Đọc thêm header User-Agent để màn hình "Thiết bị đang đăng nhập" hiện "Chrome · Windows".
   @PostMapping("/login")
-  public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-    return withRefreshCookie(authService.login(request));
+  public ResponseEntity<LoginResponse> login(
+      @Valid @RequestBody LoginRequest request,
+      @RequestHeader(value = HttpHeaders.USER_AGENT, required = false) String userAgent) {
+    return withRefreshCookie(authService.login(request, userAgent));
   }
 
   /**
