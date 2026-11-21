@@ -1,0 +1,83 @@
+<div class="notebook flex min-h-dvh flex-col">
+  <header class="topbar">
+    <div class="mx-auto flex w-full max-w-[1200px] items-center gap-4 px-4 py-3 sm:px-6">
+      <a routerLink="/reading" class="btn btn-ghost -ml-2 gap-1.5 px-2 text-ink">
+        <app-icon name="close" [strokeWidth]="2" /> Thoát
+      </a>
+      @if (attempt(); as a) {
+        <span class="min-w-0 flex-1 truncate text-sm font-semibold">{{ a.passage.title }}</span>
+        <span class="whitespace-nowrap text-[13px] text-ink-soft">Đã làm {{ answeredCount() }}/{{ questions().length }}</span>
+        <button type="button" class="btn btn-primary btn-sm hidden sm:inline-flex" [disabled]="submitting()" (click)="requestSubmit()">
+          {{ submitting() ? 'Đang nộp...' : 'Nộp bài' }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (attempt(); as a) {
+    <!-- Điện thoại: chuyển qua lại giữa bài đọc và câu hỏi -->
+    <div class="mobile-tabs lg:hidden">
+      <div class="segmented w-full" role="group" aria-label="Chọn phần đang xem">
+        <button type="button" class="flex-1" [attr.aria-pressed]="tab() === 'passage'" (click)="tab.set('passage')">Bài đọc</button>
+        <button type="button" class="flex-1" [attr.aria-pressed]="tab() === 'questions'" (click)="tab.set('questions')">
+          Câu hỏi ({{ answeredCount() }}/{{ questions().length }})
+        </button>
+      </div>
+    </div>
+
+    <main class="workspace">
+      <section class="card passage-pane" [class.hidden-mobile]="tab() !== 'passage'" aria-labelledby="passage-title">
+        <div class="flex items-center gap-3">
+          <app-level-badge [level]="a.passage.level" />
+          <span class="text-[13px] text-ink-soft">{{ a.passage.wordCount }} từ · khoảng {{ a.passage.readingMinutes }} phút đọc</span>
+        </div>
+        <h1 id="passage-title" class="page-title mt-3">{{ a.passage.title }}</h1>
+        <app-passage-text class="mt-5" [content]="a.passage.content" [marks]="marks()" [scrollKey]="lastHintKey()" />
+        <button type="button" class="btn btn-primary mt-6 w-full lg:hidden" (click)="tab.set('questions')">
+          Sang phần câu hỏi <app-icon name="chevron-right" [size]="18" />
+        </button>
+      </section>
+
+      <section class="questions-pane" [class.hidden-mobile]="tab() !== 'questions'" aria-label="Câu hỏi">
+        <p class="m-0 text-[13px] text-ink-soft">
+          Bí thì bấm <span class="font-semibold text-[#a17c00]">Gợi ý</span>: Cassin chỉ ra từ đồng nghĩa trong bài, không lộ đáp án.
+        </p>
+        <ol class="m-0 mt-3 flex list-none flex-col gap-4 p-0">
+          @for (q of questions(); track q.id) {
+            <li class="card p-5">
+              <app-reading-question [question]="q" [answer]="answerOf(q)" [hints]="hints()[q.id]?.shown ?? []"
+                [hintsRemaining]="hints()[q.id]?.remaining ?? 0" [hintBusy]="hintBusy() === q.id"
+                (answerChange)="setAnswer(q.id, $event)" (askHint)="askHint(q)" />
+            </li>
+          }
+        </ol>
+        <button type="button" class="btn btn-primary btn-lg mt-6 w-full" [disabled]="submitting()" (click)="requestSubmit()">
+          {{ submitting() ? 'Đang nộp bài...' : 'Nộp bài' }}
+        </button>
+      </section>
+    </main>
+  } @else {
+    <main class="flex flex-1 justify-center px-4 pt-10">
+      <div class="w-full max-w-[680px]">
+        @if (notFound()) {
+          <div class="card">
+            <app-empty-state icon="book" title="Không mở được bài đọc này" description="Bài đọc không tồn tại hoặc đã được ẩn.">
+              <a routerLink="/reading" class="btn btn-primary">Về danh sách bài đọc</a>
+            </app-empty-state>
+          </div>
+        } @else if (started.error()) {
+          <div class="card"><app-error-state title="Không bắt đầu được bài đọc" [message]="errorText()" (retry)="started.reload()" /></div>
+        } @else {
+          <div class="card flex flex-col items-center gap-3 p-10 text-center" aria-busy="true">
+            <p class="hand m-0 text-2xl">Đang mở bài đọc...</p>
+          </div>
+        }
+      </div>
+    </main>
+  }
+</div>
+
+<app-confirm-dialog [open]="confirmSubmit()" title="Nộp bài khi chưa làm hết?"
+  [message]="'Còn ' + unanswered() + ' câu chưa trả lời. Câu bỏ trống được tính là sai. Mỗi lượt chỉ nộp được một lần.'"
+  confirmLabel="Nộp bài" cancelLabel="Làm tiếp" [danger]="false" [busy]="submitting()"
+  (cancelled)="confirmSubmit.set(false)" (confirmed)="submit()" />

@@ -20,6 +20,7 @@ export const NAV_ITEMS: NavItem[] = [
   // [THÊM] Luyện tập thay chỗ Lịch sử trên thanh dưới đáy (Lịch sử vẫn vào từ trang Hôm nay / Ngữ pháp)
   { label: 'Luyện tập', icon: 'target', link: '/practice' },
   { label: 'Ngữ pháp', icon: 'grammar', link: '/grammar' },
+  { label: 'Đọc hiểu', icon: 'book', link: '/reading', desktopOnly: true }, // [THÊM]
   { label: 'Lịch sử', icon: 'history', link: '/quiz-history', desktopOnly: true },
 ];
 

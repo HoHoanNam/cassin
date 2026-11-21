@@ -1,0 +1,65 @@
+@let q = question();
+<fieldset class="m-0 border-0 p-0">
+  <legend class="w-full">
+    <span class="hand block text-lg text-ink-soft">Câu {{ q.position + 1 }}</span>
+    @if (q.type === 'BLANK') {
+      <span class="mt-1 block text-[17px] font-semibold leading-relaxed">
+        {{ blankParts().before }}<input class="blank-input" type="text" [value]="answer()?.text ?? ''" [maxLength]="maxText"
+          autocomplete="off" spellcheck="false" [attr.aria-label]="'Điền vào chỗ trống câu ' + (q.position + 1)"
+          [attr.aria-invalid]="blankWarning() ? true : null" (input)="typeText($event)" />{{ blankParts().after }}
+      </span>
+    } @else {
+      <span class="mt-1 block text-[17px] font-semibold leading-relaxed">{{ q.prompt }}</span>
+    }
+  </legend>
+
+  @switch (q.type) {
+    @case ('MCQ') {
+      <div class="mt-4 flex flex-col gap-2.5">
+        @for (option of q.options; track option.id) {
+          <label class="option" [class.option-selected]="answer()?.optionId === option.id">
+            <input type="radio" class="sr-only" [name]="'q-' + q.id" [checked]="answer()?.optionId === option.id"
+              (change)="chooseOption(option.id)" />
+            <span class="letter" aria-hidden="true">{{ option.label }}</span>
+            <span class="flex-1">{{ option.content }}</span>
+          </label>
+        }
+      </div>
+    }
+    @case ('TFNG') {
+      <div class="tfng mt-4" role="radiogroup" [attr.aria-label]="'Câu ' + (q.position + 1)">
+        @for (option of tfngOptions; track option.value) {
+          <button type="button" role="radio" class="tfng-btn" [attr.aria-checked]="answer()?.tfngAnswer === option.value"
+            (click)="chooseTfng(option.value)">{{ option.label }}</button>
+        }
+      </div>
+    }
+    @case ('BLANK') {
+      <p class="instruction mt-3">
+        <span class="font-semibold">{{ q.instruction }}</span>
+        @if (blankWarning(); as warning) {
+          <span class="warning" role="status"><app-icon name="alert" [size]="15" /> {{ warning }}</span>
+        }
+      </p>
+    }
+  }
+
+  <!-- Gợi ý bằng từ đồng nghĩa: mở từng cái một, không lộ đáp án -->
+  @if (totalHints() > 0) {
+    <div class="hints mt-4">
+      @for (hint of hints(); track $index) {
+        <p class="hint">
+          <app-icon name="bulb" [size]="16" />
+          <span>Câu hỏi nói <b>“{{ hint.questionPhrase }}”</b>, bài viết dùng <mark>“{{ hint.passagePhrase }}”</mark></span>
+        </p>
+      }
+      @if (hintsRemaining() > 0) {
+        <button type="button" class="btn btn-ghost btn-sm hint-btn" [disabled]="hintBusy()" (click)="askHint.emit()">
+          <app-icon name="bulb" [size]="16" />
+          {{ hintBusy() ? 'Đang mở...' : hints().length ? 'Gợi ý tiếp' : 'Gợi ý' }}
+          <span class="text-ink-soft">(còn {{ hintsRemaining() }})</span>
+        </button>
+      }
+    </div>
+  }
+</fieldset>

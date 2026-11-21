@@ -1,0 +1,114 @@
+<div class="page-container page-pad">
+  <a routerLink="/reading" class="inline-flex items-center gap-1.5 text-sm font-semibold no-underline">
+    <app-icon name="arrow-left" [size]="18" /> Đọc hiểu
+  </a>
+
+  @if (result.hasValue()) {
+    @let r = result.value();
+    <header class="card mt-4 flex flex-wrap items-center justify-between gap-6 p-6 sm:p-8">
+      <div class="min-w-0 flex-[1_1_280px]">
+        <p class="hand m-0 text-xl text-ink-soft">Bài đọc · {{ relativeDay(r.submittedAt) }}</p>
+        <h1 class="page-title mt-1">{{ r.passage.title }}</h1>
+        <p class="mb-0 mt-2 text-ink-soft">
+          Đúng {{ r.score }} / {{ r.total }} câu · {{ r.correctWithoutHints }} câu đúng không cần gợi ý.
+        </p>
+        <div class="mt-5 flex flex-wrap gap-2.5">
+          <a class="btn btn-primary" [routerLink]="['/reading', r.passage.id]">Làm lại bài</a>
+          <a class="btn btn-secondary" routerLink="/reading">Bài đọc khác</a>
+        </div>
+      </div>
+      <div class="grade-box">
+        <div class="cell">Điểm<app-score-stamp class="mt-2" [score]="r.score" [total]="r.total" size="lg" /></div>
+        <div class="cell cell-remark">Lời phê<span class="hand remark">{{ remark() }}</span></div>
+      </div>
+    </header>
+
+    <div class="review">
+      <!-- Bài đọc: câu bằng chứng của câu đang soi được tô xanh -->
+      <section class="card passage" aria-labelledby="passage-heading">
+        <h2 id="passage-heading" class="section-title">Bài đọc</h2>
+        @if (focused(); as f) {
+          <p class="focus-note">
+            Đang soi câu {{ f.position + 1 }}: <span class="evidence-swatch">câu bằng chứng</span>
+            @if (f.hints.length) { · <span class="hint-swatch">từ đồng nghĩa</span> }
+            <button type="button" class="btn btn-ghost btn-sm" (click)="focused.set(null)">Bỏ tô</button>
+          </p>
+        } @else {
+          <p class="focus-note">Bấm “Xem trong bài” ở một câu để thấy câu bằng chứng.</p>
+        }
+        <app-passage-text class="mt-4" [content]="r.passage.content" [marks]="marks()" [scrollKey]="scrollKey()" />
+      </section>
+
+      <section aria-labelledby="answers-heading">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="answers-heading" class="section-title">Bài làm của bạn</h2>
+          @if (wrongCount() > 0) {
+            <div class="segmented" role="group" aria-label="Lọc câu">
+              <button type="button" [attr.aria-pressed]="!onlyWrong()" (click)="onlyWrong.set(false)">Tất cả ({{ r.total }})</button>
+              <button type="button" [attr.aria-pressed]="onlyWrong()" (click)="onlyWrong.set(true)">Câu sai ({{ wrongCount() }})</button>
+            </div>
+          }
+        </div>
+
+        <ol class="m-0 mt-4 flex list-none flex-col gap-4 p-0">
+          @for (q of visible(); track q.questionId) {
+            <li class="card p-5" [class.is-focused]="focused()?.questionId === q.questionId">
+              <div class="flex items-start gap-3">
+                <span class="mark" [class.mark-ok]="q.correct" [attr.aria-label]="q.correct ? 'Đúng' : 'Sai'">
+                  <app-icon [name]="q.correct ? 'check' : 'close'" [size]="16" [strokeWidth]="2.4" />
+                </span>
+                <p class="m-0 min-w-0 flex-1 font-semibold">Câu {{ q.position + 1 }}. {{ q.prompt }}</p>
+              </div>
+
+              <dl class="answers">
+                <dt>Bạn trả lời</dt>
+                <dd [class.wrong]="!q.correct">
+                  @if (yourAnswer(q); as mine) { {{ mine }} } @else { <span class="text-ink-soft">(bỏ trống)</span> }
+                </dd>
+                @if (!q.correct) {
+                  <dt>Đáp án đúng</dt>
+                  <dd class="font-semibold">{{ correctAnswer(q) }}</dd>
+                }
+                @if (q.instruction) {
+                  <dt>Yêu cầu</dt>
+                  <dd class="text-[13px]">{{ q.instruction }}</dd>
+                }
+              </dl>
+              @if (q.rejectedReason) {
+                <p class="reject"><app-icon name="alert" [size]="15" /> {{ rejectedLabel[q.rejectedReason] }}, nên câu này bị tính sai.</p>
+              }
+
+              @if (q.hints.length) {
+                <p class="hint-line">
+                  <app-icon name="bulb" [size]="15" />
+                  @for (h of q.hints; track $index) {
+                    <span>{{ h.questionPhrase }} ≈ <b>{{ h.passagePhrase }}</b></span>
+                  }
+                  @if (q.hintsUsed > 0) { <span class="text-ink-soft">(bạn đã mở {{ q.hintsUsed }} gợi ý)</span> }
+                </p>
+              }
+
+              <p class="hand explain" [class.text-danger]="!q.correct">{{ q.correct ? 'Đúng.' : 'Sai.' }} {{ q.explanation }}</p>
+              <button type="button" class="btn btn-secondary btn-sm mt-3" (click)="show(q)">
+                <app-icon name="eye" [size]="16" /> Xem trong bài
+              </button>
+            </li>
+          }
+        </ol>
+      </section>
+    </div>
+  } @else if (notFound()) {
+    <div class="card mt-6">
+      <app-empty-state icon="book" title="Không xem được kết quả này" description="Lượt làm bài không tồn tại, chưa được nộp, hoặc không thuộc tài khoản của bạn.">
+        <a routerLink="/reading" class="btn btn-primary">Về danh sách bài đọc</a>
+      </app-empty-state>
+    </div>
+  } @else if (result.error()) {
+    <div class="card mt-6"><app-error-state title="Không tải được kết quả" (retry)="result.reload()" /></div>
+  } @else {
+    <div class="mt-6 flex flex-col gap-4">
+      <app-skeleton variant="card" />
+      <app-skeleton variant="card" />
+    </div>
+  }
+</div>

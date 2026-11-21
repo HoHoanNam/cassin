@@ -9,8 +9,11 @@ import { quizLeaveGuard } from './features/quiz/quiz-leave.guard';
  *   Khách (chưa đăng nhập)        : /  /login  /register
  *   Khu vực học (có sidebar)      : /today /decks /decks/:deckId /library /scan /practice /mistakes /grammar /grammar/:topicId
  *                                   /quiz-history /quiz/:attemptId/result /account /reports
- *   Quản trị (chỉ ADMIN)          : /admin  /admin/decks(/:deckId)  /admin/grammar(/:topicId)  /admin/reports
+ *   Quản trị (chỉ ADMIN)          : /admin  /admin/decks(/:deckId)  /admin/grammar(/:topicId)  /admin/reports  /admin/passages
  *   Chế độ tập trung (không menu) : /review  /decks/:deckId/review  /grammar/:topicId/quiz  /practice/session
+ *                                   /reading/:passageId                                        [THÊM] làm bài đọc
+ *   [THÊM] Đọc hiểu (có sidebar)  : /reading  /reading/attempts/:attemptId/result
+ *   [THÊM] Quản trị bài đọc       : /admin/passages  /admin/passages/new  /admin/passages/:passageId
  */
 export const routes: Routes = [
   {
@@ -60,6 +63,14 @@ export const routes: Routes = [
     // Hỏi lại trước khi rời trang khi đang làm bài dở.
     canDeactivate: [quizLeaveGuard],
     loadComponent: () => import('./features/quiz/quiz-page').then((m) => m.QuizPage),
+  },
+
+  {
+    // [THÊM] Làm bài đọc: mở trang = bắt đầu (hoặc làm tiếp) một lượt. Nháp câu trả lời lưu trong trình duyệt nên không cần guard.
+    path: 'reading/:passageId',
+    title: 'Làm bài đọc | Cassin',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/reading/reading-attempt-page').then((m) => m.ReadingAttemptPage),
   },
 
   // ---------- Khu vực học: có sidebar / thanh dưới đáy ----------
@@ -114,6 +125,17 @@ export const routes: Routes = [
         title: 'Chủ đề ngữ pháp | Cassin',
         loadComponent: () => import('./features/grammar/topic-page').then((m) => m.TopicPage),
       },
+      // [THÊM] Đọc hiểu
+      {
+        path: 'reading',
+        title: 'Đọc hiểu | Cassin',
+        loadComponent: () => import('./features/reading/reading-page').then((m) => m.ReadingPage),
+      },
+      {
+        path: 'reading/attempts/:attemptId/result',
+        title: 'Kết quả bài đọc | Cassin',
+        loadComponent: () => import('./features/reading/reading-result-page').then((m) => m.ReadingResultPage),
+      },
       {
         path: 'quiz-history',
         title: 'Lịch sử làm bài | Cassin',
@@ -166,6 +188,22 @@ export const routes: Routes = [
             path: 'grammar/:topicId',
             title: 'Chủ đề ngữ pháp | Quản trị Cassin',
             loadComponent: () => import('./features/admin/admin-topic-page').then((m) => m.AdminTopicPage),
+          },
+          // [THÊM] Bài đọc hiểu
+          {
+            path: 'passages',
+            title: 'Bài đọc | Quản trị Cassin',
+            loadComponent: () => import('./features/admin/admin-passages-page').then((m) => m.AdminPassagesPage),
+          },
+          {
+            path: 'passages/new',
+            title: 'Soạn bài đọc | Quản trị Cassin',
+            loadComponent: () => import('./features/admin/admin-passage-page').then((m) => m.AdminPassagePage),
+          },
+          {
+            path: 'passages/:passageId',
+            title: 'Soạn bài đọc | Quản trị Cassin',
+            loadComponent: () => import('./features/admin/admin-passage-page').then((m) => m.AdminPassagePage),
           },
           // [THÊM]
           {

@@ -1,0 +1,14 @@
+@for (segments of blocks(); track $index; let i = $index) {
+  <div class="paragraph">
+    <span class="para-label" [attr.aria-label]="'Đoạn ' + label(i)">{{ label(i) }}</span>
+    <p class="para-text">
+      @for (segment of segments; track $index) {
+        @if (segment.kind) {
+          <mark [class]="'mark-' + segment.kind">{{ segment.text }}</mark>
+        } @else {
+          {{ segment.text }}
+        }
+      }
+    </p>
+  </div>
+}
