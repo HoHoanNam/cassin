@@ -2,10 +2,12 @@ import { Injectable } from '@angular/core';
 
 import { CefrLevel } from '../models/grammar.models';
 import { DeckType, PartOfSpeech } from '../models/deck.models';
+import { AnswerKind, PassageStatus, QuestionType, RejectedReason, TfngAnswer } from '../models/passage.models';
 import { PracticeMode } from '../models/practice.models';
 import { ReportReason, ReportStatus } from '../models/report.models';
 import { Role } from '../models/user.models';
 import { addDays, todayIso } from '../util/dates';
+import { SEED_PASSAGES } from './mock-passage-seed';
 import { candidates } from './mock-scan-text';
 import { SEED_IDIOM_DECK, SEED_SYSTEM_DECK, SEED_TOPICS, SEED_USER_DECKS, SeedCard } from './mock-seed';
 
@@ -128,6 +130,57 @@ export interface DbReviewEvent {
   reviewedAt: string;
 }
 
+/** [THÊM] [V17] Một câu hỏi đọc hiểu. Mock gộp options / hints / acceptedAnswers vào luôn câu hỏi cho gọn. */
+export interface DbReadingQuestion {
+  id: number;
+  position: number;
+  type: QuestionType;
+  prompt: string;
+  evidence: string;
+  explanation: string;
+  hints: { id: number; questionPhrase: string; passagePhrase: string }[];
+  options: { id: number; content: string; correct: boolean }[];
+  answer: TfngAnswer | null;
+  answerKind: AnswerKind | null;
+  maxWords: number | null;
+  acceptedAnswers: string[];
+}
+
+/** [THÊM] [V17] Bảng passages (kèm câu hỏi). */
+export interface DbPassage {
+  id: number;
+  title: string;
+  content: string;
+  level: CefrLevel;
+  status: PassageStatus;
+  createdById: number | null;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string | null;
+  questions: DbReadingQuestion[];
+}
+
+/** [THÊM] [V17] Bảng reading_attempts (kèm reading_answers). */
+export interface DbReadingAttempt {
+  id: number;
+  userId: number;
+  passageId: number;
+  score: number | null;
+  total: number;
+  startedAt: string;
+  submittedAt: string | null;
+  answers: {
+    questionId: number;
+    position: number;
+    optionId: number | null;
+    tfngAnswer: TfngAnswer | null;
+    text: string | null;
+    correct: boolean;
+    rejectedReason: RejectedReason | null;
+    hintsUsed: number;
+  }[];
+}
+
 interface DbState {
   version: number;
   seq: number;
@@ -142,6 +195,8 @@ interface DbState {
   attempts: DbAttempt[];
   reports: DbReport[];
   reviewEvents: DbReviewEvent[];
+  passages: DbPassage[]; // [THÊM]
+  readingAttempts: DbReadingAttempt[]; // [THÊM]
   /** Những ngày user có ôn thẻ (để tính chuỗi ngày học liên tiếp). */
   studyDays: Record<number, string[]>;
 }
@@ -153,8 +208,9 @@ const STORAGE_KEY = 'cassin.mockdb';
  * 3: [V10] thẻ → từ nhiều nghĩa (words, senses, deck_words), tiến độ theo nghĩa.
  * 4: [THÊM] bộ hệ thống "Thành ngữ & cụm động từ" (V11).
  * 5: [THÊM] báo lỗi nội dung (content_reports) + nhật ký trả lời (review_events) cho Luyện tập / Sổ lỗi sai.
+ * 6: [THÊM] bài đọc hiểu (passages, reading_attempts) - V17.
  */
-const VERSION = 5;
+const VERSION = 6;
 
 /**
  * Lưu vào localStorage sau mỗi lần ghi: tải lại trang vẫn còn bộ từ / từ / tiến độ vừa tạo.
@@ -197,6 +253,12 @@ export class MockDb {
   get reviewEvents() {
     return this.state.reviewEvents;
   }
+  get passages() {
+    return this.state.passages;
+  }
+  get readingAttempts() {
+    return this.state.readingAttempts;
+  }
 
   /** Cấp id mới, giống BIGSERIAL (dùng chung một dãy số cho mọi bảng cho đơn giản). */
   nextId(): number {
@@ -206,7 +268,7 @@ export class MockDb {
 
   /** Xóa các dòng thỏa điều kiện khỏi một bảng (giống DELETE ... WHERE). */
   removeWhere<
-    K extends 'decks' | 'words' | 'senses' | 'deckWords' | 'progresses' | 'attempts' | 'topics' | 'questions' | 'reports' | 'reviewEvents',
+    K extends 'decks' | 'words' | 'senses' | 'deckWords' | 'progresses' | 'attempts' | 'topics' | 'questions' | 'reports' | 'reviewEvents' | 'passages',
   >(
     table: K,
     predicate: (row: DbState[K][number]) => boolean,
@@ -275,6 +337,8 @@ function buildSeed(): DbState {
     attempts: [],
     reports: [],
     reviewEvents: [],
+    passages: [],
+    readingAttempts: [],
     studyDays: {},
   };
   const id = () => ++state.seq;
@@ -434,6 +498,36 @@ function buildSeed(): DbState {
         durationMs: 4000 + ((i * 7 + k * 3) % 9) * 1000, reviewedAt: daysAgo((i + k) % 5, i % 6),
       });
     }
+  });
+
+  // [THÊM] Bài đọc mẫu (V17): 2 bài đang hiện + 1 bản nháp cho trang quản trị.
+  SEED_PASSAGES.forEach((seed, index) => {
+    const at = daysAgo(index + 1);
+    state.passages.push({
+      id: id(),
+      title: seed.title,
+      content: seed.content,
+      level: seed.level,
+      status: seed.status,
+      createdById: admin.id,
+      createdAt: at,
+      updatedAt: at,
+      publishedAt: seed.status === 'DRAFT' ? null : at,
+      questions: seed.questions.map((q, position) => ({
+        id: id(),
+        position,
+        type: q.type,
+        prompt: q.prompt,
+        evidence: q.evidence,
+        explanation: q.explanation,
+        hints: (q.hints ?? []).map(([questionPhrase, passagePhrase]) => ({ id: id(), questionPhrase, passagePhrase })),
+        options: q.type === 'MCQ' ? q.options.map((content, i) => ({ id: id(), content, correct: i === q.correct })) : [],
+        answer: q.type === 'TFNG' ? q.answer : null,
+        answerKind: q.type === 'BLANK' ? q.answerKind : null,
+        maxWords: q.type === 'BLANK' ? q.maxWords : null,
+        acceptedAnswers: q.type === 'BLANK' ? q.acceptedAnswers : [],
+      })),
+    });
   });
 
   return state;

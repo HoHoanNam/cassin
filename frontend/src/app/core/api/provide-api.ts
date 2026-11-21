@@ -6,6 +6,7 @@ import { MockAuthApi } from '../mock/mock-auth.api';
 import { MockDeckApi } from '../mock/mock-deck.api';
 import { MockGrammarApi } from '../mock/mock-grammar.api';
 import { MockLibraryApi } from '../mock/mock-library.api';
+import { MockPassageApi } from '../mock/mock-passage.api';
 import { MockPracticeApi } from '../mock/mock-practice.api';
 import { MockQuizApi } from '../mock/mock-quiz.api';
 import { MockReportApi } from '../mock/mock-report.api';
@@ -25,6 +26,7 @@ import { HttpAuthApi } from './http/http-auth.api';
 import { HttpDeckApi } from './http/http-deck.api';
 import { HttpGrammarApi } from './http/http-grammar.api';
 import { HttpLibraryApi } from './http/http-library.api';
+import { HttpPassageApi } from './http/http-passage.api';
 import { HttpPracticeApi } from './http/http-practice.api';
 import { HttpQuizApi } from './http/http-quiz.api';
 import { HttpReportApi } from './http/http-report.api';
@@ -32,6 +34,7 @@ import { HttpReviewApi } from './http/http-review.api';
 import { HttpScanApi } from './http/http-scan.api';
 import { HttpSessionApi } from './http/http-session.api';
 import { HttpWordApi } from './http/http-word.api';
+import { PassageApi } from './passage.api';
 import { PracticeApi } from './practice.api';
 import { QuizApi } from './quiz.api';
 import { ReportApi } from './report.api';
@@ -60,6 +63,7 @@ export function provideApi(useMock: boolean): EnvironmentProviders {
         { provide: ReportApi, useClass: MockReportApi }, // [THÊM]
         { provide: PracticeApi, useClass: MockPracticeApi }, // [THÊM]
         { provide: SessionApi, useClass: MockSessionApi }, // [THÊM]
+        { provide: PassageApi, useClass: MockPassageApi }, // [THÊM] bài đọc hiểu
       ]
     : [
         { provide: AuthApi, useClass: HttpAuthApi },
@@ -75,6 +79,7 @@ export function provideApi(useMock: boolean): EnvironmentProviders {
         { provide: ReportApi, useClass: HttpReportApi }, // [THÊM]
         { provide: PracticeApi, useClass: HttpPracticeApi }, // [THÊM]
         { provide: SessionApi, useClass: HttpSessionApi }, // [THÊM]
+        { provide: PassageApi, useClass: HttpPassageApi }, // [THÊM] bài đọc hiểu
       ];
   return makeEnvironmentProviders(providers);
 }
