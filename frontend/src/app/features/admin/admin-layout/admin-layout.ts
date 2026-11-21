@@ -8,7 +8,7 @@ interface AdminTab {
   label: string;
   icon: IconName;
   link: string;
-  /** Nhãn ngắn cho điện thoại: 4 tab phải vừa một hàng ở màn 360px, không phải cuộn ngang mới thấy */
+  /** Nhãn ngắn cho điện thoại. [SỬA] 5 tab: thanh tab cuộn ngang được (overflow-x: auto) nếu màn quá hẹp */
   short: string;
   /** Tab "Tổng quan" (/admin) chỉ sáng khi đúng /admin, không sáng khi đang ở /admin/decks */
   exact: boolean;
@@ -32,6 +32,7 @@ export class AdminLayout {
     { label: 'Tổng quan', short: 'Tổng quan', icon: 'chart', link: '/admin', exact: true },
     { label: 'Bộ từ hệ thống', short: 'Bộ từ', icon: 'decks', link: '/admin/decks', exact: false },
     { label: 'Ngữ pháp', short: 'Ngữ pháp', icon: 'grammar', link: '/admin/grammar', exact: false },
+    { label: 'Bài đọc', short: 'Bài đọc', icon: 'book', link: '/admin/passages', exact: false }, // [THÊM]
     // [THÊM]
     { label: 'Báo lỗi', short: 'Báo lỗi', icon: 'flag', link: '/admin/reports', exact: false, showOpenReports: true },
   ];

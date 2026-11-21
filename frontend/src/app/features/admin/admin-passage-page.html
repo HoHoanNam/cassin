@@ -1,0 +1,140 @@
+<a routerLink="/admin/passages" class="inline-flex items-center gap-1.5 text-sm font-semibold no-underline">
+  <app-icon name="arrow-left" [size]="18" /> Bài đọc
+</a>
+
+@if (loader.hasValue()) {
+  @let p = passage();
+  <header class="mt-4 flex flex-wrap items-start justify-between gap-4">
+    <div class="min-w-0 flex-[1_1_320px]">
+      <h1 class="page-title">{{ p ? p.title : 'Soạn bài đọc mới' }}</h1>
+      <p class="m-0 mt-1 text-sm text-ink-soft">
+        @if (p) {
+          <span class="chip">{{ statusLabel[p.status] }}</span>
+          {{ p.questions.length }} câu hỏi
+          @if (p.status === 'PUBLISHED') { · <a [routerLink]="['/reading', p.id]" class="font-semibold">Xem như học viên</a> }
+        } @else {
+          Lưu xong là bản nháp; publish khi đã đủ câu hỏi.
+        }
+      </p>
+    </div>
+    @if (p) {
+      <div class="flex flex-wrap gap-2.5">
+        @if (p.status === 'DRAFT') {
+          <button type="button" class="btn btn-secondary" [disabled]="saving() || form.dirty"
+            [title]="form.dirty ? 'Lưu thay đổi trước khi publish' : 'Hiện bài cho học viên'" (click)="publish()">Publish</button>
+        }
+        @if (p.status === 'PUBLISHED') {
+          <button type="button" class="btn btn-secondary" [disabled]="saving()" (click)="confirmArchive.set(true)">Lưu trữ</button>
+        }
+        @if (!p.locked) {
+          <button type="button" class="btn btn-ghost btn-icon text-danger-dark" aria-label="Xóa bài đọc" title="Xóa bài đọc"
+            [disabled]="saving()" (click)="confirmDelete.set(true)">
+            <app-icon name="trash" />
+          </button>
+        }
+      </div>
+    }
+  </header>
+
+  @if (p?.locked) {
+    <div class="form-alert form-alert-info mt-5" role="status">
+      Bài đã có học viên làm nên câu hỏi bị khóa để giữ đúng lịch sử chấm điểm. Muốn sửa: lưu trữ bài này rồi soạn bài mới.
+    </div>
+  } @else if (p?.status === 'ARCHIVED') {
+    <div class="form-alert form-alert-info mt-5" role="status">Bài đã lưu trữ: chỉ xem, không sửa được.</div>
+  }
+
+  <form class="mt-6 flex flex-col gap-6" [formGroup]="form" (ngSubmit)="save()" novalidate>
+    @if (serverError(); as message) {
+      <div class="form-alert form-alert-error" role="alert">{{ message }}</div>
+    }
+
+    <section class="card flex flex-col gap-5 p-5 sm:p-7" aria-labelledby="content-heading">
+      <h2 id="content-heading" class="section-title">Bài đọc</h2>
+      <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_140px]">
+        <div class="field">
+          <label class="label" for="ps-title">Tiêu đề</label>
+          @let title = form.controls.title;
+          <input id="ps-title" class="input" type="text" formControlName="title" [maxLength]="limits.title"
+            [attr.aria-invalid]="title.touched && title.invalid" />
+          @if (title.touched && title.hasError('required')) { <p class="field-error">Vui lòng nhập tiêu đề</p> }
+        </div>
+        <div class="field">
+          <label class="label" for="ps-level">Trình độ</label>
+          <select id="ps-level" class="input" formControlName="level">
+            @for (l of levels; track l) { <option [value]="l">{{ l }}</option> }
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label" for="ps-content">Nội dung</label>
+        @let content = form.controls.content;
+        <textarea id="ps-content" class="input content" rows="12" formControlName="content" [maxLength]="limits.content"
+          [attr.aria-invalid]="content.touched && content.invalid"
+          placeholder="Đoạn thứ nhất...&#10;&#10;Đoạn thứ hai (cách một dòng trống để sang đoạn mới)..."></textarea>
+        <p [class]="content.touched && content.hasError('required') ? 'field-error' : 'field-hint'">
+          @if (content.touched && content.hasError('required')) {
+            Vui lòng nhập nội dung bài đọc
+          } @else {
+            {{ wordCount() }} từ · {{ sentences().length }} câu · cách một dòng trống để sang đoạn mới
+          }
+        </p>
+      </div>
+    </section>
+
+    <section aria-labelledby="questions-heading">
+      <h2 id="questions-heading" class="section-title">Câu hỏi ({{ questions.length }}/{{ limits.questions }})</h2>
+      <ol class="m-0 mt-3 flex list-none flex-col gap-4 p-0">
+        @for (q of questions.controls; track q; let i = $index) {
+          <li class="card p-5 sm:p-6">
+            <app-passage-question-editor [form]="q" [index]="i" [total]="questions.length" [sentences]="sentences()"
+              (remove)="removeQuestion(i)" (move)="moveQuestion(i, $event)" />
+          </li>
+        } @empty {
+          <li class="card">
+            <app-empty-state icon="book" title="Chưa có câu hỏi" description="Thêm câu hỏi bằng các nút bên dưới. Bài cần ít nhất 1 câu mới publish được." />
+          </li>
+        }
+      </ol>
+      @if (!readonly() && questions.length < limits.questions) {
+        <div class="add-bar mt-4">
+          <span class="text-sm text-ink-soft">Thêm câu:</span>
+          @for (t of typeLabels; track t[0]) {
+            <button type="button" class="btn btn-secondary btn-sm" (click)="addQuestion(t[0])">
+              <app-icon name="plus" [size]="16" [strokeWidth]="2" /> {{ t[1] }}
+            </button>
+          }
+        </div>
+      }
+    </section>
+
+    @if (!readonly()) {
+      <div class="save-bar">
+        <span class="text-sm text-ink-soft">{{ form.dirty ? 'Có thay đổi chưa lưu' : 'Đã lưu' }}</span>
+        <button type="submit" class="btn btn-primary" [disabled]="saving() || (!form.dirty && !!p)">
+          {{ saving() ? 'Đang lưu...' : p ? 'Lưu thay đổi' : 'Lưu bản nháp' }}
+        </button>
+      </div>
+    }
+  </form>
+} @else if (notFound()) {
+  <div class="card mt-6">
+    <app-empty-state icon="book" title="Không tìm thấy bài đọc" description="Bài có thể đã bị xóa.">
+      <a routerLink="/admin/passages" class="btn btn-primary">Về danh sách bài đọc</a>
+    </app-empty-state>
+  </div>
+} @else if (loader.error()) {
+  <div class="card mt-6"><app-error-state title="Không tải được bài đọc" (retry)="loader.reload()" /></div>
+} @else {
+  <div class="mt-6 flex flex-col gap-4">
+    <app-skeleton variant="card" />
+    <app-skeleton variant="card" />
+  </div>
+}
+
+<app-confirm-dialog [open]="confirmDelete()" [title]="'Xóa bài “' + (passage()?.title ?? '') + '”?'"
+  message="Bài và toàn bộ câu hỏi sẽ bị xóa vĩnh viễn." confirmLabel="Xóa bài đọc" [busy]="saving()"
+  (cancelled)="confirmDelete.set(false)" (confirmed)="remove()" />
+<app-confirm-dialog [open]="confirmArchive()" title="Lưu trữ bài đọc này?"
+  message="Học viên sẽ không thấy bài trong danh sách nữa. Lịch sử làm bài vẫn được giữ. Không thể publish lại." confirmLabel="Lưu trữ"
+  [danger]="false" [busy]="saving()" (cancelled)="confirmArchive.set(false)" (confirmed)="archive()" />

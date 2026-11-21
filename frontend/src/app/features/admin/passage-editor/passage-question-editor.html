@@ -1,0 +1,147 @@
+@let f = form();
+<div class="editor" [formGroup]="f">
+  <div class="head">
+    <span class="hand number">Câu {{ index() + 1 }}</span>
+    <select class="input type-select" formControlName="type" [attr.aria-label]="'Dạng câu ' + (index() + 1)">
+      @for (t of types; track t[0]) {
+        <option [value]="t[0]">{{ t[1] }}</option>
+      }
+    </select>
+    <div class="ml-auto flex gap-1">
+      <button type="button" class="btn btn-ghost btn-icon" [disabled]="index() === 0 || f.disabled" aria-label="Chuyển lên" (click)="move.emit(-1)">
+        <app-icon name="chevron-down" class="rotate-180" [size]="18" />
+      </button>
+      <button type="button" class="btn btn-ghost btn-icon" [disabled]="index() === total() - 1 || f.disabled" aria-label="Chuyển xuống" (click)="move.emit(1)">
+        <app-icon name="chevron-down" [size]="18" />
+      </button>
+      <button type="button" class="btn btn-ghost btn-icon text-danger-dark" [disabled]="f.disabled" [attr.aria-label]="'Xóa câu ' + (index() + 1)" (click)="remove.emit()">
+        <app-icon name="trash" [size]="18" />
+      </button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label class="label" [for]="'p-' + index()">
+      @switch (type()) {
+        @case ('TFNG') { Câu nhận định }
+        @case ('BLANK') { Câu có chỗ trống }
+        @default { Câu hỏi }
+      }
+    </label>
+    <textarea [id]="'p-' + index()" class="input" rows="2" formControlName="prompt"
+      [placeholder]="type() === 'BLANK' ? 'Solar power is a cheap replacement for ____.' : type() === 'TFNG' ? 'Most homes used solar panels in 2020.' : 'Why did families start using solar panels?'"></textarea>
+    @if (type() === 'BLANK') {
+      <p class="field-hint">
+        Dùng {{ marker }} cho chỗ trống.
+        @if (!f.controls.prompt.value.includes(marker) && f.enabled) {
+          <button type="button" class="font-semibold text-brand underline" (click)="insertBlank()">Chèn {{ marker }}</button>
+        }
+      </p>
+    }
+  </div>
+
+  @switch (type()) {
+    @case ('MCQ') {
+      <fieldset class="m-0 flex flex-col gap-2 border-0 p-0">
+        <legend class="label mb-1.5">Lựa chọn <span class="font-normal text-ink-soft">(bấm “Đúng” ở đáp án đúng)</span></legend>
+        @for (control of f.controls.options.controls; track $index; let i = $index) {
+          <div class="option-row" [class.is-correct]="f.controls.correctIndex.value === i">
+            <span class="letter" aria-hidden="true">{{ letters[i] }}</span>
+            <input class="input" type="text" [formControl]="control" [attr.aria-label]="'Lựa chọn ' + letters[i]" />
+            <!-- Nút bật/tắt thay cho radio: radio của nhiều câu trên cùng trang sẽ bị trình duyệt gộp chung một nhóm -->
+            <button type="button" class="correct-toggle" [attr.aria-pressed]="f.controls.correctIndex.value === i"
+              [disabled]="f.disabled" [attr.aria-label]="'Lựa chọn ' + letters[i] + ' là đáp án đúng'" (click)="setCorrect(i)">
+              <app-icon name="check" [size]="15" [strokeWidth]="2.4" /> Đúng
+            </button>
+          </div>
+        }
+      </fieldset>
+    }
+    @case ('TFNG') {
+      <fieldset class="m-0 border-0 p-0">
+        <legend class="label mb-1.5">Đáp án</legend>
+        <div class="segmented" role="group">
+          @for (o of tfngOptions; track o.value) {
+            <button type="button" [attr.aria-pressed]="f.controls.tfngAnswer.value === o.value" [disabled]="f.disabled"
+              (click)="setTfng(o.value)">{{ o.label }}</button>
+          }
+        </div>
+      </fieldset>
+    }
+    @case ('BLANK') {
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div class="field">
+          <label class="label" [for]="'k-' + index()">Loại đáp án</label>
+          <select [id]="'k-' + index()" class="input" formControlName="answerKind">
+            @for (k of kindOptions; track k.value) {
+              <option [value]="k.value">{{ k.label }}</option>
+            }
+          </select>
+        </div>
+        @if (f.controls.answerKind.value !== 'NUMBER') {
+          <div class="field">
+            <label class="label" [for]="'m-' + index()">Số từ tối đa</label>
+            <select [id]="'m-' + index()" class="input" formControlName="maxWords">
+              @for (n of [1, 2, 3]; track n) {
+                <option [ngValue]="n">{{ n }}</option>
+              }
+            </select>
+          </div>
+        }
+      </div>
+      <p class="field-hint -mt-2">Học viên sẽ thấy: <b>{{ instruction() }}</b></p>
+      <div class="field">
+        <label class="label" [for]="'a-' + index()">Đáp án được chấp nhận <span class="font-normal text-ink-soft">(mỗi dòng một đáp án)</span></label>
+        <textarea [id]="'a-' + index()" class="input" rows="2" formControlName="acceptedAnswers" placeholder="ten years&#10;10 years"></textarea>
+      </div>
+    }
+  }
+
+  <div class="field">
+    <label class="label" [for]="'e-' + index()">Câu bằng chứng trong bài</label>
+    <select [id]="'e-' + index()" class="input" formControlName="evidence">
+      <option value="" disabled>Chọn câu trong bài chứa đáp án...</option>
+      @if (staleEvidence(); as old) {
+        <option [value]="old">⚠ (không còn trong bài) {{ old }}</option>
+      }
+      @for (s of sentences(); track $index) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
+    <p class="field-hint">Học viên thấy câu này được tô xanh trong bài sau khi nộp.</p>
+  </div>
+
+  <div class="field">
+    <label class="label" [for]="'x-' + index()">Lời giải thích</label>
+    <textarea [id]="'x-' + index()" class="input" rows="2" formControlName="explanation"
+      placeholder='"cheap alternative" = "inexpensive replacement"'></textarea>
+  </div>
+
+  <!-- Gợi ý từ đồng nghĩa -->
+  <fieldset class="hints m-0 border-0 p-0" formArrayName="hints">
+    <legend class="label mb-1.5">
+      Gợi ý bằng từ đồng nghĩa <span class="font-normal text-ink-soft">(tối đa {{ maxHints }}, mở lần lượt)</span>
+    </legend>
+    @for (hint of f.controls.hints.controls; track hint; let i = $index) {
+      <div class="hint-row" [formGroupName]="i">
+        <input class="input" type="text" formControlName="questionPhrase" placeholder="Cụm trong câu hỏi: replacement"
+          [attr.aria-label]="'Gợi ý ' + (i + 1) + ': cụm trong câu hỏi'" />
+        <span class="approx" aria-hidden="true">≈</span>
+        <input class="input" type="text" formControlName="passagePhrase" placeholder="Cụm trong bài: alternative"
+          [attr.aria-label]="'Gợi ý ' + (i + 1) + ': cụm trong bài'" />
+        <button type="button" class="btn btn-ghost btn-icon" [disabled]="f.disabled" [attr.aria-label]="'Xóa gợi ý ' + (i + 1)" (click)="removeHint(i)">
+          <app-icon name="close" [size]="16" />
+        </button>
+      </div>
+    }
+    @if (f.controls.hints.length < maxHints && f.enabled) {
+      <button type="button" class="btn btn-ghost btn-sm add-hint" (click)="addHint()">
+        <app-icon name="bulb" [size]="16" /> Thêm gợi ý
+      </button>
+    }
+  </fieldset>
+
+  @if (f.errors?.['rule'] && (f.touched || f.dirty)) {
+    <p class="field-error m-0" role="alert">{{ f.errors?.['rule'] }}</p>
+  }
+</div>

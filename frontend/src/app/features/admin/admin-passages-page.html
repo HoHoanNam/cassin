@@ -1,0 +1,49 @@
+<div class="flex flex-wrap items-center justify-between gap-4">
+  <div>
+    <h1 class="page-title">Bài đọc</h1>
+    <p class="mt-1 text-ink-soft">Bài chỉ hiện với học viên khi đã publish. Bài đã có người làm thì khóa câu hỏi để giữ lịch sử.</p>
+  </div>
+  <a class="btn btn-primary" routerLink="/admin/passages/new">
+    <app-icon name="plus" [size]="18" [strokeWidth]="2" /> Soạn bài đọc
+  </a>
+</div>
+
+<div class="segmented mt-6" role="group" aria-label="Lọc theo trạng thái">
+  <button type="button" [attr.aria-pressed]="status() === null" (click)="pickStatus(null)">Tất cả</button>
+  @for (s of statuses; track s) {
+    <button type="button" [attr.aria-pressed]="status() === s" (click)="pickStatus(s)">{{ statusLabel[s] }}</button>
+  }
+</div>
+
+<div class="mt-5">
+  @if (passages.hasValue()) {
+    @let data = passages.value();
+    @if (data.content.length === 0) {
+      <div class="card">
+        <app-empty-state icon="book" title="Chưa có bài đọc nào ở đây" description="Mỗi bài gồm đoạn văn và các câu hỏi trắc nghiệm, True / False / Not Given, điền từ.">
+          <a class="btn btn-primary" routerLink="/admin/passages/new">Soạn bài đọc</a>
+        </app-empty-state>
+      </div>
+    } @else {
+      <ul class="card list-card" [class.opacity-60]="passages.isLoading()">
+        @for (p of data.content; track p.id) {
+          <li class="list-row flex-nowrap">
+            <app-level-badge [level]="p.level" />
+            <a class="min-w-0 flex-1 text-ink no-underline" [routerLink]="['/admin/passages', p.id]">
+              <span class="block font-semibold hover:underline">{{ p.title }}</span>
+              <span class="text-[13px] text-ink-soft">
+                {{ p.questionCount }} câu hỏi · {{ p.wordCount }} từ · sửa {{ relativeDay(p.updatedAt) }}
+              </span>
+            </a>
+            <span class="chip" [class.font-semibold]="p.status === 'PUBLISHED'" [class.text-brand]="p.status === 'PUBLISHED'">{{ statusLabel[p.status] }}</span>
+          </li>
+        }
+      </ul>
+      <app-pager [page]="data.page" [totalPages]="data.totalPages" [disabled]="passages.isLoading()" (pageChange)="page.set($event)" />
+    }
+  } @else if (passages.error()) {
+    <div class="card"><app-error-state title="Không tải được bài đọc" (retry)="passages.reload()" /></div>
+  } @else {
+    <app-skeleton [rows]="4" />
+  }
+</div>
