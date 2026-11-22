@@ -181,6 +181,19 @@ export interface DbReadingAttempt {
   }[];
 }
 
+/**
+ * [THÊM] Bảng user_badges: MỖI CẤP huy hiệu một người đã đạt là một dòng.
+ * (user_id, badge_code, level) là khóa chính → không cấp trùng.
+ * seenAt = null: chưa xem popup "Mở khóa huy hiệu".
+ */
+export interface DbUserBadge {
+  userId: number;
+  code: string;
+  level: number;
+  earnedAt: string;
+  seenAt: string | null;
+}
+
 interface DbState {
   version: number;
   seq: number;
@@ -197,6 +210,8 @@ interface DbState {
   reviewEvents: DbReviewEvent[];
   passages: DbPassage[]; // [THÊM]
   readingAttempts: DbReadingAttempt[]; // [THÊM]
+  /** [THÊM] Có thể thiếu trong dữ liệu đã lưu từ trước khi có huy hiệu: getter tự khởi tạo [] (không cần tăng VERSION). */
+  userBadges?: DbUserBadge[];
   /** Những ngày user có ôn thẻ (để tính chuỗi ngày học liên tiếp). */
   studyDays: Record<number, string[]>;
 }
@@ -258,6 +273,14 @@ export class MockDb {
   }
   get readingAttempts() {
     return this.state.readingAttempts;
+  }
+  /** [THÊM] */
+  get userBadges(): DbUserBadge[] {
+    // Dữ liệu lưu từ bản huy hiệu đầu (chưa có cấp): bỏ đi, mock sẽ tự cấp lại theo luật mới.
+    if (this.state.userBadges?.some((ub) => typeof ub.level !== 'number')) {
+      this.state.userBadges = [];
+    }
+    return (this.state.userBadges ??= []);
   }
 
   /** Cấp id mới, giống BIGSERIAL (dùng chung một dãy số cho mọi bảng cho đơn giản). */

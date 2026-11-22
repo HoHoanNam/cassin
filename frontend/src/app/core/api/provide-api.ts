@@ -1,6 +1,7 @@
 import { EnvironmentProviders, Provider, makeEnvironmentProviders } from '@angular/core';
 
 import { MockAccountApi } from '../mock/mock-account.api';
+import { MockBadgeApi } from '../mock/mock-badge.api';
 import { MockAdminApi } from '../mock/mock-admin.api';
 import { MockAuthApi } from '../mock/mock-auth.api';
 import { MockDeckApi } from '../mock/mock-deck.api';
@@ -17,12 +18,14 @@ import { MockWordApi } from '../mock/mock-word.api';
 import { AccountApi } from './account.api';
 import { AdminApi } from './admin.api';
 import { AuthApi } from './auth.api';
+import { BadgeApi } from './badge.api';
 import { DeckApi } from './deck.api';
 import { GrammarApi } from './grammar.api';
 import { LibraryApi } from './library.api';
 import { HttpAccountApi } from './http/http-account.api';
 import { HttpAdminApi } from './http/http-admin.api';
 import { HttpAuthApi } from './http/http-auth.api';
+import { HttpBadgeApi } from './http/http-badge.api';
 import { HttpDeckApi } from './http/http-deck.api';
 import { HttpGrammarApi } from './http/http-grammar.api';
 import { HttpLibraryApi } from './http/http-library.api';
@@ -64,6 +67,7 @@ export function provideApi(useMock: boolean): EnvironmentProviders {
         { provide: PracticeApi, useClass: MockPracticeApi }, // [THÊM]
         { provide: SessionApi, useClass: MockSessionApi }, // [THÊM]
         { provide: PassageApi, useClass: MockPassageApi }, // [THÊM] bài đọc hiểu
+        { provide: BadgeApi, useClass: MockBadgeApi }, // [THÊM] huy hiệu
       ]
     : [
         { provide: AuthApi, useClass: HttpAuthApi },
@@ -80,6 +84,7 @@ export function provideApi(useMock: boolean): EnvironmentProviders {
         { provide: PracticeApi, useClass: HttpPracticeApi }, // [THÊM]
         { provide: SessionApi, useClass: HttpSessionApi }, // [THÊM]
         { provide: PassageApi, useClass: HttpPassageApi }, // [THÊM] bài đọc hiểu
+        { provide: BadgeApi, useClass: HttpBadgeApi }, // [THÊM] huy hiệu
       ];
   return makeEnvironmentProviders(providers);
 }

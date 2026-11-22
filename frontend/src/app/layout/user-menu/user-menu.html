@@ -22,6 +22,10 @@
       <a role="menuitem" class="item" routerLink="/account" (click)="open.set(false)">
         <app-icon name="user" [size]="18" /> Tài khoản
       </a>
+      <!-- [THÊM] Điện thoại không có mục Thành tích trên thanh dưới đáy: vào từ đây -->
+      <a role="menuitem" class="item" routerLink="/achievements" (click)="open.set(false)">
+        <app-icon name="trophy" [size]="18" /> Thành tích
+      </a>
       <!-- [THÊM] -->
       <a role="menuitem" class="item" routerLink="/reports" (click)="open.set(false)">
         <app-icon name="flag" [size]="18" /> Báo lỗi của tôi

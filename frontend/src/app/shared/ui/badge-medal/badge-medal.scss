@@ -1,0 +1,7 @@
+/* [THÊM] Kích thước theo chiều rộng; chiều cao theo tỉ lệ khung nhìn (MEDAL_RATIO). Màu nằm trong badge.models. */
+:host {
+  display: inline-block;
+  flex: none;
+  width: var(--medal-size, 96px);
+  height: calc(var(--medal-size, 96px) * var(--medal-ratio, 0.92));
+}

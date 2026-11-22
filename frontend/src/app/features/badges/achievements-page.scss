@@ -1,0 +1,305 @@
+/* [THÊM] Trang Thành tích. Màu nhóm đi vào qua biến --cat / --cat-wash đặt ở từng khối. */
+
+/* ---------- Tổng quan ---------- */
+.hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px 32px;
+  padding: 28px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 92% 0%, #fff4d6 0, transparent 45%),
+    radial-gradient(circle at 70% 110%, #eaf0fb 0, transparent 45%),
+    var(--surface);
+}
+
+.tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.tally li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tally b {
+  color: var(--ink);
+}
+
+/* Đồng xu nhỏ màu kim loại */
+.coin {
+  display: inline-block;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: inset 0 -2px 0 var(--c-dark), 0 0 0 1.5px var(--c-dark);
+}
+
+.coin-special {
+  background: conic-gradient(#3b3f9e, #c2309f, #f26b1d, #2f6bed, #3b3f9e);
+  box-shadow: 0 0 0 1.5px #23256a;
+}
+
+/* Kệ trưng bày 3 huy hiệu mới nhất */
+.shelf {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 0 12px 10px;
+}
+
+.shelf-item {
+  position: relative;
+  z-index: 1;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  transition: transform 0.18s ease-out;
+}
+
+.shelf-item:hover {
+  transform: translateY(-4px) rotate(-2deg);
+}
+
+.shelf-main {
+  order: -1;
+}
+
+.shelf-board {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 14px;
+  border-radius: 4px;
+  background: #e9dcc7;
+  box-shadow: inset 0 -4px 0 #d6c3a5;
+}
+
+/* ---------- Thanh tiến độ ---------- */
+.progress {
+  display: block;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--chip);
+}
+
+.progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand);
+  transition: width 0.5s ease-out;
+}
+
+.progress-lg {
+  height: 12px;
+}
+
+.progress-lg > span {
+  background: linear-gradient(90deg, #c67b45, #aeb8ca 50%, #f2b40c);
+}
+
+.progress-cat > span {
+  background: var(--cat);
+}
+
+/* ---------- Sắp lên cấp ---------- */
+.near {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.near-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px 10px 12px;
+  border-left: 4px solid var(--cat);
+}
+
+/* ---------- Lưới huy hiệu ---------- */
+.group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.group-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  background: var(--cat);
+  transform: rotate(45deg);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
+  gap: 12px;
+  margin-bottom: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 18px 14px 14px;
+  overflow: hidden;
+  color: var(--ink);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+
+/* Nền nhạt màu nhóm phía trên, mờ dần xuống dưới */
+.tile {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cat-wash) 26%, #fff) 0, #fff 62%);
+}
+
+.tile-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  margin: -6px 0 6px -2px;
+  color: color-mix(in srgb, var(--cat) 75%, var(--ink));
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.tile-cat .group-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+/* Chip lọc theo nhóm */
+.cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--card-line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: 500 13.5px/1 var(--font-body);
+  cursor: pointer;
+}
+
+.cat-chip[aria-pressed='true'] {
+  border-color: var(--cat);
+  background: color-mix(in srgb, var(--cat-wash) 30%, #fff);
+  font-weight: 600;
+}
+
+.cat-count {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.tile:hover {
+  border-color: var(--cat);
+  box-shadow: 0 12px 24px -18px var(--cat);
+  transform: translateY(-2px);
+}
+
+.tile-locked {
+  background: linear-gradient(180deg, #f7f6fa 0, #fff 62%);
+}
+
+.tile-locked .font-semibold {
+  color: var(--ink-soft);
+}
+
+.level-chip {
+  display: inline-flex;
+  margin-top: 6px;
+  padding: 1px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c, #3b3f9e) 22%, #fff);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-dark, #23256a) 45%, transparent);
+  color: color-mix(in srgb, var(--c-dark, #23256a) 85%, #000);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.level-chip-off {
+  background: var(--chip);
+  box-shadow: none;
+  color: var(--ink-soft);
+}
+
+/* ---------- Hộp chi tiết ---------- */
+.detail-stage {
+  display: grid;
+  place-items: center;
+  width: 200px;
+  height: 190px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--cat-wash) 55%, #fff) 0, transparent 70%);
+}
+
+.ladder {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rung {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+}
+
+.rung-on {
+  border-color: color-mix(in srgb, var(--cat) 35%, transparent);
+  background: color-mix(in srgb, var(--cat-wash) 18%, #fff);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile,
+  .shelf-item,
+  .progress > span {
+    transition: none;
+  }
+}

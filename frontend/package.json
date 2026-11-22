@@ -7,7 +7,8 @@
     "start:mock": "ng serve --configuration mock",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "docs:badges": "esbuild scripts/badge-gallery.ts --bundle --platform=node --outfile=dist/badge-gallery.cjs --log-level=warning && node dist/badge-gallery.cjs"
   },
   "private": true,
   "packageManager": "npm@10.9.8",

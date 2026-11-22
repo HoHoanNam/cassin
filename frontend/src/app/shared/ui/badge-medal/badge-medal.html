@@ -1,0 +1,6 @@
+<svg [attr.viewBox]="viewBox" class="block h-full w-full" stroke-linecap="round" stroke-linejoin="round">
+  @for (p of parts(); track $index) {
+    <path [attr.d]="p.d" [attr.fill]="p.fill ?? 'none'" [attr.stroke]="p.stroke ?? null"
+      [attr.stroke-width]="p.sw ?? null" [attr.opacity]="p.opacity ?? null" [attr.transform]="p.transform ?? null" />
+  }
+</svg>
