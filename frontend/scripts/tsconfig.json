@@ -1,0 +1,11 @@
+/* [THÊM] Cấu hình TypeScript cho script Node trong thư mục này (không thuộc app Angular). */
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "noEmit": true,
+    "types": ["node"],
+    "lib": ["ES2022"]
+  },
+  "include": ["./*.ts"]
+}

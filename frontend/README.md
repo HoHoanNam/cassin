@@ -43,8 +43,11 @@ src/app/
     ├── quiz/              Làm bài, kết quả, lịch sử
     ├── account/           Tài khoản: sửa hồ sơ, đổi mật khẩu
     ├── admin/             Khu vực quản trị (chỉ ADMIN): tổng quan, bộ từ hệ thống, ngữ pháp + câu hỏi
+    ├── badges/            [THÊM] Trang Thành tích + popup mở khóa huy hiệu (thiết kế: docs/badges/README.md)
     └── not-found/
 ```
 
 Quy ước: mỗi component tách riêng `.ts` / `.html` / `.scss`; component dùng signal + `ChangeDetectionStrategy.OnPush`;
 dữ liệu tải bằng `rxResource`, mỗi khối tự có trạng thái đang tải / trống / lỗi.
+
+`npm run docs:badges`: sinh lại `docs/badges/badge-gallery.html` (mọi huy hiệu ở mọi cấp + bảng màu) từ chính code vẽ huy chương.

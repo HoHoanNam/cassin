@@ -50,6 +50,7 @@ Cassin giải quyết cả hai:
 | **Ôn thẻ Leitner** | Hàng đợi thẻ đến hạn + thẻ mới, phím tắt, biểu đồ 5 hộp, chuỗi ngày học liên tiếp |
 | **Ngữ pháp** | Chủ đề theo trình độ CEFR, lý thuyết, bài trắc nghiệm, lịch sử làm bài |
 | **Quản trị** | Thống kê tổng quan, quản lý bộ từ hệ thống, chủ đề ngữ pháp và câu hỏi |
+| **Huy hiệu** *(frontend, chạy mock)* | 10 huy hiệu 3 cấp Đồng / Bạc / Vàng + 5 huy hiệu đặc biệt, popup mở khóa / lên cấp, trang Thành tích ([thiết kế](docs/badges/README.md)) |
 
 ## Ảnh demo
 
@@ -135,7 +136,9 @@ cassin/
 │   └── src/test/java/com/cassin/
 ├── frontend/
 │   └── src/app/                      core (api, mock, auth, models) · shared/ui · layout · features
-└── docs/images/                      Ảnh trong README
+└── docs/
+    ├── images/                       Ảnh trong README
+    └── badges/                       Design pattern huy hiệu + trang xem trước (badge-gallery.html)
 ```
 
 ## Chạy dự án
@@ -265,6 +268,7 @@ Mỗi luồng chính có một tài liệu giải thích luồng chạy, thuật
 | Quét đoạn văn tìm từ mới | [`backend/docs/text-scan.md`](backend/docs/text-scan.md) |
 | Ôn thẻ Leitner | [`backend/docs/review-leitner.md`](backend/docs/review-leitner.md) |
 | Cấu trúc frontend, chế độ mock | [`frontend/README.md`](frontend/README.md) |
+| Huy hiệu: luật, hình ảnh, bảng màu, API, luồng | [`docs/badges/README.md`](docs/badges/README.md) |
 
 ## Hướng phát triển
 

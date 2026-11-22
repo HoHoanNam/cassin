@@ -7,7 +7,8 @@ export type IconName =
   | 'shield' | 'user' | 'eye' | 'users' | 'chart' | 'library' | 'scan' | 'upload' | 'download' | 'file'
   | 'flag' | 'target' | 'shuffle' | 'type'
   | 'monitor' | 'phone' // [THÊM] thiết bị đang đăng nhập
-  | 'book' | 'bulb'; // [THÊM] bài đọc hiểu, nút gợi ý
+  | 'book' | 'bulb' // [THÊM] bài đọc hiểu, nút gợi ý
+  | 'trophy' | 'lock'; // [THÊM] huy hiệu
 
 /**
  * Icon nét mảnh (stroke) vẽ bằng SVG, dùng chung cả app.

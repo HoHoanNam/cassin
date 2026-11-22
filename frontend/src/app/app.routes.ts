@@ -8,7 +8,7 @@ import { quizLeaveGuard } from './features/quiz/quiz-leave.guard';
  *
  *   Khách (chưa đăng nhập)        : /  /login  /register
  *   Khu vực học (có sidebar)      : /today /decks /decks/:deckId /library /scan /practice /mistakes /grammar /grammar/:topicId
- *                                   /quiz-history /quiz/:attemptId/result /account /reports
+ *                                   /quiz-history /quiz/:attemptId/result /account /reports /achievements
  *   Quản trị (chỉ ADMIN)          : /admin  /admin/decks(/:deckId)  /admin/grammar(/:topicId)  /admin/reports  /admin/passages
  *   Chế độ tập trung (không menu) : /review  /decks/:deckId/review  /grammar/:topicId/quiz  /practice/session
  *                                   /reading/:passageId                                        [THÊM] làm bài đọc
@@ -150,6 +150,12 @@ export const routes: Routes = [
         path: 'account',
         title: 'Tài khoản | Cassin',
         loadComponent: () => import('./features/account/account-page').then((m) => m.AccountPage),
+      },
+      // [THÊM] Huy hiệu / thành tích
+      {
+        path: 'achievements',
+        title: 'Thành tích | Cassin',
+        loadComponent: () => import('./features/badges/achievements-page').then((m) => m.AchievementsPage),
       },
       // [THÊM]
       {

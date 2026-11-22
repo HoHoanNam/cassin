@@ -22,6 +22,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Ngữ pháp', icon: 'grammar', link: '/grammar' },
   { label: 'Đọc hiểu', icon: 'book', link: '/reading', desktopOnly: true }, // [THÊM]
   { label: 'Lịch sử', icon: 'history', link: '/quiz-history', desktopOnly: true },
+  { label: 'Thành tích', icon: 'trophy', link: '/achievements', desktopOnly: true }, // [THÊM] huy hiệu
 ];
 
 /** Chỉ hiện với tài khoản ADMIN (sidebar). Trên điện thoại vào qua menu tài khoản. */
