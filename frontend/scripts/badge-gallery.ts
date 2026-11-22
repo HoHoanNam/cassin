@@ -9,21 +9,43 @@
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
-  BADGE_CATEGORY_LABELS, BADGE_CATEGORY_THEMES, BADGE_METALS, BADGE_NEUTRALS, BadgeCategory, Tone,
+  BADGE_CATEGORY_LABELS,
+  BADGE_CATEGORY_THEMES,
+  BADGE_METALS,
+  BADGE_NEUTRALS,
+  BadgeCategory,
+  BadgeCode,
+  BadgeKind,
+  Tone,
 } from '../src/app/core/models/badge.models';
 import { BADGE_CATALOG } from '../src/app/core/mock/mock-badge-catalog';
-
-import { MEDAL_RATIO, MEDAL_VIEWBOX, SPECIAL_RIM, buildMedal } from '../src/app/shared/ui/badge-medal/badge-art';
+import {
+  MEDAL_RATIO,
+  MEDAL_VIEWBOX,
+  SPECIAL_RIM,
+  buildMedal,
+} from '../src/app/shared/ui/badge-medal/badge-art';
 
 // Dùng CHÍNH hàm vẽ của app → hình trong tài liệu giống hệt hình trong app.
-function medal(code: string, category: BadgeCategory, kind: string, level: number, hidden = false, size = 96): string {
-  const parts = buildMedal({ code: code as never, category, kind: kind as never, level, hidden });
+function medal(
+  code: BadgeCode,
+  category: BadgeCategory,
+  kind: BadgeKind,
+  level: number,
+  hidden = false,
+  size = 96,
+): string {
+  const parts = buildMedal({ code, category, kind, level, hidden });
   return `<svg viewBox="${MEDAL_VIEWBOX}" width="${size}" height="${(size * MEDAL_RATIO).toFixed(1)}" stroke-linecap="round" stroke-linejoin="round">${parts
-    .map((p) => `<path d="${p.d}" fill="${p.fill ?? 'none'}"${p.stroke ? ` stroke="${p.stroke}"` : ''}${p.sw ? ` stroke-width="${p.sw}"` : ''}${p.opacity != null ? ` opacity="${p.opacity}"` : ''}${p.transform ? ` transform="${p.transform}"` : ''}/>`)
+    .map(
+      (p) =>
+        `<path d="${p.d}" fill="${p.fill ?? 'none'}"${p.stroke ? ` stroke="${p.stroke}"` : ''}${p.sw ? ` stroke-width="${p.sw}"` : ''}${p.opacity != null ? ` opacity="${p.opacity}"` : ''}${p.transform ? ` transform="${p.transform}"` : ''}/>`,
+    )
     .join('')}</svg>`;
 }
 
-const swatch = (name: string, t: Tone, note = '') => `<div class="sw"><div class="chips">${(['light', 'base', 'dark'] as const).map((k) => `<span style="background:${t[k]}" title="${k} ${t[k]}"></span>`).join('')}</div><b>${name}</b><code>${t.light} · ${t.base} · ${t.dark}</code>${note ? `<small>${note}</small>` : ''}</div>`;
+const swatch = (name: string, t: Tone, note = '') =>
+  `<div class="sw"><div class="chips">${(['light', 'base', 'dark'] as const).map((k) => `<span style="background:${t[k]}" title="${k} ${t[k]}"></span>`).join('')}</div><b>${name}</b><code>${t.light} · ${t.base} · ${t.dark}</code>${note ? `<small>${note}</small>` : ''}</div>`;
 
 const cats = Object.keys(BADGE_CATEGORY_THEMES) as BadgeCategory[];
 const tiered = BADGE_CATALOG.filter((b) => b.kind === 'TIERED');
@@ -90,6 +112,7 @@ ${tiered.map((b) => `<tr><td class="n"><b><span class="dot" style="background:${
 <h2>Huy hiệu đặc biệt</h2>
 <div class="row">${specials.map((b) => `<figure>${medal(b.code, 'SPECIAL', 'SPECIAL', 1, false, 104)}<figcaption><b style="color:var(--ink)">${b.name}${b.secret ? ' (bí mật)' : ''}</b><br>${b.description}</figcaption></figure>`).join('')}</div>
 </main></body></html>`;
+// Script được bundle ra frontend/dist/badge-gallery.cjs → __dirname là frontend/dist.
 const out = resolve(__dirname, '../../docs/badges/badge-gallery.html');
 writeFileSync(out, html);
 console.log('Đã ghi', out);

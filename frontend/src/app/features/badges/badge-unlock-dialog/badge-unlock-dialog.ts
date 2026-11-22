@@ -1,7 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { BADGE_CATEGORY_LABELS, BADGE_LEVEL_LABELS, ROMAN } from '../../../core/models/badge.models';
+import {
+  BADGE_CATEGORY_LABELS,
+  BADGE_LEVEL_LABELS,
+  ROMAN,
+} from '../../../core/models/badge.models';
 import { BadgeStore } from '../../../core/state/badge.store';
 import { BadgeMedal } from '../../../shared/ui/badge-medal/badge-medal';
 import { Modal } from '../../../shared/ui/modal/modal';

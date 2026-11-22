@@ -18,7 +18,15 @@ import { EmptyState } from '../../shared/ui/empty-state/empty-state';
 import { ErrorState } from '../../shared/ui/error-state/error-state';
 import { Modal } from '../../shared/ui/modal/modal';
 import { Skeleton } from '../../shared/ui/skeleton/skeleton';
-import { CATEGORY_ACTIONS, fmt, isMaxed, metalOf, nextTier, percentToNext, themeOf } from './badge-view';
+import {
+  CATEGORY_ACTIONS,
+  fmt,
+  isMaxed,
+  metalOf,
+  nextTier,
+  percentToNext,
+  themeOf,
+} from './badge-view';
 
 type Filter = 'ALL' | 'EARNED' | 'LOCKED';
 
@@ -67,7 +75,9 @@ export class AchievementsPage {
 
   /** Tổng số "sao" = tổng số cấp đã đạt trên mọi huy hiệu. */
   protected readonly earnedLevels = computed(() => this.all().reduce((sum, b) => sum + b.level, 0));
-  protected readonly totalLevels = computed(() => this.all().reduce((sum, b) => sum + b.tiers.length, 0));
+  protected readonly totalLevels = computed(() =>
+    this.all().reduce((sum, b) => sum + b.tiers.length, 0),
+  );
   protected readonly percent = computed(() =>
     this.totalLevels() === 0 ? 0 : Math.round((this.earnedLevels() / this.totalLevels()) * 100),
   );

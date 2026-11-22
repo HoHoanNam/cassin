@@ -16,7 +16,11 @@
   height: 230px;
   margin: -115px 0 0 -115px;
   border-radius: 50%;
-  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--cat-wash) 55%, #fff) 0deg 11deg, transparent 11deg 30deg);
+  background: repeating-conic-gradient(
+    from 0deg,
+    color-mix(in srgb, var(--cat-wash) 55%, #fff) 0deg 11deg,
+    transparent 11deg 30deg
+  );
   mask: radial-gradient(circle, #000 30%, transparent 70%);
   animation: spin 14s linear infinite;
 }

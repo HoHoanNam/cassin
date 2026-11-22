@@ -41,7 +41,9 @@ export class MockBadgeApi extends BadgeApi {
       this.award(userId);
       const mine = this.db.userBadges.filter((ub) => ub.userId === userId);
       // Cùng một huy hiệu nhảy nhiều cấp: chỉ hiện cấp cao nhất (các cấp dưới coi như đã thấy theo).
-      const top = mine.filter((ub) => ub.seenAt === null && !mine.some((o) => o.code === ub.code && o.level > ub.level));
+      const top = mine.filter(
+        (ub) => ub.seenAt === null && !mine.some((o) => o.code === ub.code && o.level > ub.level),
+      );
       return top
         .sort((a, b) => a.earnedAt.localeCompare(b.earnedAt) || a.code.localeCompare(b.code))
         .flatMap((ub) => {
@@ -57,7 +59,11 @@ export class MockBadgeApi extends BadgeApi {
       const now = new Date().toISOString();
       for (const ub of this.db.userBadges) {
         // Đã xem cấp N thì mọi cấp <= N của huy hiệu đó cũng tính là đã xem.
-        if (ub.userId === userId && ub.seenAt === null && items.some((i) => i.code === ub.code && i.level >= ub.level)) {
+        if (
+          ub.userId === userId &&
+          ub.seenAt === null &&
+          items.some((i) => i.code === ub.code && i.level >= ub.level)
+        ) {
           ub.seenAt = now;
         }
       }
@@ -73,7 +79,9 @@ export class MockBadgeApi extends BadgeApi {
       const value = def.progress(this.db, userId);
       def.targets.forEach((target, i) => {
         const level = i + 1;
-        const owned = this.db.userBadges.some((ub) => ub.userId === userId && ub.code === def.code && ub.level === level);
+        const owned = this.db.userBadges.some(
+          (ub) => ub.userId === userId && ub.code === def.code && ub.level === level,
+        );
         if (!owned && value >= target) {
           this.db.userBadges.push({ userId, code: def.code, level, earnedAt: now, seenAt: null });
           changed = true;
@@ -95,8 +103,15 @@ export class MockBadgeApi extends BadgeApi {
     }));
     if (def.secret && level === 0) {
       return {
-        code: def.code, kind: def.kind, name: '???', description: 'Huy hiệu bí mật. Cứ học đi, rồi sẽ biết.',
-        unit: '', category: def.category, secret: true, level: 0, progress: 0,
+        code: def.code,
+        kind: def.kind,
+        name: '???',
+        description: 'Huy hiệu bí mật. Cứ học đi, rồi sẽ biết.',
+        unit: '',
+        category: def.category,
+        secret: true,
+        level: 0,
+        progress: 0,
         tiers: tiers.map((t) => ({ ...t, target: 1 })),
       };
     }

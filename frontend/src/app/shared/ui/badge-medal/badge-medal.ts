@@ -33,8 +33,8 @@ export class BadgeMedal {
   readonly level = input<BadgeLevel>(0);
   /** Bí mật VÀ chưa đạt thì giấu hình */
   readonly hidden = input(false);
-  /** Hiện tấm đế + sao */
-  readonly ribbon = input(true);
+  /** Hiện tấm đế + sao (tắt ở chỗ nhỏ như danh sách "Sắp lên cấp") */
+  readonly showBase = input(true);
   readonly size = input(96);
 
   protected readonly viewBox = MEDAL_VIEWBOX;
@@ -47,7 +47,7 @@ export class BadgeMedal {
       kind: this.kind(),
       level: this.level(),
       hidden: this.hidden(),
-      base: this.ribbon(),
+      base: this.showBase(),
     }),
   );
 }

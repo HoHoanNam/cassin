@@ -54,7 +54,10 @@ const LOCKED_FACE: Tone = { light: '#FFFFFF', base: '#ECE9F3', dark: '#CFC9DD' }
 
 // ---------------------------------------------------------------- màu
 
-const hex = (n: number) => Math.round(Math.max(0, Math.min(255, n))).toString(16).padStart(2, '0');
+const hex = (n: number) =>
+  Math.round(Math.max(0, Math.min(255, n)))
+    .toString(16)
+    .padStart(2, '0');
 const rgb = (c: string) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
 
 /** Trộn hai màu hex: t = 0 → a, t = 1 → b. */
@@ -90,7 +93,13 @@ function vertices(n: number, r: number, cy = CY): Pt[] {
 }
 
 /** Vòng mặt cắt giữa hai đa giác đồng tâm: mỗi cạnh một hình thang, tô theo hướng sáng. */
-function facetRing(n: number, rOuter: number, rInner: number, tone: Tone, invert = false): MedalPart[] {
+function facetRing(
+  n: number,
+  rOuter: number,
+  rInner: number,
+  tone: Tone,
+  invert = false,
+): MedalPart[] {
   const o = vertices(n, rOuter);
   const i = vertices(n, rInner);
   return o.map((_, k) => {
@@ -116,11 +125,28 @@ function gem(cy: number, w: number, h: number, tone: Tone, rim: Tone): MedalPart
   const right: Pt = [CX + w / 2, cy];
   const pad = 3;
   return [
-    { d: poly([[CX, top[1] - pad], [right[0] + pad, cy], [CX, bottom[1] + pad], [left[0] - pad, cy]]), fill: rim.dark },
+    {
+      d: poly([
+        [CX, top[1] - pad],
+        [right[0] + pad, cy],
+        [CX, bottom[1] + pad],
+        [left[0] - pad, cy],
+      ]),
+      fill: rim.dark,
+    },
     { d: poly([top, right, bottom, left]), fill: tone.base },
     { d: poly([top, [CX, cy], left]), fill: tone.light },
     { d: poly([[CX, cy], right, bottom]), fill: tone.dark },
-    { d: poly([[CX, top[1] + h * 0.18], [CX + w * 0.12, cy], [CX, bottom[1] - h * 0.18], [CX - w * 0.12, cy]]), fill: '#ffffff', opacity: 0.7 },
+    {
+      d: poly([
+        [CX, top[1] + h * 0.18],
+        [CX + w * 0.12, cy],
+        [CX, bottom[1] - h * 0.18],
+        [CX - w * 0.12, cy],
+      ]),
+      fill: '#ffffff',
+      opacity: 0.7,
+    },
   ];
 }
 
@@ -128,8 +154,16 @@ function gem(cy: number, w: number, h: number, tone: Tone, rim: Tone): MedalPart
 function sideSpikes(tone: Tone, x0: number): MedalPart[] {
   const tip = x0 - 17;
   const left: [Pt[], Pt[]] = [
-    [[x0, CY - 12], [tip, CY], [x0, CY]],
-    [[x0, CY], [tip, CY], [x0, CY + 12]],
+    [
+      [x0, CY - 12],
+      [tip, CY],
+      [x0, CY],
+    ],
+    [
+      [x0, CY],
+      [tip, CY],
+      [x0, CY + 12],
+    ],
   ];
   const parts: MedalPart[] = [];
   for (const [upper, lower] of [left, [mirror(left[0]), mirror(left[1])] as [Pt[], Pt[]]]) {
@@ -142,7 +176,8 @@ function sideSpikes(tone: Tone, x0: number): MedalPart[] {
 function wings(tone: Tone): MedalPart[] {
   const feather = (y0: number, tipX: number, tipY: number) =>
     `M32 ${y0}C14 ${y0 - 1} ${tipX + 8} ${tipY + 4} ${tipX} ${tipY}C${tipX + 6} ${tipY + 12} 14 ${y0 + 13} 32 ${y0 + 14}Z`;
-  const vein = (y0: number, tipX: number, tipY: number) => `M30 ${y0 + 7}Q14 ${y0 + 4} ${tipX + 6} ${tipY + 4}`;
+  const vein = (y0: number, tipX: number, tipY: number) =>
+    `M30 ${y0 + 7}Q14 ${y0 + 4} ${tipX + 6} ${tipY + 4}`;
   const rows: [number, number, number, string][] = [
     [64, -4, 68, tone.base],
     [50, -12, 44, mix(tone.light, tone.base, 0.45)],
@@ -161,8 +196,19 @@ function wings(tone: Tone): MedalPart[] {
 
 /** Tấm đế: 3 tấm (giữa dài hơn), mỗi tấm một ô sao. */
 function basePlates(tone: Tone, stars: number, lit: number): MedalPart[] {
-  const center: Pt[] = [[46, 96], [74, 96], [74, 126], [60, 135], [46, 126]];
-  const side: Pt[] = [[18, 84], [44, 94], [44, 122], [22, 113]];
+  const center: Pt[] = [
+    [46, 96],
+    [74, 96],
+    [74, 126],
+    [60, 135],
+    [46, 126],
+  ];
+  const side: Pt[] = [
+    [18, 84],
+    [44, 94],
+    [44, 122],
+    [22, 113],
+  ];
   const parts: MedalPart[] = [];
   for (const pts of [side, mirror(side), center]) {
     parts.push({ d: roundedPath(pts, 2.5), fill: tone.dark, transform: 'translate(0 3)' });
@@ -170,14 +216,25 @@ function basePlates(tone: Tone, stars: number, lit: number): MedalPart[] {
   }
   // gờ sáng trên mép tấm
   parts.push({ d: 'M48 99H72', stroke: tone.light, sw: 1.6, opacity: 0.9 });
-  const slots: Pt[] = stars === 1 ? [[60, 122]] : [[32, 109], [60, 122], [88, 109]];
+  const slots: Pt[] =
+    stars === 1
+      ? [[60, 122]]
+      : [
+          [32, 109],
+          [60, 122],
+          [88, 109],
+        ];
   // thứ tự sáng: giữa trước, rồi trái, phải
   const order = stars === 1 ? [0] : [1, 0, 2];
   order.forEach((slot, idx) => {
     const [x, y] = slots[slot];
     const on = idx < lit;
     const r = slot === (stars === 1 ? 0 : 1) ? 6 : 5;
-    parts.push({ d: circle(r + 2.2, x, y), fill: mix(tone.dark, '#000000', 0.15), opacity: on ? 0.35 : 0.5 });
+    parts.push({
+      d: circle(r + 2.2, x, y),
+      fill: mix(tone.dark, '#000000', 0.15),
+      opacity: on ? 0.35 : 0.5,
+    });
     parts.push({
       d: star(x, y, r),
       fill: on ? '#FFF3BF' : tone.dark,
@@ -195,7 +252,11 @@ export function buildMedal(o: MedalOptions): MedalPart[] {
   const locked = o.level === 0;
   const special = o.kind === 'SPECIAL';
   const sides = special ? 12 : 6;
-  const metal: Tone = locked ? BADGE_NEUTRALS.locked : special ? SPECIAL_RIM : BADGE_METALS[o.level as 1 | 2 | 3];
+  const metal: Tone = locked
+    ? BADGE_NEUTRALS.locked
+    : special
+      ? SPECIAL_RIM
+      : BADGE_METALS[o.level as 1 | 2 | 3];
   const cat = BADGE_CATEGORY_THEMES[o.category];
   const face: Tone = locked ? LOCKED_FACE : cat;
   const level = special ? (locked ? 0 : 3) : o.level; // đặc biệt: trang trí như cấp cao nhất
@@ -208,12 +269,20 @@ export function buildMedal(o: MedalOptions): MedalPart[] {
     parts.push({ d: circle(58), fill: metal.light, opacity: 0.24 });
     for (let k = 0; k < 8; k++) {
       const a = (Math.PI / 4) * k + Math.PI / 8;
-      const p = (r: number, da: number): Pt => [CX + r * Math.cos(a + da), CY + r * Math.sin(a + da)];
-      parts.push({ d: poly([p(50, -0.12), p(72, 0), p(50, 0.12)]), fill: metal.light, opacity: 0.55 });
+      const p = (r: number, da: number): Pt => [
+        CX + r * Math.cos(a + da),
+        CY + r * Math.sin(a + da),
+      ];
+      parts.push({
+        d: poly([p(50, -0.12), p(72, 0), p(50, 0.12)]),
+        fill: metal.light,
+        opacity: 0.55,
+      });
     }
   }
   if (level === 3 && !special) parts.push(...wings(metal));
-  if (o.base !== false) parts.push(...basePlates(metal, special ? 1 : 3, special ? (locked ? 0 : 1) : o.level));
+  if (o.base !== false)
+    parts.push(...basePlates(metal, special ? 1 : 3, special ? (locked ? 0 : 1) : o.level));
   if (level >= 2 && !special) parts.push(...sideSpikes(metal, CX - R * Math.cos(Math.PI / 6) + 1));
 
   // Khung: bóng khối, viền ngoài bo tròn, vòng mặt cắt
@@ -227,7 +296,10 @@ export function buildMedal(o: MedalOptions): MedalPart[] {
   const rFace = R - 12;
   parts.push({ d: poly(vertices(sides, rFace)), fill: face.dark });
   parts.push(...facetRing(sides, rFace, rFace - 5, face, true));
-  parts.push({ d: poly(vertices(sides, rFace - 5)), fill: locked ? face.base : mix(face.base, face.dark, 0.25) });
+  parts.push({
+    d: poly(vertices(sides, rFace - 5)),
+    fill: locked ? face.base : mix(face.base, face.dark, 0.25),
+  });
 
   if (!locked) {
     const p = pattern(cat.pattern, rFace - 7);
@@ -240,7 +312,14 @@ export function buildMedal(o: MedalOptions): MedalPart[] {
   // Hình: bóng tối lệch xuống + nét trắng dày
   const glyph = o.hidden ? SECRET_GLYPH : BADGE_GLYPHS[o.code];
   const gT = 'translate(37 34.5) scale(1.92)';
-  if (!locked) parts.push({ d: glyph, stroke: face.dark, sw: 2.3, transform: 'translate(37 36.6) scale(1.92)', opacity: 0.9 });
+  if (!locked)
+    parts.push({
+      d: glyph,
+      stroke: face.dark,
+      sw: 2.3,
+      transform: 'translate(37 36.6) scale(1.92)',
+      opacity: 0.9,
+    });
   parts.push({
     d: glyph,
     stroke: locked ? BADGE_NEUTRALS.lockedInk : special ? SPECIAL_GLYPH : '#ffffff',
@@ -250,7 +329,16 @@ export function buildMedal(o: MedalOptions): MedalPart[] {
 
   if (!locked) {
     // Ánh phản chiếu + lấp lánh
-    parts.push({ d: poly([[CX - 22, CY - 20], [CX - 6, CY - 28], [CX - 2, CY - 24], [CX - 19, CY - 15]]), fill: '#ffffff', opacity: 0.16 });
+    parts.push({
+      d: poly([
+        [CX - 22, CY - 20],
+        [CX - 6, CY - 28],
+        [CX - 2, CY - 24],
+        [CX - 19, CY - 15],
+      ]),
+      fill: '#ffffff',
+      opacity: 0.16,
+    });
     parts.push({ d: sparkle(CX - 17, CY - 14, 5), fill: '#ffffff' });
     parts.push({ d: sparkle(CX + 19, CY + 15, 3.2), fill: '#ffffff', opacity: 0.9 });
   }
@@ -265,7 +353,11 @@ export function buildMedal(o: MedalOptions): MedalPart[] {
   // Ổ khóa
   if (locked) {
     parts.push({ d: circle(11, 97, 25), fill: '#ffffff', stroke: '#D4D0E3', sw: 1.5 });
-    parts.push({ d: 'M92.5 24h9v7h-9zM94.5 24v-2.4a2.5 2.5 0 0 1 5 0V24', stroke: '#5D6080', sw: 1.6 });
+    parts.push({
+      d: 'M92.5 24h9v7h-9zM94.5 24v-2.4a2.5 2.5 0 0 1 5 0V24',
+      stroke: '#5D6080',
+      sw: 1.6,
+    });
   }
   return parts;
 }

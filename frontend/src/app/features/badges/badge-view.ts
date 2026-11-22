@@ -12,7 +12,8 @@ import {
 export const fmt = (n: number) => n.toLocaleString('vi-VN');
 
 /** Cấp kế tiếp chưa đạt; null nếu đã đạt cấp cao nhất. */
-export const nextTier = (b: Badge): BadgeTier | null => b.tiers.find((t) => t.earnedAt === null) ?? null;
+export const nextTier = (b: Badge): BadgeTier | null =>
+  b.tiers.find((t) => t.earnedAt === null) ?? null;
 
 export const isMaxed = (b: Badge) => nextTier(b) === null;
 
@@ -26,7 +27,8 @@ export function percentToNext(b: Badge): number {
 }
 
 /** Màu kim loại của cấp (dùng cho chip "Cấp II · Bạc"). */
-export const metalOf = (level: number) => BADGE_METALS[Math.max(1, Math.min(3, level)) as 1 | 2 | 3];
+export const metalOf = (level: number) =>
+  BADGE_METALS[Math.max(1, Math.min(3, level)) as 1 | 2 | 3];
 
 export const themeOf = (c: BadgeCategory) => BADGE_CATEGORY_THEMES[c];
 

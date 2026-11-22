@@ -3,23 +3,45 @@
   @if (badge) {
     @let t = theme()!;
     @let mt = metal();
-    <div class="mt-1 flex flex-col items-center text-center" aria-live="polite"
-      [style.--cat]="t.base" [style.--cat-wash]="t.light" [style.--metal]="mt.base">
+    <div
+      class="mt-1 flex flex-col items-center text-center"
+      aria-live="polite"
+      [style.--cat]="t.base"
+      [style.--cat-wash]="t.light"
+      [style.--metal]="mt.base"
+    >
       <!-- @for một phần tử, track theo mã + cấp: sang huy hiệu khác thì khối được dựng lại → hiệu ứng chạy lại -->
       @for (b of [badge]; track b.code + b.level) {
         <div class="stage">
           <span class="burst" aria-hidden="true"></span>
           @for (p of confetti; track $index) {
-            <i class="confetti" [class.confetti-metal]="p.tone === 1" [class.confetti-light]="p.tone === 2"
-              [style.left.%]="p.x" [style.animation-delay.s]="p.delay" [style.--r]="p.rot + 'deg'" aria-hidden="true"></i>
+            <i
+              class="confetti"
+              [class.confetti-metal]="p.tone === 1"
+              [class.confetti-light]="p.tone === 2"
+              [style.left.%]="p.x"
+              [style.animation-delay.s]="p.delay"
+              [style.--r]="p.rot + 'deg'"
+              aria-hidden="true"
+            ></i>
           }
-          <app-badge-medal class="medal" [code]="b.code" [category]="b.category" [kind]="b.kind" [level]="b.level" [size]="172" />
+          <app-badge-medal
+            class="medal"
+            [code]="b.code"
+            [category]="b.category"
+            [kind]="b.kind"
+            [level]="b.level"
+            [size]="172"
+          />
         </div>
         <p class="hand m-0 mt-2 text-[30px] leading-tight">{{ b.name }}</p>
         @if (b.kind === 'SPECIAL') {
           <p class="m-0 mt-1 text-ink-soft">{{ b.description }}</p>
         } @else {
-          <p class="m-0 mt-1 text-ink-soft">Bạn đã đạt <b class="text-ink">{{ fmt(b.target) }} {{ b.unit }}</b>. {{ b.description }}</p>
+          <p class="m-0 mt-1 text-ink-soft">
+            Bạn đã đạt <b class="text-ink">{{ fmt(b.target) }} {{ b.unit }}</b
+            >. {{ b.description }}
+          </p>
         }
         <p class="m-0 mt-3 flex flex-wrap justify-center gap-2">
           @if (b.kind === 'TIERED') {
@@ -28,7 +50,9 @@
           <span class="chip chip-cat">{{ categoryLabels[b.category] }}</span>
         </p>
         @if (b.kind === 'TIERED' && b.level < b.maxLevel) {
-          <p class="m-0 mt-3 text-[13px] text-ink-soft">Cấp tiếp theo đang chờ trong trang Thành tích.</p>
+          <p class="m-0 mt-3 text-[13px] text-ink-soft">
+            Cấp tiếp theo đang chờ trong trang Thành tích.
+          </p>
         }
       }
 

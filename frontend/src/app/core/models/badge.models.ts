@@ -162,7 +162,8 @@ export interface Tone {
 
 /** Màu riêng từng nhóm + họa tiết nền mặt huy chương. */
 export interface CategoryTheme extends Tone {
-  pattern: 'stripes' | 'embers' | 'rings' | 'dots' | 'checks' | 'lines' | 'zigzag' | 'rays' | 'stars';
+  pattern:
+    'stripes' | 'embers' | 'rings' | 'dots' | 'checks' | 'lines' | 'zigzag' | 'rays' | 'stars';
 }
 
 export const BADGE_CATEGORY_THEMES: Record<BadgeCategory, CategoryTheme> = {

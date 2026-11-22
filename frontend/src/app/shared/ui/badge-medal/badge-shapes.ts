@@ -1,7 +1,7 @@
 import { CategoryTheme } from '../../../core/models/badge.models';
 
 /*
- * [THÊM] Hình học của huy chương, tính sẵn thành chuỗi path SVG (hệ tọa độ 120 × 128).
+ * [THÊM] Hình học của huy chương, tính sẵn thành chuỗi path SVG (hệ tọa độ của huy chương: tâm (60, 58), xem MEDAL_VIEWBOX trong badge-art.ts).
  * Không dùng gradient / clipPath (url(#id) dễ hỏng khi app có <base href> và nhiều huy chương cùng trang):
  * độ khối tạo bằng các lớp màu phẳng light / base / dark chồng lên nhau, kiểu flat illustration.
  */
@@ -27,28 +27,11 @@ export function roundedPath(points: Point[], corner: number): string {
     const b = Math.min(corner / dNext, 0.5);
     const p1: Point = [x + (px - x) * a, y + (py - y) * a];
     const p2: Point = [x + (nx - x) * b, y + (ny - y) * b];
-    parts.push(`${i === 0 ? 'M' : 'L'}${f(p1[0])} ${f(p1[1])}Q${f(x)} ${f(y)} ${f(p2[0])} ${f(p2[1])}`);
+    parts.push(
+      `${i === 0 ? 'M' : 'L'}${f(p1[0])} ${f(p1[1])}Q${f(x)} ${f(y)} ${f(p2[0])} ${f(p2[1])}`,
+    );
   }
   return parts.join('') + 'Z';
-}
-
-/** Lục giác đỉnh nhọn hướng lên (dáng "viên đá quý" / khiên), tâm (cx, cy). */
-export function hexagon(r: number, corner: number, cx = CX, cy = CY): string {
-  const pts = Array.from({ length: 6 }, (_, i): Point => {
-    const a = (Math.PI / 3) * i - Math.PI / 2;
-    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
-  });
-  return roundedPath(pts, corner);
-}
-
-/** Con dấu răng cưa (huy hiệu đặc biệt): `teeth` răng, bán kính ngoài / trong. */
-export function seal(teeth: number, outer: number, inner: number, cx = CX, cy = CY): string {
-  const pts = Array.from({ length: teeth * 2 }, (_, i): Point => {
-    const a = (Math.PI / teeth) * i - Math.PI / 2;
-    const r = i % 2 === 0 ? outer : inner;
-    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
-  });
-  return roundedPath(pts, 3);
 }
 
 export function circle(r: number, cx = CX, cy = CY): string {
@@ -150,16 +133,33 @@ export function pattern(kind: CategoryTheme['pattern'], r: number): PatternPaths
     }
     case 'embers': {
       const spots: [number, number, number][] = [
-        [-22, 18, 3], [-14, 26, 2], [20, 20, 3.2], [26, 6, 2], [-26, 0, 2.2], [12, 28, 2], [-6, -26, 1.8], [22, -18, 2.4],
-        [-20, -16, 2.6], [4, 30, 1.6],
+        [-22, 18, 3],
+        [-14, 26, 2],
+        [20, 20, 3.2],
+        [26, 6, 2],
+        [-26, 0, 2.2],
+        [12, 28, 2],
+        [-6, -26, 1.8],
+        [22, -18, 2.4],
+        [-20, -16, 2.6],
+        [4, 30, 1.6],
       ];
       return { ...empty, fill: spots.map(([dx, dy, rr]) => circle(rr, CX + dx, CY + dy)).join('') };
     }
     case 'stars': {
       const spots: [number, number, number][] = [
-        [-22, -14, 4], [20, -20, 3], [24, 14, 4.5], [-24, 16, 3], [-8, -28, 2.5], [8, 28, 2.5], [28, -2, 2],
+        [-22, -14, 4],
+        [20, -20, 3],
+        [24, 14, 4.5],
+        [-24, 16, 3],
+        [-8, -28, 2.5],
+        [8, 28, 2.5],
+        [28, -2, 2],
       ];
-      return { ...empty, fill: spots.map(([dx, dy, rr]) => sparkle(CX + dx, CY + dy, rr)).join('') };
+      return {
+        ...empty,
+        fill: spots.map(([dx, dy, rr]) => sparkle(CX + dx, CY + dy, rr)).join(''),
+      };
     }
   }
 }
