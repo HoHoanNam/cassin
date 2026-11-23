@@ -18,6 +18,8 @@ cassin:
     access-token-ttl: 15m # giá trị mục tiêu, test theo đúng cấu hình sẽ deploy
   refresh-token:
     cookie-secure: false
+  badge:
+    async: false # xét huy hiệu ngay trên thread gọi → nộp bài xong là kiểm được, không phải chờ
   admin: # AdminBootstrap tạo sẵn admin → section 3 (báo lỗi) dùng
     email: admin@it.local
     password: admin-it-12345
