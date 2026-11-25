@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -60,6 +62,7 @@ class QuizServiceTest {
   @Mock QuestionRepository questionRepository;
   @Mock UserRepository userRepository;
   @Mock GrammarService grammarService;
+  @Mock ApplicationEventPublisher publisher;
 
   private QuizService quizService;
 
@@ -73,7 +76,7 @@ class QuizServiceTest {
     // findOwnAttempt so attempt.getUser().getId() với userId → user cần có id.
     ReflectionTestUtils.setField(user, "id", USER_ID);
     // Thứ tự tham số = thứ tự field final trong QuizService (@RequiredArgsConstructor).
-    quizService = new QuizService(attemptRepository, questionRepository, userRepository, grammarService);
+    quizService = new QuizService(attemptRepository, questionRepository, userRepository, grammarService, publisher);
   }
 
   // ===================== start =====================
@@ -155,6 +158,7 @@ class QuizServiceTest {
     assertThat(second.correctOptionId()).isEqualTo(optionId(2, 1));
     assertThat(second.correct()).isFalse();
     assertThat(second.explanation()).isEqualTo("Giải thích câu 2");
+    verify(publisher).publishEvent(new QuizSubmittedEvent(USER_ID, TOPIC_ID, 1, 2)); // [THÊM] huy hiệu
   }
 
   @Test
@@ -191,6 +195,7 @@ class QuizServiceTest {
           assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
           assertThat(ex.getCode()).isEqualTo("QUIZ_ALREADY_SUBMITTED");
         });
+    verifyNoInteractions(publisher); // nộp lại không tính huy hiệu lần nữa
   }
 
   @Test

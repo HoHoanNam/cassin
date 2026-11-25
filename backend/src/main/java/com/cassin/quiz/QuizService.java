@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -34,6 +35,7 @@ public class QuizService {
   private final QuestionRepository questionRepository;
   private final UserRepository userRepository;
   private final GrammarService grammarService;
+  private final ApplicationEventPublisher publisher; // [THÊM] huy hiệu
 
   @Transactional
   public QuizStartResponse start(Long topicId, Long userId) {
@@ -84,6 +86,10 @@ public class QuizService {
       // Câu hỏi không có trong đề / đáp án không thuộc câu hỏi: dữ liệu gửi lên sai → 400
       throw new BusinessException(HttpStatus.BAD_REQUEST, "INVALID_ANSWER", ex.getMessage());
     }
+
+    // [THÊM] Huy hiệu (Điểm tuyệt đối, Nhà ngữ pháp). Listener chạy sau khi lượt nộp này commit.
+    publisher.publishEvent(
+        new QuizSubmittedEvent(userId, attempt.getTopic().getId(), attempt.getScore(), attempt.getTotal()));
 
     // 4. Trả về kết quả
     return QuizResultResponse.from(attempt);
