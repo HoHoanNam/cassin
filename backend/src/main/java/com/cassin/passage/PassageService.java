@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -51,6 +52,7 @@ public class PassageService {
   private final UserRepository userRepository;
   private final PassageMapper mapper;
   private final Clock clock;
+  private final ApplicationEventPublisher publisher; // [THÊM] huy hiệu
 
   @Transactional(readOnly = true)
   public PageResponse<PassageSummary> list(CefrLevel level, int page, int size, Long userId) {
@@ -114,6 +116,9 @@ public class PassageService {
       attempt.submit(inputs, Instant.now(clock));
       return attempt;
     });
+    // [THÊM] Huy hiệu (Mọt sách, Tự lực). Listener chạy sau khi lượt nộp này commit.
+    publisher.publishEvent(new ReadingSubmittedEvent(userId, attempt.getPassage().getId(), attempt.getScore(),
+        attempt.getTotal(), attempt.correctWithoutHints()));
     return mapper.toResult(attempt);
   }
 
