@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.nio.charset.StandardCharsets;
@@ -23,6 +24,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
 
@@ -45,6 +47,7 @@ class WordImportServiceTest {
   @Mock DeckService deckService;
   @Mock WordRepository wordRepository;
   @Mock UserRepository userRepository;
+  @Mock ApplicationEventPublisher publisher; // [THÊM] thiếu mock này thì @InjectMocks truyền null → NPE khi nhập thật
   @InjectMocks WordImportService importService;
 
   private final User me = VocabFixtures.user(USER_ID, "an@gmail.com");
@@ -175,6 +178,7 @@ class WordImportServiceTest {
     assertThat(result.errors()).isEmpty();
     verify(wordRepository, never()).saveAll(any());
     verify(deckService, never()).linkWord(any(), any());
+    verifyNoInteractions(publisher); // xem trước: không tính huy hiệu
   }
 
   @Test
@@ -192,6 +196,7 @@ class WordImportServiceTest {
     assertThat(result.words()).isEqualTo(2);
     verify(wordRepository).saveAll(any());
     verify(deckService, times(2)).linkWord(eq(myDeck), any(Word.class));
+    verify(publisher).publishEvent(new WordsAddedEvent(USER_ID, 2)); // [THÊM] một sự kiện cho cả file
   }
 
   @Test

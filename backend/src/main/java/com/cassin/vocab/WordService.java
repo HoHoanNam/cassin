@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,7 @@ public class WordService {
   private final DeckRepository deckRepository;
   private final UserRepository userRepository;
   private final DeckService deckService;   // dùng lại luật quyền của bộ và của từ
+  private final ApplicationEventPublisher publisher; // [THÊM] huy hiệu
 
   /** GET /api/words?q=&deckId=: sổ từ (deckId null) hoặc từ trong một bộ. */
   @Transactional(readOnly = true)
@@ -71,6 +73,7 @@ public class WordService {
         deckService.linkWord(deckService.findEditable(deckId, userId), word);
       }
     }
+    publisher.publishEvent(new WordsAddedEvent(userId, 1)); // [THÊM] huy hiệu Nhà sưu tầm, xét sau khi commit
     return toResponse(word, userId);
   }
 
