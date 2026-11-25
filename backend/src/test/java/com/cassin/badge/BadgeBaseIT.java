@@ -2,7 +2,10 @@ package com.cassin.badge;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -31,14 +34,16 @@ import com.cassin.support.IntegrationTest;
 import com.jayway.jsonpath.JsonPath;
 
 /**
- * Phase 0: kiểm tra phần chung của module huy hiệu bằng 2 rule GIẢ (chưa có rule thật nào).
+ * Phần chung của module huy hiệu, kiểm bằng 2 rule GIẢ trên huy hiệu GIẢ (TEST_*, nạp từ db/testdata/R__test_badges.sql).
  *
  *   - V18 chạy được, Hibernate validate khớp entity
  *   - nhảy nhiều cấp, không cấp trùng, unseen chỉ trả cấp cao nhất, seen đánh dấu mọi cấp <= N
  *   - chỉ huy hiệu có rule mới hiện, bí mật bị che tới khi đạt
  *
- * @Import thêm rule giả → context riêng (khác các IT khác). Chấp nhận: rule giả dùng mã THẬT (DILIGENT, NIGHT_OWL),
- * để chung context thì Phase 1 thêm rule DILIGENT thật sẽ trùng mã.
+ * @Import thêm rule giả → context riêng (khác các IT khác). Context đó VẪN quét mọi @Component, tức có đủ rule thật.
+ * [SỬA] Vì vậy rule giả không được mượn mã thật (bản Phase 0 dùng DILIGENT / NIGHT_OWL → trùng mã khi có rule thật).
+ * Người dùng trong test là người mới, chưa học gì → rule thật không cấp gì, không làm lệch các assertion bên dưới.
+ * Danh sách /api/badges có cả huy hiệu thật → tìm theo MÃ ($[?(@.code == '...')]), không theo vị trí $[0].
  * Sự kiện chạy đồng bộ nhờ cassin.badge.async=false trong application-it.yml.
  */
 @IntegrationTest
@@ -74,13 +79,13 @@ class BadgeBaseIT {
   @TestConfiguration(proxyBeanMethods = false)
   static class FakeRules {
     @Bean
-    BadgeRule fakeDiligent() {
-      return fakeRule("DILIGENT"); // 30 / 300 / 1500
+    BadgeRule fakeTiered() {
+      return fakeRule("TEST_TIERED"); // 30 / 300 / 1500
     }
 
     @Bean
-    BadgeRule fakeNightOwl() {
-      return fakeRule("NIGHT_OWL"); // bí mật, 1 cấp
+    BadgeRule fakeSecret() {
+      return fakeRule("TEST_SECRET"); // bí mật, 1 cấp
     }
   }
 
@@ -112,23 +117,24 @@ class BadgeBaseIT {
   void listsOnlyEnabledBadges() throws Exception {
     mvc.perform(get("/api/badges").header(AUTHORIZATION, me.bearer()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[*].code", contains("DILIGENT", "NIGHT_OWL")))
-        .andExpect(jsonPath("$[0].level").value(0))
-        .andExpect(jsonPath("$[0].tiers[*].target", contains(30, 300, 1500)));
+        .andExpect(jsonPath("$[*].code", hasItems("TEST_TIERED", "TEST_SECRET")))
+        .andExpect(jsonPath("$[*].code", not(hasItem("TEST_DISABLED")))) // có trong DB nhưng không có rule
+        .andExpect(jsonPath("$[?(@.code == 'TEST_TIERED')].level", contains(0)))
+        .andExpect(jsonPath("$[?(@.code == 'TEST_TIERED')].tiers[*].target", contains(30, 300, 1500)));
   }
 
   @Test
   @DisplayName("Nhảy 0 → 350: cấp đủ I và II; unseen chỉ trả cấp II")
   void jumpsSeveralLevels() throws Exception {
-    progress("DILIGENT", 350);
+    progress("TEST_TIERED", 350);
 
     assertThat(userBadgeRepository.findByIdUserId(myId)).extracting(UserBadge::level).containsExactlyInAnyOrder(1, 2);
     mvc.perform(get("/api/badges").header(AUTHORIZATION, me.bearer()))
-        .andExpect(jsonPath("$[0].level").value(2))
-        .andExpect(jsonPath("$[0].progress").value(350));
+        .andExpect(jsonPath("$[?(@.code == 'TEST_TIERED')].level", contains(2)))
+        .andExpect(jsonPath("$[?(@.code == 'TEST_TIERED')].progress", contains(350)));
     mvc.perform(get("/api/badges/unseen").header(AUTHORIZATION, me.bearer()))
         .andExpect(jsonPath("$", hasSize(1)))
-        .andExpect(jsonPath("$[0].code").value("DILIGENT"))
+        .andExpect(jsonPath("$[0].code").value("TEST_TIERED"))
         .andExpect(jsonPath("$[0].level").value(2))
         .andExpect(jsonPath("$[0].target").value(300))
         .andExpect(jsonPath("$[0].maxLevel").value(3));
@@ -137,9 +143,9 @@ class BadgeBaseIT {
   @Test
   @DisplayName("Sự kiện lặp lại không cấp trùng")
   void idempotent() {
-    progress("DILIGENT", 40);
-    progress("DILIGENT", 40);
-    progress("DILIGENT", 40);
+    progress("TEST_TIERED", 40);
+    progress("TEST_TIERED", 40);
+    progress("TEST_TIERED", 40);
 
     assertThat(userBadgeRepository.findByIdUserId(myId)).hasSize(1);
   }
@@ -147,9 +153,9 @@ class BadgeBaseIT {
   @Test
   @DisplayName("Xem cấp II = đã xem cả cấp I; gọi lại vẫn 204")
   void markSeenCoversLowerLevels() throws Exception {
-    progress("DILIGENT", 350);
+    progress("TEST_TIERED", 350);
     String body = """
-        {"items": [{"code": "DILIGENT", "level": 2}]}
+        {"items": [{"code": "TEST_TIERED", "level": 2}]}
         """;
     for (int i = 0; i < 2; i++) {
       mvc.perform(post("/api/badges/seen").header(AUTHORIZATION, me.bearer()).contentType(APPLICATION_JSON).content(body))
@@ -164,20 +170,20 @@ class BadgeBaseIT {
   @DisplayName("Bí mật bị che tới khi đạt")
   void secretIsMaskedUntilEarned() throws Exception {
     mvc.perform(get("/api/badges").header(AUTHORIZATION, me.bearer()))
-        .andExpect(jsonPath("$[1].name").value(BadgeService.SECRET_NAME))
-        .andExpect(jsonPath("$[1].progress").value(0));
+        .andExpect(jsonPath("$[?(@.code == 'TEST_SECRET')].name", contains(BadgeService.SECRET_NAME)))
+        .andExpect(jsonPath("$[?(@.code == 'TEST_SECRET')].progress", contains(0)));
 
-    progress("NIGHT_OWL", 1);
+    progress("TEST_SECRET", 1);
 
     mvc.perform(get("/api/badges").header(AUTHORIZATION, me.bearer()))
-        .andExpect(jsonPath("$[1].name").value("Cú đêm"))
-        .andExpect(jsonPath("$[1].level").value(1));
+        .andExpect(jsonPath("$[?(@.code == 'TEST_SECRET')].name", contains("Test bí mật")))
+        .andExpect(jsonPath("$[?(@.code == 'TEST_SECRET')].level", contains(1)));
   }
 
   @Test
   @DisplayName("Huy hiệu của người này không lẫn sang người khác")
   void isolatedPerUser() throws Exception {
-    progress("DILIGENT", 350);
+    progress("TEST_TIERED", 350);
     ApiSession other = new ApiClient(mvc).newLearner();
 
     mvc.perform(get("/api/badges/unseen").header(AUTHORIZATION, other.bearer())).andExpect(jsonPath("$", hasSize(0)));
@@ -188,7 +194,7 @@ class BadgeBaseIT {
   void validationAndAuth() throws Exception {
     mvc.perform(post("/api/badges/seen").header(AUTHORIZATION, me.bearer()).contentType(APPLICATION_JSON)
         .content("""
-            {"items": [{"code": "DILIGENT", "level": 5}]}
+            {"items": [{"code": "TEST_TIERED", "level": 5}]}
             """))
         .andExpect(status().isBadRequest());
     mvc.perform(get("/api/badges")).andExpect(status().isUnauthorized());

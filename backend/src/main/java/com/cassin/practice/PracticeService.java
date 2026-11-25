@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,6 +56,7 @@ public class PracticeService {
   private final ReviewEventRepository eventRepository;
   private final UserRepository userRepository;
   private final Clock clock;
+  private final ApplicationEventPublisher publisher; // [THÊM] huy hiệu
 
   /** GET /api/practice/fill-blank?deckId=&count= */
   @Transactional(readOnly = true)
@@ -122,6 +124,7 @@ public class PracticeService {
 
     eventRepository.save(ReviewEvent.of(userRepository.getReferenceById(userId), sense, a.mode(),
         result.correct(), a.durationMs(), clock.instant())); // [SỬA] giờ theo Clock
+    publisher.publishEvent(new ReviewAnsweredEvent(userId, a.mode(), result.correct())); // [THÊM] huy hiệu
     if (!result.correct()) {
       // Chỉ áp dụng cho nghĩa user ĐÃ học (có tiến độ). Nghĩa chưa học thì để hàng đợi "thẻ mới" lo.
       progressRepository.findByUserIdAndSenseId(userId, sense.getId())
