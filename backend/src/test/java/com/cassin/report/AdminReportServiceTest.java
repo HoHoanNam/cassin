@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.Clock;
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -44,6 +46,7 @@ class AdminReportServiceTest {
 
   @Mock ContentReportRepository reportRepository;
   @Mock UserRepository userRepository;
+  @Mock ApplicationEventPublisher publisher;
 
   private AdminReportService adminReportService;
   private ContentReport report;
@@ -51,7 +54,7 @@ class AdminReportServiceTest {
   @BeforeEach
   void setUp() {
     adminReportService = new AdminReportService(
-        reportRepository, userRepository, new ReportMapper(), Clock.fixed(REVIEWED_AT, ZoneOffset.UTC));
+        reportRepository, userRepository, new ReportMapper(), Clock.fixed(REVIEWED_AT, ZoneOffset.UTC), publisher);
     report = ReportFixtures.openReport(5L, ReportFixtures.learner(), ReportFixtures.systemSense());
   }
 
@@ -109,6 +112,8 @@ class AdminReportServiceTest {
     assertThat(response.resolvedByName()).isEqualTo("Quản trị");
     assertThat(response.adminNote()).isEqualTo("Đã sửa nghĩa");
     assertThat(response.resolvedAt()).isEqualTo(REVIEWED_AT);
+    // [THÊM] huy hiệu Mắt tinh cho NGƯỜI BÁO (learner), không phải admin
+    verify(publisher).publishEvent(new ReportResolvedEvent(ReportFixtures.USER_ID, 5L));
   }
 
   @Test
@@ -121,6 +126,7 @@ class AdminReportServiceTest {
         5L, new ReviewReportRequest(ReportStatus.REJECTED, "Nghĩa này đúng"), ADMIN_ID);
 
     assertThat(response.status()).isEqualTo(ReportStatus.REJECTED);
+    verifyNoInteractions(publisher); // báo sai không được thưởng
   }
 
   @Test

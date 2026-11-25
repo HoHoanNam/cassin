@@ -3,6 +3,7 @@ package com.cassin.report;
 import java.time.Clock;
 import java.time.Instant;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -40,6 +41,7 @@ public class AdminReportService {
   private final UserRepository userRepository;
   private final ReportMapper mapper;
   private final Clock clock;
+  private final ApplicationEventPublisher publisher; // [THÊM] huy hiệu
 
   /**
    * GET /api/admin/reports?status=&page=&size=
@@ -90,6 +92,12 @@ public class AdminReportService {
     }
     // ⚠ Hai admin bấm xử lý CÙNG LÚC: cả hai đọc thấy OPEN, cùng qua close(), người lưu sau đè người trước
     //   (lost update). Sửa triệt để: thêm cột version + @Version vào ContentReport (câu 10 trong tài liệu).
+
+    // [THÊM] Huy hiệu Mắt tinh cho NGƯỜI BÁO LỖI (không phải admin). getReporter().getId() trên proxy LAZY
+    // không chạy SELECT. Listener chỉ chạy sau khi transaction này commit.
+    if (report.getStatus() == ReportStatus.RESOLVED) {
+      publisher.publishEvent(new ReportResolvedEvent(report.getReporter().getId(), report.getId()));
+    }
     return mapper.toAdminResponse(report);
   }
 
