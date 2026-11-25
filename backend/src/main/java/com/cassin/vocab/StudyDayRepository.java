@@ -3,6 +3,7 @@ package com.cassin.vocab;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -44,4 +45,15 @@ public interface StudyDayRepository extends JpaRepository<StudyDay, StudyDayId> 
   List<LocalDate> recentDays(@Param("userId") Long userId, Pageable limit);
 
   long countByIdStudyDate(LocalDate studyDate); // id.studyDate (khóa ghép)
+
+  /**
+   * [THÊM] Chuỗi ngày học liên tiếp tính tới hôm nay, ĐÚNG con số trang Ôn tập đang hiện (ReviewStatsResponse).
+   * Dùng lại ReviewService.streak (cùng package nên gọi được) thay vì viết lại luật đếm ở nơi khác:
+   * huy hiệu Lửa bền và trang Ôn tập không bao giờ lệch nhau.
+   *
+   * default method: Spring Data chỉ sinh code cho method TRỪU TƯỢNG; method có thân thì proxy gọi thẳng thân này.
+   */
+  default int currentStreak(Long userId, LocalDate today) {
+    return ReviewService.streak(recentDays(userId, PageRequest.of(0, ReviewService.MAX_STREAK_DAYS)), today);
+  }
 }

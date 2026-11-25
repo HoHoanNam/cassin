@@ -23,6 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 
 import com.cassin.common.BusinessException;
@@ -54,6 +55,7 @@ class PracticeServiceTest {
   @Mock CardProgressRepository progressRepository;
   @Mock ReviewEventRepository eventRepository;
   @Mock UserRepository userRepository;
+  @Mock ApplicationEventPublisher publisher;
 
   private PracticeService practiceService;
 
@@ -69,7 +71,8 @@ class PracticeServiceTest {
   @BeforeEach
   void setUp() {
     Clock fixedClock = Clock.fixed(TODAY.atStartOfDay(TimeConfig.APP_ZONE).toInstant(), TimeConfig.APP_ZONE);
-    practiceService = new PracticeService(wordService, progressRepository, eventRepository, userRepository, fixedClock);
+    practiceService = new PracticeService(wordService, progressRepository, eventRepository, userRepository, fixedClock,
+        publisher);
   }
 
   // ===================== Tạo câu hỏi =====================
@@ -139,6 +142,7 @@ class PracticeServiceTest {
     // [THÊM] B1: giờ ghi nhật ký lấy từ Clock (đồng hồ cố định của test), không phải giờ máy
     assertThat(event.getValue().getReviewedAt()).isEqualTo(TODAY.atStartOfDay(TimeConfig.APP_ZONE).toInstant());
     verifyNoInteractions(progressRepository);
+    verify(publisher).publishEvent(new ReviewAnsweredEvent(USER_ID, PracticeMode.FILL_BLANK, true)); // [THÊM] huy hiệu
   }
 
   @Test
@@ -175,6 +179,7 @@ class PracticeServiceTest {
     assertThat(result.hint()).isNull();
     verify(eventRepository).save(any(ReviewEvent.class));
     verify(progressRepository, never()).save(any());
+    verify(publisher).publishEvent(new ReviewAnsweredEvent(USER_ID, PracticeMode.FILL_BLANK, false)); // câu sai vẫn tính
   }
 
   @Test
@@ -197,7 +202,7 @@ class PracticeServiceTest {
 
     PracticeAnswer unmarked = new PracticeAnswer(30L, 1, PracticeMode.FILL_BLANK, "improve", 1000);
     assertStatus(() -> practiceService.check(unmarked, USER_ID), HttpStatus.BAD_REQUEST, "NOT_PRACTICABLE");
-    verifyNoInteractions(eventRepository, progressRepository);
+    verifyNoInteractions(eventRepository, progressRepository, publisher);
   }
 
   @Test
@@ -215,7 +220,7 @@ class PracticeServiceTest {
     when(wordService.findReadableSense(30L, USER_ID)).thenReturn(improveVerb);
 
     assertStatus(() -> practiceService.check(answer(PracticeMode.FLASHCARD, "x"), USER_ID), HttpStatus.BAD_REQUEST, "INVALID_MODE");
-    verifyNoInteractions(eventRepository);
+    verifyNoInteractions(eventRepository, publisher);
     verify(progressRepository, never()).findByUserIdAndSenseId(anyLong(), anyLong());
   }
 

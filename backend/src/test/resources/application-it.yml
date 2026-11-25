@@ -3,6 +3,11 @@
 # KHÔNG khai báo spring.datasource ở đây: DataSource do PostgresContainerConfig hoặc LocalPostgresConfig tạo.
 # Flyway vẫn chạy đủ V1 → V14 trên DB trống, Hibernate "validate" entity → lỗi migration lộ ra ngay.
 
+spring:
+  flyway:
+    # [THÊM] db/testdata: huy hiệu GIẢ (TEST_*) cho BadgeBaseIT, nạp sau mọi migration thật. Chỉ có trong test.
+    locations: classpath:db/migration,classpath:db/testdata
+
 cassin:
   # [THÊM] Chạy IT trên DB nào:
   #   container (mặc định): PostgreSQL trong Docker qua Testcontainers, cần Docker Desktop đang chạy

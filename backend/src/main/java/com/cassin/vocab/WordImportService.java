@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -84,6 +85,7 @@ public class WordImportService {
   private final DeckService deckService;
   private final WordRepository wordRepository;
   private final UserRepository userRepository;
+  private final ApplicationEventPublisher publisher; // [THÊM] huy hiệu
 
   /**
    * POST /api/decks/{deckId}/import?dryRun=
@@ -142,6 +144,11 @@ public class WordImportService {
     wordRepository.saveAll(newWords);
     for (Word word : newWords) {
       deckService.linkWord(deck, word);
+    }
+    if (!newWords.isEmpty()) {
+      // [THÊM] Huy hiệu: một sự kiện cho CẢ FILE (không phải mỗi từ một sự kiện). Nhập 120 từ có thể nhảy
+      // thẳng cấp I + II; listener chạy sau khi transaction của cả file commit.
+      publisher.publishEvent(new WordsAddedEvent(userId, newWords.size()));
     }
     return new ImportResult(true, newWords.size(), senseCount, skipped, List.of());
   }

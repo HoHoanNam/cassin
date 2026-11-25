@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.IntStream;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.cassin.common.BusinessException;
 import com.cassin.practice.PracticeMode;
+import com.cassin.practice.ReviewAnsweredEvent;
 import com.cassin.practice.ReviewEvent;
 import com.cassin.practice.ReviewEventRepository;
 import com.cassin.user.UserRepository;
@@ -52,6 +54,7 @@ public class ReviewService {
   private final StudyDayRepository studyDayRepository;
   private final ReviewEventRepository eventRepository;
   private final Clock clock;
+  private final ApplicationEventPublisher publisher; // [THÊM] huy hiệu
 
   /**
    * GET /api/review-queue?deckId=&newLimit=
@@ -122,6 +125,9 @@ public class ReviewService {
     eventRepository.save(ReviewEvent.of(
         userRepository.getReferenceById(userId), sense, PracticeMode.FLASHCARD,
         remembered, durationMs == null ? 0 : durationMs, clock.instant())); // [SỬA] giờ theo Clock
+    // [THÊM] Huy hiệu. Listener chạy SAU khi transaction này commit (AFTER_COMMIT); rollback thì không xét.
+    // Lượt bị 409 đã throw ở trên nên không tới đây, không được tính.
+    publisher.publishEvent(new ReviewAnsweredEvent(userId, PracticeMode.FLASHCARD, remembered));
     return ReviewResultResponse.from(saved);
   }
 

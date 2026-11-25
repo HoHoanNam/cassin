@@ -24,12 +24,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 
 import com.cassin.common.BusinessException;
 import com.cassin.common.TimeConfig;
 import com.cassin.practice.PracticeMode;
+import com.cassin.practice.ReviewAnsweredEvent;
 import com.cassin.practice.ReviewEvent;
 import com.cassin.practice.ReviewEventRepository;
 import com.cassin.user.User;
@@ -55,6 +57,7 @@ class ReviewServiceTest {
   @Mock WordService wordService;
   @Mock StudyDayRepository studyDayRepository;
   @Mock ReviewEventRepository eventRepository;
+  @Mock ApplicationEventPublisher publisher;
 
   private ReviewService reviewService;
 
@@ -71,7 +74,7 @@ class ReviewServiceTest {
   void setUp() {
     Clock fixedClock = Clock.fixed(TODAY.atStartOfDay(TimeConfig.APP_ZONE).toInstant(), TimeConfig.APP_ZONE);
     reviewService = new ReviewService(progressRepository, senseRepository, userRepository,
-        deckService, wordService, studyDayRepository, eventRepository, fixedClock);
+        deckService, wordService, studyDayRepository, eventRepository, fixedClock, publisher);
   }
 
   // ===================== getQueue =====================
@@ -169,7 +172,7 @@ class ReviewServiceTest {
 
     assertStatus(() -> reviewService.review(30L, true, null, USER_ID), HttpStatus.CONFLICT, "REVIEW_NOT_ALLOWED");
     verify(progressRepository, never()).save(any());
-    verifyNoInteractions(studyDayRepository, eventRepository);   // lượt 409 không ghi nhật ký
+    verifyNoInteractions(studyDayRepository, eventRepository, publisher);   // lượt 409 không ghi nhật ký, không tính huy hiệu
   }
 
   @Test
@@ -179,7 +182,7 @@ class ReviewServiceTest {
         .thenThrow(new BusinessException(HttpStatus.NOT_FOUND, "SENSE_NOT_FOUND", "Không tìm thấy nghĩa"));
 
     assertStatus(() -> reviewService.review(99L, true, null, USER_ID), HttpStatus.NOT_FOUND, "SENSE_NOT_FOUND");
-    verifyNoInteractions(progressRepository, studyDayRepository, eventRepository);
+    verifyNoInteractions(progressRepository, studyDayRepository, eventRepository, publisher);
   }
 
   @Test
@@ -198,6 +201,8 @@ class ReviewServiceTest {
     assertThat(event.getValue().isCorrect()).isFalse();
     assertThat(event.getValue().getDurationMs()).isZero();
     assertThat(event.getValue().getSense()).isSameAs(lightAdj);
+    // [THÊM] huy hiệu: record so sánh theo từng field → khớp đúng sự kiện mong đợi
+    verify(publisher).publishEvent(new ReviewAnsweredEvent(USER_ID, PracticeMode.FLASHCARD, false));
   }
 
   @Test

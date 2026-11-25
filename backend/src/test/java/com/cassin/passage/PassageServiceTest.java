@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.Clock;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
@@ -38,6 +40,8 @@ class PassageServiceTest {
   ReadingAttemptRepository attemptRepository;
   @Mock
   UserRepository userRepository;
+  @Mock
+  ApplicationEventPublisher publisher;
 
   PassageService service;
   Passage passage;
@@ -45,7 +49,7 @@ class PassageServiceTest {
   @BeforeEach
   void setUp() {
     service = new PassageService(passageRepository, attemptRepository, userRepository,
-        new PassageMapper(), Clock.fixed(PassageFixtures.NOW, ZoneOffset.UTC));
+        new PassageMapper(), Clock.fixed(PassageFixtures.NOW, ZoneOffset.UTC), publisher);
     passage = PassageFixtures.publishedWithAllTypes();
   }
 
@@ -146,6 +150,8 @@ class PassageServiceTest {
     assertCode(catchThrowable(() -> service.submit(5L, answers, 7L)), "ATTEMPT_SUBMITTED");
     assertCode(catchThrowable(() -> service.getAttempt(5L, 7L)), "ATTEMPT_SUBMITTED");
     assertThat(service.result(5L, 7L).correctWithoutHints()).isEqualTo(3);
+    // [THÊM] huy hiệu: đúng MỘT sự kiện (lượt gửi trùng và lượt nộp lại đều bị từ chối, không phát)
+    verify(publisher).publishEvent(new ReadingSubmittedEvent(7L, 1L, 3, 3, 3L));
   }
 
   @Test
@@ -156,6 +162,7 @@ class PassageServiceTest {
     assertCode(catchThrowable(() -> service.submit(5L,
         new SubmitRequest(List.of(new AnswerRequest(3L, 99L, null, null))), 7L)), "INVALID_ANSWER");
     assertThat(attempt.isSubmitted()).isFalse();
+    verifyNoInteractions(publisher);
   }
 
   private static Throwable catchThrowable(org.assertj.core.api.ThrowableAssert.ThrowingCallable call) {
