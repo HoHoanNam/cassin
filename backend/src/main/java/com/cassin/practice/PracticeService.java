@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.cassin.common.BusinessException;
 import com.cassin.practice.dto.FillBlankQuestion;
 import com.cassin.practice.dto.PracticeAnswer;
+import com.cassin.practice.dto.PracticeAvailability;
 import com.cassin.practice.dto.PracticeResult;
 import com.cassin.practice.dto.SentenceBuildQuestion;
 import com.cassin.user.UserRepository;
@@ -50,7 +51,7 @@ import lombok.RequiredArgsConstructor;
 public class PracticeService {
   static final int MIN_TOKENS = 5;
   static final int MAX_TOKENS = 15;
-  static final int MAX_QUESTIONS = 30;
+  static final int MAX_QUESTIONS = 200; // [SỬA] 30 → 200: cho phép ôn gộp nhiều bộ
 
   private final WordService wordService;
   private final CardProgressRepository progressRepository;
@@ -62,6 +63,7 @@ public class PracticeService {
   /** GET /api/practice/fill-blank?deckIds=&notebook=&all=&count= */
   @Transactional(readOnly = true)
   public List<FillBlankQuestion> fillBlank(PracticeSource source, int count, Long userId) { // [SỬA] deckId → source
+    checkCount(count); // [THÊM] chặn sớm, khỏi truy vấn
     List<FillBlankQuestion> candidates = new ArrayList<>();
     for (Sense sense : wordService.practiceSenses(source, userId)) {
       List<String> examples = sense.getExamples();
@@ -80,19 +82,38 @@ public class PracticeService {
   /** GET /api/practice/sentence-build?deckIds=&notebook=&all=&count= */
   @Transactional(readOnly = true)
   public List<SentenceBuildQuestion> sentenceBuild(PracticeSource source, int count, Long userId) { // [SỬA]
+    checkCount(count); // [THÊM]
     Random random = ThreadLocalRandom.current();
     List<SentenceBuildQuestion> candidates = new ArrayList<>();
     for (Sense sense : wordService.practiceSenses(source, userId)) {
       List<String> examples = sense.getExamples();
       for (int i = 0; i < examples.size(); i++) {
         List<String> tokens = tokens(ExampleMarkup.plainOf(examples.get(i)));
-        if (tokens.size() >= MIN_TOKENS && tokens.size() <= MAX_TOKENS) {
+        if (buildable(tokens)) {
           candidates.add(new SentenceBuildQuestion(sense.getId(), i, sense.getWord().getTerm(),
               sense.getDefinition(), shuffled(tokens, random)));
         }
       }
     }
     return pickOnePerSense(candidates, count, q -> q.senseId());
+  }
+
+  /**
+   * [THÊM] GET /api/practice/availability?deckIds=&notebook=&all=
+   * Số câu TỐI ĐA mỗi chế độ cho nguồn đã chọn = số NGHĨA có ít nhất 1 câu dùng được
+   * (mỗi nghĩa chỉ ra 1 câu / lượt, xem pickOnePerSense). FE dùng để vẽ thanh trượt, nút MAX và cảnh báo.
+   * Đếm bằng đúng 2 điều kiện mà fillBlank / sentenceBuild dùng → con số luôn khớp số câu thật.
+   */
+  @Transactional(readOnly = true)
+  public PracticeAvailability availability(PracticeSource source, Long userId) {
+    List<Sense> senses = wordService.practiceSenses(source, userId);
+    int fillBlank = (int) senses.stream()
+        .filter(s -> s.getExamples().stream().anyMatch(e -> ExampleMarkup.parse(e).isPresent()))
+        .count();
+    int sentenceBuild = (int) senses.stream()
+        .filter(s -> s.getExamples().stream().anyMatch(e -> buildable(tokens(ExampleMarkup.plainOf(e)))))
+        .count();
+    return new PracticeAvailability(fillBlank, sentenceBuild, MAX_QUESTIONS);
   }
 
   /** POST /api/practice/answers */
@@ -172,22 +193,40 @@ public class PracticeService {
         .toLowerCase(Locale.ROOT);
   }
 
-  /** Xáo danh sách, mỗi nghĩa lấy tối đa 1 câu (tránh 3 câu liền nhau cùng một từ), lấy count câu. */
-  private static <T> List<T> pickOnePerSense(List<T> candidates, int count, Function<T, Long> senseOf) {
+  /** [THÊM] Câu dài vừa phải mới đem đi xếp (ngắn quá thì dễ, dài quá thì nản). */
+  static boolean buildable(List<String> tokens) {
+    return tokens.size() >= MIN_TOKENS && tokens.size() <= MAX_TOKENS;
+  }
+
+  /** [THÊM] count ngoài 1..MAX_QUESTIONS là lỗi của client (trước đây bị kẹp im lặng). */
+  static void checkCount(int count) {
+    if (count < 1 || count > MAX_QUESTIONS) {
+      throw new BusinessException(HttpStatus.BAD_REQUEST, "INVALID_COUNT",
+          "Số câu phải từ 1 đến " + MAX_QUESTIONS);
+    }
+  }
+
+  /**
+   * Xáo danh sách, mỗi nghĩa lấy tối đa 1 câu (tránh 3 câu liền nhau cùng một từ), lấy count câu.
+   * [SỬA] Không đủ câu → 400 PRACTICE_COUNT_EXCEEDS thay vì trả thiếu: FE đã biết trước số câu có sẵn
+   * (availability), nên tới được đây nghĩa là client gửi sai hoặc dữ liệu vừa đổi → báo rõ để chọn lại.
+   */
+  static <T> List<T> pickOnePerSense(List<T> candidates, int count, Function<T, Long> senseOf) {
     List<T> pool = new ArrayList<>(candidates);
     Collections.shuffle(pool, ThreadLocalRandom.current());
-    int limit = Math.clamp(count, 1, MAX_QUESTIONS);
     Set<Long> usedSenses = new HashSet<>();
-    List<T> picked = new ArrayList<>();
+    List<T> onePerSense = new ArrayList<>();
     for (T question : pool) {
-      if (picked.size() == limit) {
-        break;
-      }
       if (usedSenses.add(senseOf.apply(question))) {
-        picked.add(question);
+        onePerSense.add(question);
       }
     }
-    return picked;
+    if (count > onePerSense.size()) {
+      throw new BusinessException(HttpStatus.BAD_REQUEST, "PRACTICE_COUNT_EXCEEDS", onePerSense.isEmpty()
+          ? "Phạm vi đã chọn chưa có câu nào để luyện"
+          : "Phạm vi đã chọn chỉ có " + onePerSense.size() + " câu");
+    }
+    return List.copyOf(onePerSense.subList(0, count));
   }
 
   private static BusinessException notPracticable() {

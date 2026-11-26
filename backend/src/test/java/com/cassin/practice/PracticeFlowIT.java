@@ -65,7 +65,7 @@ class PracticeFlowIT {
 
     mvc.perform(get("/api/practice/fill-blank")
             .param("deckIds", String.valueOf(deck))
-            .param("count", "30")
+            .param("count", "24")
             .header(AUTHORIZATION, nam.bearer()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$", hasSize(24))) // trước V15: 0 câu
@@ -101,6 +101,24 @@ class PracticeFlowIT {
     practice(nam, "fill-blank", "all", "true", "count", "25")
         .andExpect(status().isOk())
         .andExpect(jsonPath("$", hasSize(25)));
+  }
+
+  @Test
+  @DisplayName("[THÊM] Availability khớp số câu thật; xin quá số đó → 400 PRACTICE_COUNT_EXCEEDS")
+  void availability_matchesQuestions_andGuardsCount() throws Exception {
+    ApiSession nam = api.newLearner();
+    long deck = systemDeckNamed(nam, COMMON_DECK);
+
+    practice(nam, "availability", "deckIds", String.valueOf(deck))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.fillBlank").value(24))
+        .andExpect(jsonPath("$.maxQuestions").value(200));
+    practice(nam, "fill-blank", "deckIds", String.valueOf(deck), "count", "25")
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("PRACTICE_COUNT_EXCEEDS"));
+    practice(nam, "fill-blank", "deckIds", String.valueOf(deck), "count", "201")
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("INVALID_COUNT"));
   }
 
   @Test

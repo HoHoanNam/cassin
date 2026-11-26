@@ -30,6 +30,7 @@ import com.cassin.common.BusinessException;
 import com.cassin.common.TimeConfig;
 import com.cassin.practice.dto.FillBlankQuestion;
 import com.cassin.practice.dto.PracticeAnswer;
+import com.cassin.practice.dto.PracticeAvailability;
 import com.cassin.practice.dto.PracticeResult;
 import com.cassin.practice.dto.SentenceBuildQuestion;
 import com.cassin.user.User;
@@ -85,7 +86,7 @@ class PracticeServiceTest {
   void fillBlank_hidesAnswer() {
     when(wordService.practiceSenses(NOTEBOOK, USER_ID)).thenReturn(List.of(improveVerb));
 
-    List<FillBlankQuestion> questions = practiceService.fillBlank(NOTEBOOK, 10, USER_ID);
+    List<FillBlankQuestion> questions = practiceService.fillBlank(NOTEBOOK, 1, USER_ID);
 
     assertThat(questions).singleElement().satisfies(q -> {
       assertThat(q.senseId()).isEqualTo(30L);
@@ -101,7 +102,7 @@ class PracticeServiceTest {
   void sentenceBuild_filtersAndShuffles() {
     when(wordService.practiceSenses(DECK_5, USER_ID)).thenReturn(List.of(improveVerb));
 
-    List<SentenceBuildQuestion> questions = practiceService.sentenceBuild(DECK_5, 10, USER_ID);
+    List<SentenceBuildQuestion> questions = practiceService.sentenceBuild(DECK_5, 1, USER_ID);
 
     List<String> original = List.of("Her", "English", "has", "improved", "a", "lot", "this", "year.");
     assertThat(questions).singleElement().satisfies(q -> {
@@ -119,7 +120,7 @@ class PracticeServiceTest {
         sense(PartOfSpeech.ADJECTIVE, "nhẹ", "This bag is [light]."));
     when(wordService.practiceSenses(NOTEBOOK, USER_ID)).thenReturn(List.of(improveVerb, light.getSenses().get(0), light.getSenses().get(1)));
 
-    List<FillBlankQuestion> all = practiceService.fillBlank(NOTEBOOK, 10, USER_ID);
+    List<FillBlankQuestion> all = practiceService.fillBlank(NOTEBOOK, 3, USER_ID);
     List<FillBlankQuestion> two = practiceService.fillBlank(NOTEBOOK, 2, USER_ID);
 
     assertThat(all).extracting(q -> q.senseId()).containsExactlyInAnyOrder(30L, 40L, 41L);
@@ -259,6 +260,47 @@ class PracticeServiceTest {
   // PracticeService KHÔNG cần sửa: các test này chốt rằng luồng cũ đã chạy đúng với cụm nhiều chữ.
 
   // [THÊM] Từ 6 → nghĩa 60 (quy ước id của VocabFixtures).
+  // ===================== [THÊM] Số câu: kiểm tra count + availability =====================
+
+  @Test
+  @DisplayName("[THÊM] count vượt số nghĩa có sẵn → 400 PRACTICE_COUNT_EXCEEDS (không trả thiếu im lặng)")
+  void fillBlank_countExceedsAvailable_isBadRequest() {
+    when(wordService.practiceSenses(NOTEBOOK, USER_ID)).thenReturn(List.of(improveVerb));
+
+    assertThatThrownBy(() -> practiceService.fillBlank(NOTEBOOK, 2, USER_ID))
+        .isInstanceOfSatisfying(BusinessException.class, e -> {
+          assertThat(e.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          assertThat(e.getCode()).isEqualTo("PRACTICE_COUNT_EXCEEDS");
+          assertThat(e.getMessage()).contains("1 câu");
+        });
+  }
+
+  @Test
+  @DisplayName("[THÊM] count ngoài 1..200 → 400 INVALID_COUNT, chưa kịp truy vấn")
+  void count_outOfRange_isBadRequest() {
+    for (int count : new int[] {0, PracticeService.MAX_QUESTIONS + 1}) {
+      assertThatThrownBy(() -> practiceService.sentenceBuild(NOTEBOOK, count, USER_ID))
+          .isInstanceOfSatisfying(BusinessException.class, e -> assertThat(e.getCode()).isEqualTo("INVALID_COUNT"));
+    }
+    verifyNoInteractions(wordService);
+  }
+
+  @Test
+  @DisplayName("[THÊM] Availability đếm theo NGHĨA, cùng điều kiện với lúc tạo câu hỏi")
+  void availability_countsSensesPerMode() {
+    Word light = VocabFixtures.word(4L, "light", null,
+        sense(PartOfSpeech.NOUN, "ánh sáng", "Turn on the [light].", "The [light] flickers."), // 4 và 3 mảnh: không xếp
+        sense(PartOfSpeech.ADJECTIVE, "nhẹ", "This bag is light enough to carry.")); // không đánh dấu: không điền
+    when(wordService.practiceSenses(NOTEBOOK, USER_ID))
+        .thenReturn(List.of(improveVerb, light.getSenses().get(0), light.getSenses().get(1)));
+
+    PracticeAvailability availability = practiceService.availability(NOTEBOOK, USER_ID);
+
+    assertThat(availability.fillBlank()).isEqualTo(2);      // improve + light (n), dù light (n) có 2 câu
+    assertThat(availability.sentenceBuild()).isEqualTo(2);  // improve + light (adj)
+    assertThat(availability.maxQuestions()).isEqualTo(PracticeService.MAX_QUESTIONS);
+  }
+
   private final Word breakTheIce = VocabFixtures.word(6L, "break the ice", null,
       sense(PartOfSpeech.IDIOM, "phá vỡ sự ngại ngùng ban đầu",
           "He told a funny story to [break the ice]."));
@@ -271,7 +313,7 @@ class PracticeServiceTest {
   void fillBlank_idiom_hidesWholePhrase() {
     when(wordService.practiceSenses(NOTEBOOK, USER_ID)).thenReturn(List.of(breakTheIce.getSenses().get(0)));
 
-    List<FillBlankQuestion> questions = practiceService.fillBlank(NOTEBOOK, 10, USER_ID);
+    List<FillBlankQuestion> questions = practiceService.fillBlank(NOTEBOOK, 1, USER_ID);
 
     assertThat(questions).singleElement().satisfies(q -> {
       assertThat(q.senseId()).isEqualTo(60L);
@@ -314,7 +356,7 @@ class PracticeServiceTest {
   void sentenceBuild_idiom() {
     when(wordService.practiceSenses(NOTEBOOK, USER_ID)).thenReturn(List.of(breakTheIce.getSenses().get(0)));
 
-    List<SentenceBuildQuestion> questions = practiceService.sentenceBuild(NOTEBOOK, 10, USER_ID);
+    List<SentenceBuildQuestion> questions = practiceService.sentenceBuild(NOTEBOOK, 1, USER_ID);
 
     assertThat(questions).singleElement().satisfies(q -> {
       assertThat(q.term()).isEqualTo("break the ice");

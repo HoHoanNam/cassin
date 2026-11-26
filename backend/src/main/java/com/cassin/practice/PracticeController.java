@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import com.cassin.auth.AuthUser;
 import com.cassin.practice.dto.FillBlankQuestion;
 import com.cassin.practice.dto.PracticeAnswer;
+import com.cassin.practice.dto.PracticeAvailability;
 import com.cassin.practice.dto.PracticeResult;
 import com.cassin.practice.dto.PracticeStatsResponse;
 import com.cassin.practice.dto.SentenceBuildQuestion;
@@ -54,6 +55,19 @@ public class PracticeController {
       @RequestParam(defaultValue = "10") int count,
       @AuthenticationPrincipal AuthUser user) {
     return practiceService.sentenceBuild(new PracticeSource(all, notebook, deckIds), count, user.id());
+  }
+
+  /**
+   * [THÊM] Số câu tối đa mỗi chế độ cho nguồn đã chọn, cùng tham số nguồn với 2 API trên.
+   *   GET /api/practice/availability?all=true → {"fillBlank": 312, "sentenceBuild": 290, "maxQuestions": 200}
+   */
+  @GetMapping("/availability")
+  public PracticeAvailability availability(
+      @RequestParam(required = false) List<Long> deckIds,
+      @RequestParam(defaultValue = "false") boolean notebook,
+      @RequestParam(defaultValue = "false") boolean all,
+      @AuthenticationPrincipal AuthUser user) {
+    return practiceService.availability(new PracticeSource(all, notebook, deckIds), user.id());
   }
 
   @PostMapping("/answers")
