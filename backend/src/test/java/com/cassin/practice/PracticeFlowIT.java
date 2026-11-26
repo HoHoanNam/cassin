@@ -64,12 +64,55 @@ class PracticeFlowIT {
     long deck = systemDeckNamed(nam, COMMON_DECK);
 
     mvc.perform(get("/api/practice/fill-blank")
-            .param("deckId", String.valueOf(deck))
+            .param("deckIds", String.valueOf(deck))
             .param("count", "30")
             .header(AUTHORIZATION, nam.bearer()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$", hasSize(24))) // trước V15: 0 câu
         .andExpect(jsonPath("$[0].sentence").value(containsString("____")));
+  }
+
+  @Test
+  @DisplayName("[THÊM] Gộp nhiều bộ: deckIds=A,B lấy câu của cả 2 bộ; chỉ A thì chỉ bộ A")
+  void fillBlank_multipleDecks_unionOfDecks() throws Exception {
+    ApiSession nam = api.newLearner();
+    long deckA = vocab.createDeck(nam, "Environment");
+    long deckB = vocab.createDeck(nam, "Health");
+    vocab.createWord(nam, deckA, "recycle");
+    vocab.createWord(nam, deckA, "pollute");
+    vocab.createWord(nam, deckB, "recover");
+
+    practice(nam, "fill-blank", "deckIds", deckA + "," + deckB, "count", "3")
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(3)));
+    practice(nam, "fill-blank", "deckIds", String.valueOf(deckA), "count", "2")
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(2)));
+  }
+
+  @Test
+  @DisplayName("[THÊM] 'Tất cả' = mọi bộ hệ thống + sổ từ, nghĩa trùng chỉ tính 1 lần")
+  void fillBlank_all_systemDecksPlusNotebook() throws Exception {
+    ApiSession nam = api.newLearner();
+    long deck = vocab.createDeck(nam, "Của tôi");
+    vocab.createWord(nam, deck, "recycle"); // 1 nghĩa luyện được, chỉ có trong sổ từ
+
+    // 24 câu của bộ seed + 1 câu sổ từ
+    practice(nam, "fill-blank", "all", "true", "count", "25")
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(25)));
+  }
+
+  @Test
+  @DisplayName("[THÊM] Bộ của người khác trong deckIds → 404, không lộ câu hỏi")
+  void fillBlank_foreignDeck_isNotFound() throws Exception {
+    ApiSession nam = api.newLearner();
+    ApiSession other = api.newLearner();
+    long mine = vocab.createDeck(nam, "Của Nam");
+    long foreign = vocab.createDeck(other, "Của người khác");
+
+    practice(nam, "fill-blank", "deckIds", mine + "," + foreign, "count", "1")
+        .andExpect(status().isNotFound());
   }
 
   @Test
@@ -127,6 +170,15 @@ class PracticeFlowIT {
         .content("""
             {"senseId": %d, "exampleIndex": 0, "mode": "%s", "answer": "%s", "durationMs": 2000}
             """.formatted(senseId, mode, text)));
+  }
+
+  /** GET /api/practice/{mode} với các cặp tham số (tên, giá trị). */
+  private ResultActions practice(ApiSession user, String mode, String... params) throws Exception {
+    var request = get("/api/practice/" + mode).header(AUTHORIZATION, user.bearer());
+    for (int i = 0; i < params.length; i += 2) {
+      request.param(params[i], params[i + 1]);
+    }
+    return mvc.perform(request);
   }
 
   private ResultActions stats(ApiSession user, int days) throws Exception {

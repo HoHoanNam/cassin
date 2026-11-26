@@ -26,6 +26,7 @@ import com.cassin.practice.dto.SentenceBuildQuestion;
 import com.cassin.user.UserRepository;
 import com.cassin.vocab.CardProgressRepository;
 import com.cassin.vocab.ExampleMarkup;
+import com.cassin.vocab.PracticeSource;
 import com.cassin.vocab.Sense;
 import com.cassin.vocab.WordService;
 
@@ -58,11 +59,11 @@ public class PracticeService {
   private final Clock clock;
   private final ApplicationEventPublisher publisher; // [THÊM] huy hiệu
 
-  /** GET /api/practice/fill-blank?deckId=&count= */
+  /** GET /api/practice/fill-blank?deckIds=&notebook=&all=&count= */
   @Transactional(readOnly = true)
-  public List<FillBlankQuestion> fillBlank(Long deckId, int count, Long userId) {
+  public List<FillBlankQuestion> fillBlank(PracticeSource source, int count, Long userId) { // [SỬA] deckId → source
     List<FillBlankQuestion> candidates = new ArrayList<>();
-    for (Sense sense : wordService.practiceSenses(deckId, userId)) {
+    for (Sense sense : wordService.practiceSenses(source, userId)) {
       List<String> examples = sense.getExamples();
       for (int i = 0; i < examples.size(); i++) {
         Optional<ExampleMarkup> markup = ExampleMarkup.parse(examples.get(i));
@@ -76,12 +77,12 @@ public class PracticeService {
     return pickOnePerSense(candidates, count, q -> q.senseId());
   }
 
-  /** GET /api/practice/sentence-build?deckId=&count= */
+  /** GET /api/practice/sentence-build?deckIds=&notebook=&all=&count= */
   @Transactional(readOnly = true)
-  public List<SentenceBuildQuestion> sentenceBuild(Long deckId, int count, Long userId) {
+  public List<SentenceBuildQuestion> sentenceBuild(PracticeSource source, int count, Long userId) { // [SỬA]
     Random random = ThreadLocalRandom.current();
     List<SentenceBuildQuestion> candidates = new ArrayList<>();
-    for (Sense sense : wordService.practiceSenses(deckId, userId)) {
+    for (Sense sense : wordService.practiceSenses(source, userId)) {
       List<String> examples = sense.getExamples();
       for (int i = 0; i < examples.size(); i++) {
         List<String> tokens = tokens(ExampleMarkup.plainOf(examples.get(i)));

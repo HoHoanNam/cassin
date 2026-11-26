@@ -1,7 +1,9 @@
 package com.cassin.vocab;
 
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -123,16 +125,25 @@ public class WordService {
   }
 
   /**
-   * Nguồn câu hỏi luyện tập: các nghĩa CÓ câu ví dụ, trong một bộ (deckId) hoặc trong sổ từ (null).
+   * [SỬA] Nguồn câu hỏi luyện tập: các nghĩa CÓ câu ví dụ, gộp từ nhiều nguồn (xem PracticeSource).
    * public vì PracticeService nằm ở package khác; luật quyền của bộ vẫn nằm trong vocab.
+   *
+   * Gộp bằng LinkedHashMap theo id: một nghĩa vừa trong sổ từ vừa trong bộ hệ thống chỉ tính 1 lần
+   * (nếu không, "Có sẵn N câu" bị đếm dư và một nghĩa có thể ra 2 câu hỏi).
    */
   @Transactional(readOnly = true)
-  public List<Sense> practiceSenses(Long deckId, Long userId) {
-    if (deckId != null) {
-      deckService.findReadable(deckId, userId);
-      return senseRepository.findPracticeInDeck(deckId);
+  public List<Sense> practiceSenses(PracticeSource source, Long userId) {
+    Map<Long, Sense> senses = new LinkedHashMap<>();
+    if (source.all()) {
+      senseRepository.findPracticeInSystemDecks().forEach(s -> senses.putIfAbsent(s.getId(), s));
+    } else if (!source.deckIds().isEmpty()) {
+      source.deckIds().forEach(deckId -> deckService.findReadable(deckId, userId)); // 404 / 403 trước khi truy vấn
+      senseRepository.findPracticeInDecks(source.deckIds()).forEach(s -> senses.putIfAbsent(s.getId(), s));
     }
-    return senseRepository.findPracticeInNotebook(userId);
+    if (source.includesNotebook()) {
+      senseRepository.findPracticeInNotebook(userId).forEach(s -> senses.putIfAbsent(s.getId(), s));
+    }
+    return List.copyOf(senses.values());
   }
 
   // ===================== helpers =====================
