@@ -1,5 +1,6 @@
 package com.cassin.vocab;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.domain.Pageable;
@@ -50,15 +51,25 @@ public interface SenseRepository extends JpaRepository<Sense, Long> {
   long countNewInDeck(@Param("deckId") Long deckId, @Param("userId") Long userId);
 
   /**
-   * Nghĩa CÓ câu ví dụ trong một bộ (nguồn câu hỏi luyện tập).
+   * [SỬA] Nghĩa CÓ câu ví dụ trong MỘT HOẶC NHIỀU bộ (nguồn câu hỏi luyện tập).
    * size(s.examples): hàm của HQL, đếm số phần tử collection (Hibernate dịch thành subquery count).
+   * Dùng exists (không join thẳng Deck) nên một từ nằm trong 2 bộ được chọn vẫn chỉ ra 1 lần.
    */
   @Query("""
       select s from Sense s join fetch s.word w
       where size(s.examples) > 0
-        and exists (select 1 from Deck d join d.words dw where d.id = :deckId and dw = w)
+        and exists (select 1 from Deck d join d.words dw where d.id in :deckIds and dw = w)
       """)
-  List<Sense> findPracticeInDeck(@Param("deckId") Long deckId);
+  List<Sense> findPracticeInDecks(@Param("deckIds") Collection<Long> deckIds);
+
+  /** [THÊM] Nghĩa CÓ câu ví dụ trong mọi bộ hệ thống (phần "bộ" của lựa chọn "Tất cả"). */
+  @Query("""
+      select s from Sense s join fetch s.word w
+      where size(s.examples) > 0
+        and exists (select 1 from Deck d join d.words dw
+                    where d.deckType = com.cassin.vocab.DeckType.SYSTEM_DECK and dw = w)
+      """)
+  List<Sense> findPracticeInSystemDecks();
 
   /** Nghĩa CÓ câu ví dụ trong sổ từ của user (cùng 3 nguồn). */
   @Query("""

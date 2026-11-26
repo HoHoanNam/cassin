@@ -129,7 +129,7 @@
           }
         }
       } @else if (questions.error()) {
-        <div class="card"><app-error-state title="Không tải được câu luyện tập" (retry)="questions.reload()" /></div>
+        <div class="card"><app-error-state title="Không tải được câu luyện tập" [message]="loadError()" (retry)="questions.reload()" /></div>
       } @else {
         <div class="card-lines question-skeleton" aria-busy="true" aria-label="Đang tải câu hỏi"></div>
       }

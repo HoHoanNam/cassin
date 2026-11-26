@@ -9,8 +9,10 @@ import {
   ModeStat,
   PRACTICE_LIMITS,
   PracticeAnswer,
+  PracticeAvailability,
   PracticeMode,
   PracticeResult,
+  PracticeScope,
   PracticeStats,
   SentenceBuildQuestion,
 } from '../models/practice.models';
@@ -28,7 +30,7 @@ const DAY_MS = 86_400_000;
  *
  *   Điền từ : câu PHẢI có đánh dấu [từ đích]; so sánh "lỏng" (hoa thường, dấu câu cuối, nháy cong)
  *   Xếp câu : câu 5–15 mảnh (tách theo khoảng trắng, dấu câu dính theo chữ)
- *   Mỗi nghĩa tối đa 1 câu / lượt, tối đa 30 câu
+ *   Mỗi nghĩa tối đa 1 câu / lượt, 1–200 câu; xin nhiều hơn số có sẵn → 400 PRACTICE_COUNT_EXCEEDS
  *   Sai → nghĩa đến hạn ôn ngày mai (nếu đang học). Đúng → không đổi hộp.
  */
 @Injectable()
@@ -37,10 +39,11 @@ export class MockPracticeApi extends PracticeApi {
   private readonly session = inject(MockSession);
   private readonly vocab = inject(MockVocab);
 
-  fillBlank(deckId: number | null, count: number): Observable<FillBlankQuestion[]> {
+  fillBlank(scope: PracticeScope, count: number): Observable<FillBlankQuestion[]> {
     return simulate(() => {
+      checkCount(count);
       const candidates: FillBlankQuestion[] = [];
-      for (const sense of this.practiceSenses(deckId, this.session.userId())) {
+      for (const sense of this.practiceSenses(scope, this.session.userId())) {
         sense.examples.forEach((raw, exampleIndex) => {
           const parts = parseExample(raw);
           if (parts) {
@@ -60,19 +63,32 @@ export class MockPracticeApi extends PracticeApi {
     });
   }
 
-  sentenceBuild(deckId: number | null, count: number): Observable<SentenceBuildQuestion[]> {
+  sentenceBuild(scope: PracticeScope, count: number): Observable<SentenceBuildQuestion[]> {
     return simulate(() => {
+      checkCount(count);
       const candidates: SentenceBuildQuestion[] = [];
-      for (const sense of this.practiceSenses(deckId, this.session.userId())) {
+      for (const sense of this.practiceSenses(scope, this.session.userId())) {
         const term = this.db.words.find((w) => w.id === sense.wordId)?.term ?? '';
         sense.examples.forEach((raw, exampleIndex) => {
           const pieces = tokens(plainExample(raw));
-          if (pieces.length >= PRACTICE_LIMITS.minTokens && pieces.length <= PRACTICE_LIMITS.maxTokens) {
+          if (buildable(pieces)) {
             candidates.push({ senseId: sense.id, exampleIndex, term, definition: sense.definition, tokens: shuffled(pieces) });
           }
         });
       }
       return pickOnePerSense(candidates, count);
+    });
+  }
+
+  /** [THÊM] PracticeService.availability: đếm NGHĨA có ít nhất 1 câu dùng được cho từng chế độ. */
+  availability(scope: PracticeScope): Observable<PracticeAvailability> {
+    return simulate(() => {
+      const senses = this.practiceSenses(scope, this.session.userId());
+      return {
+        fillBlank: senses.filter((s) => s.examples.some((raw) => parseExample(raw) !== null)).length,
+        sentenceBuild: senses.filter((s) => s.examples.some((raw) => buildable(tokens(plainExample(raw))))).length,
+        maxQuestions: PRACTICE_LIMITS.maxQuestions,
+      };
     });
   }
 
@@ -215,17 +231,29 @@ export class MockPracticeApi extends PracticeApi {
 
   // ===== helper =====
 
-  /** WordService.practiceSenses: nghĩa CÓ câu ví dụ, trong một bộ (đọc được) hoặc trong sổ từ. */
-  private practiceSenses(deckId: number | null, userId: number): DbSense[] {
-    let wordIds: Set<number>;
-    if (deckId !== null) {
-      this.vocab.readableDeck(deckId, userId); // bộ không đọc được → 404 DECK_NOT_FOUND
-      wordIds = this.vocab.wordIdsIn(deckId);
+  /** [SỬA] WordService.practiceSenses: nghĩa CÓ câu ví dụ, gộp từ nhiều nguồn (Tất cả / các bộ / sổ từ). */
+  private practiceSenses(scope: PracticeScope, userId: number): DbSense[] {
+    const wordIds = new Set<number>();
+    if (scope.all) {
+      this.db.decks
+        .filter((d) => d.deckType === 'SYSTEM_DECK')
+        .forEach((d) => this.vocab.wordIdsIn(d.id).forEach((id) => wordIds.add(id)));
     } else {
-      wordIds = new Set(this.vocab.notebookWords(userId).map((w) => w.id));
+      for (const deckId of scope.deckIds) {
+        this.vocab.readableDeck(deckId, userId); // bộ không đọc được → 404 DECK_NOT_FOUND
+        this.vocab.wordIdsIn(deckId).forEach((id) => wordIds.add(id));
+      }
+    }
+    if (scope.all || scope.notebook || scope.deckIds.length === 0) {
+      this.vocab.notebookWords(userId).forEach((w) => wordIds.add(w.id));
     }
     return this.db.senses.filter((s) => wordIds.has(s.wordId) && s.examples.length > 0);
   }
+}
+
+/** PracticeService.buildable: câu 5–15 mảnh mới đem đi xếp. */
+function buildable(pieces: string[]): boolean {
+  return pieces.length >= PRACTICE_LIMITS.minTokens && pieces.length <= PRACTICE_LIMITS.maxTokens;
 }
 
 /** PracticeService.tokens: tách theo khoảng trắng, dấu câu dính theo chữ ("lot."). */
@@ -256,21 +284,30 @@ function normalize(value: string | null | undefined): string {
     .toLowerCase();
 }
 
-/** PracticeService.pickOnePerSense: xáo, mỗi nghĩa tối đa 1 câu, lấy clamp(count, 1, 30) câu. */
+/** [SỬA] PracticeService.pickOnePerSense: xáo, mỗi nghĩa tối đa 1 câu; không đủ count câu → 400. */
 function pickOnePerSense<T extends { senseId: number }>(candidates: T[], count: number): T[] {
-  const limit = Math.min(Math.max(count, 1), PRACTICE_LIMITS.maxQuestions);
   const used = new Set<number>();
-  const picked: T[] = [];
+  const onePerSense: T[] = [];
   for (const question of shuffle(candidates)) {
-    if (picked.length === limit) {
-      break;
-    }
     if (!used.has(question.senseId)) {
       used.add(question.senseId);
-      picked.push(question);
+      onePerSense.push(question);
     }
   }
-  return picked;
+  if (count > onePerSense.length) {
+    throw businessError(
+      'PRACTICE_COUNT_EXCEEDS',
+      onePerSense.length === 0 ? 'Phạm vi đã chọn chưa có câu nào để luyện' : `Phạm vi đã chọn chỉ có ${onePerSense.length} câu`,
+    );
+  }
+  return onePerSense.slice(0, count);
+}
+
+/** [THÊM] PracticeService.checkCount */
+function checkCount(count: number): void {
+  if (!Number.isInteger(count) || count < 1 || count > PRACTICE_LIMITS.maxQuestions) {
+    throw businessError('INVALID_COUNT', `Số câu phải từ 1 đến ${PRACTICE_LIMITS.maxQuestions}`);
+  }
 }
 
 function checkDays(days: number): void {
