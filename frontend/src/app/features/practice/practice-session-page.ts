@@ -14,6 +14,7 @@ import {
   SentenceBuildQuestion,
 } from '../../core/models/practice.models';
 import { PART_OF_SPEECH } from '../../core/util/part-of-speech';
+import { scopeFromQuery } from '../../core/util/practice-scope';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
 import { ErrorState } from '../../shared/ui/error-state/error-state';
 import { Icon } from '../../shared/ui/icon/icon';
@@ -37,7 +38,8 @@ interface Answered {
 }
 
 /**
- * [THÊM] Chế độ luyện tập trung: /practice/session?mode=fill-blank|sentence-build&deckId=&count=
+ * [THÊM] Chế độ luyện tập trung: /practice/session?mode=fill-blank|sentence-build&count=
+ *   [SỬA] phạm vi: &all=1 | &deckIds=3,7 | &notebook=1 (xem scopeFromQuery)
  *
  * KHÁC trang ôn thẻ: KHÔNG chấm lạc quan. Người học cần biết đúng / sai và đáp án ngay sau mỗi câu,
  * mà chỉ server biết đáp án (câu hỏi không chứa đáp án) → chờ kết quả rồi mới hiện.
@@ -53,29 +55,40 @@ interface Answered {
 })
 export class PracticeSessionPage {
   readonly mode = input<PracticeModeParam>('fill-blank');
-  readonly deckId = input(undefined, { transform: (v: unknown) => (v == null || v === '' ? undefined : numberAttribute(v)) });
+  // [SỬA] deckId → 3 tham số phạm vi; đọc dạng chuỗi rồi gom lại ở scope()
+  readonly all = input<string | undefined>(undefined);
+  readonly deckIds = input<string | undefined>(undefined);
+  readonly notebook = input<string | undefined>(undefined);
   readonly count = input(10, { transform: (v: unknown) => (v == null ? 10 : numberAttribute(v, 10)) });
 
   private readonly api = inject(PracticeApi);
   private readonly deckApi = inject(DeckApi);
   protected readonly pos = PART_OF_SPEECH;
 
+  protected readonly scope = computed(() =>
+    scopeFromQuery({ all: this.all(), deckIds: this.deckIds(), notebook: this.notebook() }),
+  );
+
   /** Lượt hiện tại; tăng lên để tải bộ câu hỏi mới ("Luyện tiếp"). */
   private readonly round = signal(0);
 
   protected readonly questions = rxResource({
-    params: () => ({ mode: this.mode(), deckId: this.deckId() ?? null, count: this.count(), round: this.round() }),
+    params: () => ({ mode: this.mode(), scope: this.scope(), count: this.count(), round: this.round() }),
     stream: ({ params }): Observable<Question[]> => {
       const source: Observable<Question[]> =
         params.mode === 'sentence-build'
-          ? this.api.sentenceBuild(params.deckId, params.count).pipe(map((list) => list.map((q) => ({ kind: 'build' as const, q }))))
-          : this.api.fillBlank(params.deckId, params.count).pipe(map((list) => list.map((q) => ({ kind: 'fill' as const, q }))));
+          ? this.api.sentenceBuild(params.scope, params.count).pipe(map((list) => list.map((q) => ({ kind: 'build' as const, q }))))
+          : this.api.fillBlank(params.scope, params.count).pipe(map((list) => list.map((q) => ({ kind: 'fill' as const, q }))));
       return source.pipe(tap((list) => this.startQuestion(list[0])));
     },
   });
 
   protected readonly deck = rxResource({
-    params: () => this.deckId(),
+    // Chỉ cần tên bộ khi luyện đúng 1 bộ; nhiều nguồn thì tiêu đề tự ghép (scopeTitle)
+    params: () => {
+      const scope = this.scope();
+      return !scope.all && !scope.notebook && scope.deckIds.length === 1 ? scope.deckIds[0] : undefined;
+    },
     stream: ({ params }) => (params !== undefined ? this.deckApi.getDeck(params) : of(null)),
   });
 
@@ -103,7 +116,19 @@ export class PracticeSessionPage {
   protected readonly correctCount = computed(() => this.answered().filter((a) => a.result.correct).length);
   protected readonly wrong = computed(() => this.answered().filter((a) => !a.result.correct));
   protected readonly modeTitle = computed(() => (this.mode() === 'sentence-build' ? 'Xếp câu' : 'Điền từ'));
-  protected readonly scopeTitle = computed(() => (this.deck.hasValue() && this.deck.value()?.deckName) || 'Cả sổ từ');
+  protected readonly scopeTitle = computed(() => {
+    const scope = this.scope();
+    if (scope.all) {
+      return 'Tất cả';
+    }
+    if (this.deck.hasValue() && this.deck.value()) {
+      return this.deck.value()!.deckName;
+    }
+    const parts = scope.deckIds.length > 0 ? [`${scope.deckIds.length} bộ`] : [];
+    return [...parts, ...(scope.notebook ? ['Sổ từ'] : [])].join(' + ');
+  });
+  /** [THÊM] Lỗi tải câu hỏi: hiện đúng thông báo backend (vd "Phạm vi đã chọn chỉ có 12 câu"). */
+  protected readonly loadError = computed(() => errorMessage(this.questions.error(), 'Kiểm tra kết nối mạng rồi thử lại.'));
 
   /** Gợi ý ô điền: "i _ _ _ _ _ _ _" */
   protected readonly blankHint = computed(() => {

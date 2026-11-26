@@ -4,7 +4,9 @@ import {
   FillBlankQuestion,
   MistakeItem,
   PracticeAnswer,
+  PracticeAvailability,
   PracticeResult,
+  PracticeScope,
   PracticeStats,
   SentenceBuildQuestion,
 } from '../models/practice.models';
@@ -16,10 +18,15 @@ import {
  * Sai → nghĩa đó đến hạn ôn ngày mai; đúng → KHÔNG đổi hộp Leitner (chỉ lật thẻ mới chấm hộp).
  */
 export abstract class PracticeApi {
-  /** GET /api/practice/fill-blank?deckId=&count=. deckId = null: cả sổ từ. Có thể ít hơn count, hoặc rỗng. */
-  abstract fillBlank(deckId: number | null, count: number): Observable<FillBlankQuestion[]>;
-  /** GET /api/practice/sentence-build?deckId=&count= */
-  abstract sentenceBuild(deckId: number | null, count: number): Observable<SentenceBuildQuestion[]>;
+  /**
+   * [SỬA] GET /api/practice/fill-blank?all=&deckIds=&notebook=&count=
+   * Lỗi: 400 INVALID_COUNT (ngoài 1–200) · 400 PRACTICE_COUNT_EXCEEDS (nhiều hơn số câu có sẵn) · 404 DECK_NOT_FOUND
+   */
+  abstract fillBlank(scope: PracticeScope, count: number): Observable<FillBlankQuestion[]>;
+  /** [SỬA] GET /api/practice/sentence-build?all=&deckIds=&notebook=&count= (cùng mã lỗi) */
+  abstract sentenceBuild(scope: PracticeScope, count: number): Observable<SentenceBuildQuestion[]>;
+  /** [THÊM] GET /api/practice/availability?all=&deckIds=&notebook= */
+  abstract availability(scope: PracticeScope): Observable<PracticeAvailability>;
   /** POST /api/practice/answers. Lỗi: 404 SENSE_NOT_FOUND · 400 NOT_PRACTICABLE */
   abstract answer(answer: PracticeAnswer): Observable<PracticeResult>;
   /** GET /api/practice/stats?days= (1–30, sai → 400 INVALID_DAYS) */

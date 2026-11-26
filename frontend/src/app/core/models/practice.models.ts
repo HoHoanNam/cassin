@@ -85,10 +85,32 @@ export interface MistakeItem {
   lastWrongAt: string;
 }
 
+/**
+ * [THÊM] Nguồn câu hỏi một lượt luyện (khớp PracticeSource ở backend).
+ *   all = true         → "Tất cả": mọi bộ hệ thống + sổ từ (bỏ qua 2 trường còn lại)
+ *   deckIds = [3, 7]   → các bộ đã chọn
+ *   notebook = true    → thêm sổ từ
+ */
+export interface PracticeScope {
+  all: boolean;
+  notebook: boolean;
+  deckIds: number[];
+}
+
+export const ALL_SCOPE: PracticeScope = { all: true, notebook: false, deckIds: [] };
+
+/** [THÊM] GET /api/practice/availability: số câu tối đa mỗi chế độ cho nguồn đã chọn */
+export interface PracticeAvailability {
+  fillBlank: number;
+  sentenceBuild: number;
+  /** trần mỗi lượt của server (200) */
+  maxQuestions: number;
+}
+
 /** Khớp các hằng số ở backend */
 export const PRACTICE_LIMITS = {
-  /** PracticeService.MAX_QUESTIONS */
-  maxQuestions: 30,
+  /** PracticeService.MAX_QUESTIONS ([SỬA] 30 → 200) */
+  maxQuestions: 200,
   /** PracticeService.MIN_TOKENS / MAX_TOKENS: câu dùng cho Xếp câu */
   minTokens: 5,
   maxTokens: 15,

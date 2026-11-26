@@ -22,29 +22,65 @@
         }
       </div>
 
-      <div class="flex flex-wrap items-end gap-5">
-        <div class="field min-w-[220px] flex-1">
-          <label class="label" for="practice-deck">Luyện từ</label>
-          <select id="practice-deck" class="input" (change)="onDeckChange($event)" [disabled]="!decks.hasValue()">
-            <option value="" [selected]="deckId() === null">Cả sổ từ của tôi</option>
-            @if (decks.hasValue()) {
-              @for (d of decks.value(); track d.id) {
-                <option [value]="d.id" [selected]="deckId() === d.id">{{ d.deckName }}</option>
-              }
+      <!-- [SỬA] Phạm vi: chọn nhiều nguồn (thay cho select 1 bộ) -->
+      <fieldset class="m-0 flex flex-col gap-2.5 border-0 p-0">
+        <legend class="label mb-2.5 p-0">Luyện từ</legend>
+        <div class="sources" role="group" aria-label="Nguồn từ vựng">
+          <button type="button" class="source" [attr.aria-pressed]="scope().all" (click)="selectAll()">
+            <app-icon name="decks" [size]="16" /> Tất cả
+          </button>
+          <button type="button" class="source" [attr.aria-pressed]="!scope().all && scope().notebook" (click)="onToggleNotebook()">
+            <app-icon name="book" [size]="16" /> Sổ từ của tôi
+          </button>
+          @if (decks.hasValue()) {
+            @for (d of sourceDecks(); track d.id) {
+              <button type="button" class="source" [attr.aria-pressed]="isDeckSelected(d.id)" (click)="onToggleDeck(d.id)">
+                {{ d.deckName }}
+                <span class="source-count">{{ d.wordCount }}</span>
+              </button>
             }
-          </select>
+          } @else if (decks.isLoading()) {
+            <span class="text-sm text-ink-soft">Đang tải các bộ từ...</span>
+          }
         </div>
-        <div class="field">
-          <span class="label" id="count-label">Số câu</span>
-          <div class="segmented" role="group" aria-labelledby="count-label">
-            @for (c of counts; track c) {
-              <button type="button" [attr.aria-pressed]="count() === c" (click)="count.set(c)">{{ c }} câu</button>
+        <p class="m-0 text-[13px] text-ink-soft">{{ scopeSummary() }}</p>
+      </fieldset>
+
+      <!-- [SỬA] Số câu: thanh trượt + ô số + MAX (thay cho 10 / 20 câu) -->
+      <div class="field gap-2.5">
+        <div class="flex flex-wrap items-baseline justify-between gap-2">
+          <label class="label m-0" for="practice-count">Số câu</label>
+          <span class="text-[13px] text-ink-soft" aria-live="polite">
+            @if (availability.hasValue()) {
+              Có sẵn <strong class="text-ink">{{ available() }}</strong> câu {{ mode() === 'sentence-build' ? 'Xếp câu' : 'Điền từ' }}
+              @if (available() > cap()) { · tối đa {{ cap() }} câu / lượt }
+            } @else if (availability.error()) {
+              Không đếm được số câu
+            } @else {
+              Đang đếm số câu...
             }
-          </div>
+          </span>
         </div>
+        <div class="count-row">
+          <input type="range" class="count-range" min="1" [max]="max() || 1" step="1"
+            [value]="count() ?? 1" [disabled]="max() === 0" aria-label="Kéo để chọn số câu"
+            (input)="onCountInput($event)" />
+          <input id="practice-count" type="number" class="input count-input" min="1" [max]="cap()" step="1" inputmode="numeric"
+            [value]="count() ?? ''" [attr.aria-invalid]="problem() !== null" aria-describedby="count-problem"
+            (input)="onCountInput($event)" />
+          <button type="button" class="btn btn-secondary count-max" [attr.aria-pressed]="max() > 0 && count() === max()"
+            [disabled]="max() === 0" (click)="useMax()">MAX</button>
+        </div>
+        @if (problem(); as message) {
+          <p id="count-problem" class="form-alert form-alert-error m-0 items-center" role="status">
+            <app-icon name="alert" [size]="16" /> {{ message }}
+          </p>
+        }
       </div>
 
-      <button type="button" class="btn btn-primary btn-lg self-start" (click)="start()">Bắt đầu luyện</button>
+      <button type="button" class="btn btn-primary btn-lg self-start" [disabled]="!canStart()" (click)="start()">
+        Bắt đầu luyện{{ canStart() ? ' ' + count() + ' câu' : '' }}
+      </button>
     </section>
 
     <!-- Thống kê 7 ngày + Sổ lỗi sai -->
