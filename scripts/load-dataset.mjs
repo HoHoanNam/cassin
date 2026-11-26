@@ -116,6 +116,14 @@ function checkGrammar(file, r) {
     if (titles.has(t.title)) r.error(at, 'trùng tiêu đề trong cùng file');
     titles.add(t.title);
     if (isBlank(t.explanation)) r.error(at, 'thiếu lý thuyết');
+    // topic-page gom dòng thường lên TRƯỚC các gạch đầu dòng trong cùng đoạn → dòng thường sau "• " sẽ bị đảo chỗ
+    (t.explanation ?? '').split(/\n\s*\n/).forEach((para) => {
+      const lines = para.split('\n').map((l) => l.trim()).filter(Boolean);
+      const firstBullet = lines.findIndex((l) => l.startsWith('•'));
+      if (firstBullet >= 0 && lines.slice(firstBullet).some((l) => !l.startsWith('•'))) {
+        r.warn(at, `dòng thường nằm sau gạch đầu dòng sẽ bị đảo lên trên: "${lines[firstBullet]}"`);
+      }
+    });
     const contents = new Set();
     (t.questions ?? []).forEach((q, qi) => {
       const aq = `${at} › câu ${qi + 1}`;
@@ -172,8 +180,14 @@ function checkReading(file, r) {
       const hints = q.hints ?? [];
       if (hints.length > LIMITS.hints) r.error(aq, `tối đa ${LIMITS.hints} gợi ý`);
       if (hints.length === 0) r.warn(aq, 'chưa có gợi ý đồng nghĩa');
+      const seenHints = new Set();
       for (const h of hints) {
         if (isBlank(h.question) || isBlank(h.passage)) { r.error(aq, 'gợi ý thiếu cụm từ'); continue; }
+        if (h.question.length > LIMITS.hintPhrase || h.passage.length > LIMITS.hintPhrase) r.error(aq, `cụm gợi ý dài quá ${LIMITS.hintPhrase} ký tự`);
+        if (h.question.trim().toLowerCase() === h.passage.trim().toLowerCase()) r.error(aq, `gợi ý "${h.question}" phải là hai cách diễn đạt khác nhau`);
+        const key = `${h.question.trim().toLowerCase()}|${h.passage.trim().toLowerCase()}`;
+        if (seenHints.has(key)) r.error(aq, 'hai gợi ý trùng nhau');
+        seenHints.add(key);
         if (!(q.prompt ?? '').toLowerCase().includes(h.question.toLowerCase())) r.error(aq, `gợi ý "${h.question}" không có trong đề`);
         if (!content.toLowerCase().includes(h.passage.toLowerCase())) r.error(aq, `gợi ý "${h.passage}" không có trong bài`);
       }
@@ -191,6 +205,7 @@ function checkReading(file, r) {
         }
         const answers = q.answers ?? [];
         if (answers.length === 0 || answers.length > LIMITS.accepted) r.error(aq, `cần 1–${LIMITS.accepted} đáp án`);
+        if (new Set(answers.map((a) => a.trim().toLowerCase())).size !== answers.length) r.error(aq, 'hai đáp án trùng nhau');
         for (const a of answers) {
           const problem = ANSWER_KINDS.includes(q.answerKind) ? blankFormatProblem(q.answerKind, q.maxWords, a) : null;
           if (problem) r.error(aq, `đáp án "${a}" ${problem}`);
@@ -428,6 +443,7 @@ async function loadVocab(files, tally) {
         if (wordId === null) throw new Error(`"${w.term}" báo đã tồn tại nhưng không tìm thấy trong Thư viện`);
         await call('POST', `/api/admin/decks/${deck.id}/words/${wordId}`);
         tally.add('vocab', 'từ có sẵn → gắn vào bộ');
+        console.log(`    ↪ "${w.term}" đã có trong hệ thống → gắn từ có sẵn (giữ nghĩa cũ, không thêm nghĩa trong file)`);
       }
       have.add(norm(w.term));
       added++;
